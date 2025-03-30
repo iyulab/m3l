@@ -39,6 +39,7 @@
 8. [Best Practices and Anti-patterns](#8-best-practices-and-anti-patterns)
    1. [Recommended Practices](#81-recommended-practices)
    2. [Anti-patterns to Avoid](#82-anti-patterns-to-avoid)
+   3. [Naming Conventions](#83-naming-conventions)
 9. [Appendix](#9-appendix)
    1. [Terminology](#91-terminology)
    2. [Mapping to Implementation](#92-mapping-to-implementation)
@@ -380,6 +381,17 @@ Default values can be more than simple constants. M3L supports various forms of 
 - status: string = if(is_verified, "active", "pending")
 ```
 
+#### 2.5.6 Custom Framework Attributes
+
+M3L allows for custom framework-specific attributes using square brackets:
+
+```markdown
+- password: string(100) [DataType(DataType.Password)][JsonIgnore]
+- created_at: timestamp = now() [Insert("@now")]
+```
+
+These custom attributes can be used to provide platform-specific metadata that will be processed by implementation-specific parsers.
+
 ## 3. Special Elements
 
 ### 3.1 Enum Definition
@@ -604,6 +616,12 @@ Defined at the field level using the `@unique` attribute:
 - email: string(100) @unique @index
 ```
 
+Or using framework-specific notation:
+
+```markdown
+- normalized_email: string(256) [UQ]
+```
+
 #### 3.3.5.2 Multi-Column Unique Constraints
 
 To ensure the uniqueness of a combination of multiple columns, defined at the model level:
@@ -624,7 +642,15 @@ Inheritance provides a mechanism for sharing common attributes between models.
 #### 3.4.1 Interface Definition
 
 ```markdown
-## Timestampable # Timestampable interface
+## Timestampable ::interface
+- created_at: timestamp = now()
+- updated_at: timestamp = now() @on_update(now())
+```
+
+With descriptive comment:
+
+```markdown
+## Timestampable ::interface # Common timestamp fields
 - created_at: timestamp = now()
 - updated_at: timestamp = now() @on_update(now())
 ```
@@ -937,11 +963,11 @@ Defining changes between schema versions.
 ```markdown
 # Content Management Data Model
 
-## Timestampable # Common timestamp fields
+## Timestampable ::interface # Common timestamp fields
 - created_at: timestamp = now()
 - updated_at: timestamp = now() @on_update(now())
 
-## Trackable # Common tracking fields
+## Trackable ::interface # Common tracking fields
 - created_by: identifier? @reference(Person)
 - updated_by: identifier? @reference(Person)
 
@@ -964,10 +990,7 @@ Defining changes between schema versions.
 - last_login: timestamp?
 - full_name: string @computed("first_name + ' ' + last_name")
 
-### Indexes
-- login_info
-  - fields: [email, username]
-  - unique: false
+- @index(email, username, name: "login_info")
 
 - @relation(contents, <- Content.author_id) "Content created by person"
 - @relation(comments, <- Comment.author_id) "Comments written by person"
@@ -1027,18 +1050,10 @@ Defining changes between schema versions.
   - is_primary: boolean = false
 - tags: string[]?
 
-### Indexes
-- product_search
-  - fields: [name, sku]
-  - fulltext: true
+- @index(name, sku, name: "product_search", fulltext: true)
 
-### Relations
-- >category
-  - target: Category
-  - from: category_id
-  
-- <order_items
-  - target: OrderItem.product_id
+- @relation(category, -> Category, from: category_id) "Category this product belongs to"
+- @relation(order_items, <- OrderItem.product_id) "Order items containing this product"
 
 ## Order : BaseModel
 - order_number: string(20) @unique
@@ -1068,13 +1083,8 @@ Defining changes between schema versions.
 - ordered_at: timestamp = now()
 - shipped_at: timestamp?
 
-### Relations
-- >customer
-  - target: Customer
-  - from: customer_id
-  
-- <items
-  - target: OrderItem.order_id
+- @relation(customer, -> Customer, from: customer_id) "Customer who placed this order"
+- @relation(items, <- OrderItem.order_id) "Items in this order"
 
 ## OrderItem
 - order_id: identifier @reference(Order) @primary(1)
@@ -1084,121 +1094,32 @@ Defining changes between schema versions.
 - discount: decimal(10, 2) = 0
 - subtotal: decimal(12, 2) @computed("quantity * unit_price - discount")
 
-### Relations
-- >order
-  - target: Order
-  - from: order_id
-
-- >product
-  - target: Product
-  - from: product_id
+- @relation(order, -> Order, from: order_id) "Order containing this item"
+- @relation(product, -> Product, from: product_id) "Product in this order item"
 ```
 
 ## 8. Best Practices and Anti-patterns
 
 ### 8.1 Recommended Practices
 
-#### 8.1.1 Naming Conventions
-
-- Use names that reflect the business domain
-- Be consistent with naming style throughout a schema
-- Consider compatibility with target platforms
-- Use descriptive names over abbreviated ones
-
-#### 8.1.2 Organization
+#### 8.1.1 Organization
 
 - Group related models in the same M3L document
 - Put commonly used interfaces and base models in separate files
 - Organize fields in a logical order (identifiers first, then core data, then metadata)
 - Use sections for complex models with many relationships
 
-#### 8.1.3 Documentation
+#### 8.1.2 Documentation
 
 - Include a description for every model
 - Document complex fields, particularly those with business rules
 - Use comments to explain non-obvious relationships or constraints
 - Provide examples for fields with specific formats
 
-#### 8.1.4 Expression Patterns
+#### 8.1.3 Expression Patterns
 
 - Use the simplest expression pattern that adequately captures the metadata
 - Use one-line format for simple fields
-- Use section format for groups of related items (relationships, behaviors)
+- Use model-level attributes for relationships and indexes when possible
+- Use section format only when needed for groups of related items
 - Be consistent in your chosen pattern throughout a document
-
-### 8.2 Anti-patterns to Avoid
-
-#### 8.2.1 Structural Anti-patterns
-
-- **Inconsistent Notation**: Mixing different notations for the same concept
-- **Over-nesting**: Creating unnecessarily deep hierarchies
-- **Redundant Metadata**: Repeating the same metadata in multiple places
-- **Misusing Inheritance**: Creating deep inheritance hierarchies instead of composition
-
-#### 8.2.2 Modeling Anti-patterns
-
-- **Premature Optimization**: Adding indexes before understanding access patterns
-- **Ignoring Nullability**: Not explicitly marking nullable fields
-- **Ambiguous Relationships**: Not clearly specifying relationship direction and cardinality
-- **Mixing Concerns**: Including implementation details in the conceptual model
-- **Over-specialization**: Creating models that are too specific to a particular use case
-
-## 9. Appendix
-
-### 9.1 Terminology
-
-- **Model**: A representation of a data entity or concept
-- **Field**: An individual attribute or property of a model
-- **Enum**: A set of predefined values for a field
-- **Relationship**: A connection between two models
-- **Interface**: A reusable set of fields that can be included in multiple models
-- **Attribute**: A modifier that adds constraints, behaviors, or metadata to a field or model
-- **Behavior**: Events and associated actions on a model
-- **Index**: A structure that improves query performance
-
-### 9.2 Mapping to Implementation
-
-#### 9.2.1 To Relational Databases
-
-M3L concepts can be mapped to relational database concepts:
-
-| M3L Concept | SQL Equivalent |
-|-------------|----------------|
-| Model | Table |
-| Field | Column |
-| @primary | PRIMARY KEY |
-| @unique | UNIQUE constraint |
-| @reference | FOREIGN KEY |
-| @index | INDEX |
-| Enum | CHECK constraint or reference table |
-| Object | JSON column or normalized tables |
-| Array | JSON array or junction table |
-
-#### 9.2.2 To Object-Oriented Languages
-
-M3L concepts map to OOP concepts:
-
-| M3L Concept | OOP Equivalent |
-|-------------|----------------|
-| Model | Class |
-| Field | Property/Attribute |
-| Enum | Enumeration type |
-| Relationship | Association |
-| Interface | Interface or Abstract class |
-| Inheritance | Class inheritance |
-| Behavior | Methods/Hooks |
-
-#### 9.2.3 To Document Databases
-
-M3L concepts map to document database concepts:
-
-| M3L Concept | Document DB Equivalent |
-|-------------|------------------------|
-| Model | Collection/Document type |
-| Field | Document field |
-| @primary | _id field |
-| @index | Index |
-| Object | Nested document |
-| Array | Array |
-| Enum | String with validation |
-| Relationship | Reference or embedding |

@@ -523,7 +523,24 @@ Relationships define connections between models.
 #### 3.2.1 Field Level Relationships (Recommended for Simple References)
 
 ```markdown
-- author_id: identifier @reference(Person)
+- author_id: identifier @reference(Person)          # CASCADE (default)
+- blocked_user_id: identifier @reference(User)!    # NO ACTION (prevent deletion)
+- reviewed_by_id?: identifier @reference(User)?    # SET NULL (nullable field)
+```
+
+#### 3.2.1.1 Cascade Behavior Syntax
+
+M3L supports concise cascade behavior notation using symbol suffixes:
+
+- **Default (CASCADE)**: `@reference(Model)` - Parent deletion cascades to child
+- **NO ACTION**: `@reference(Model)!` - Prevents parent deletion if children exist
+- **SET NULL**: `@reference(Model)?` - Sets field to NULL when parent is deleted (requires nullable field)
+
+Alternative explicit syntax:
+```markdown
+- author_id: identifier @reference(Person) @cascade(cascade)
+- blocked_user_id: identifier @reference(User) @cascade(no-action)
+- reviewed_by_id?: identifier @reference(User) @cascade(set-null)
 ```
 
 #### 3.2.2 Model Level Relationships (Single Line)
@@ -1098,28 +1115,157 @@ Defining changes between schema versions.
 - @relation(product, -> Product, from: product_id) "Product in this order item"
 ```
 
-## 8. Best Practices and Anti-patterns
+## 8. M3L Simple Extensions
 
-### 8.1 Recommended Practices
+M3L can be extended with minimal complexity while maintaining readability and focus on table specifications.
 
-#### 8.1.1 Organization
+### 8.1 Enhanced Documentation
+
+Improved documentation using markdown blockquotes for better readability:
+
+#### 8.1.1 Model Documentation
+
+```markdown
+## User
+> User account information for the platform
+> Supports both Google OAuth and email authentication
+
+- Id: identifier @primary
+- Email: string(320) @unique
+- Name: string(100)
+```
+
+#### 8.1.2 Field Comments
+
+Use inline comments for field descriptions:
+
+```markdown
+- Email: string(320) @unique  # Primary contact email
+- CreatedAt: datetime = "@now"  # Account creation timestamp
+```
+
+### 8.2 Basic Constraints
+
+Simple field-level constraints for common validation needs:
+
+```markdown
+## Product
+- Price: decimal(10,2) @min(0)  # Must be positive
+- Stock: integer @min(0) @max(9999)  # Inventory limits
+- Name: string(200) @required  # Cannot be null or empty
+```
+
+### 8.3 Advanced Field Types
+
+Support for modern data types:
+
+```markdown
+## UserProfile
+- Id: identifier @primary
+- Settings: json  # JSON configuration data
+- Tags: string[]  # Array of strings
+- Metadata: object  # Structured data
+  - Theme: string
+  - Language: string(5)
+  - Timezone: string(50)
+```
+
+### 8.4 Cascade Behavior for Foreign Keys
+
+M3L provides concise syntax for controlling foreign key cascade behavior:
+
+#### 8.4.1 Symbol-Based Cascade Notation
+
+```markdown
+## Block
+> User blocking system with cascade protection
+
+- Id: identifier @primary
+- BlockerId: identifier @reference(User)!      # NO ACTION - prevents User deletion
+- BlockedUserId: identifier @reference(User)!  # NO ACTION - prevents User deletion
+- Reason?: string(500)                         # Optional blocking reason
+- CreatedAt: datetime = "@now"
+
+## Report
+> Content reporting system with mixed cascade behavior
+
+- Id: identifier @primary
+- ReporterId: identifier @reference(User)!     # NO ACTION - preserve reporter
+- TargetType: ReportTargetType
+- TargetId: identifier
+- Status: ReportStatus = "Pending"
+- ReviewedBy?: identifier @reference(User)?    # SET NULL - clear on reviewer deletion
+```
+
+#### 8.4.2 Cascade Behavior Guidelines
+
+**CASCADE (default)**: Use for parent-child relationships where child data becomes meaningless without parent
+```markdown
+- AuthorId: identifier @reference(User)        # Delete posts when author deleted
+- CategoryId: identifier @reference(Category)  # Delete products when category deleted
+```
+
+**NO ACTION (!)**: Use for important reference data that should be preserved
+```markdown
+- CreatedBy: identifier @reference(User)!      # Preserve audit trail
+- ModeratorId: identifier @reference(User)!    # Prevent moderator deletion
+```
+
+**SET NULL (?)**: Use for optional relationships where record should survive parent deletion
+```markdown
+- ReviewedBy?: identifier @reference(User)?    # Clear reviewer on deletion
+- AssignedTo?: identifier @reference(User)?    # Clear assignment on deletion
+```
+
+## 9. Best Practices and Anti-patterns
+
+### 9.1 Recommended Practices
+
+#### 9.1.1 Organization
 
 - Group related models in the same M3L document
 - Put commonly used interfaces and base models in separate files
 - Organize fields in a logical order (identifiers first, then core data, then metadata)
 - Use sections for complex models with many relationships
 
-#### 8.1.2 Documentation
+#### 9.1.2 Documentation
 
 - Include a description for every model
 - Document complex fields, particularly those with business rules
 - Use comments to explain non-obvious relationships or constraints
 - Provide examples for fields with specific formats
 
-#### 8.1.3 Expression Patterns
+#### 9.1.3 Expression Patterns
 
 - Use the simplest expression pattern that adequately captures the metadata
 - Use one-line format for simple fields
 - Use model-level attributes for relationships and indexes when possible
 - Use section format only when needed for groups of related items
 - Be consistent in your chosen pattern throughout a document
+
+#### 9.1.4 Extension Usage
+
+- Use storage hints for multi-tier architectures
+- Define business constraints close to field definitions
+
+#### 9.1.5 Cascade Behavior Best Practices
+
+- **Default to CASCADE** for true parent-child relationships where child data has no meaning without parent
+- **Use NO ACTION (!)** for audit trail preservation, user blocking systems, and critical reference data
+- **Use SET NULL (?)** for optional assignments where the record should survive reference deletion
+- **Document cascade decisions** with inline comments explaining the business rationale
+- **Test cascade scenarios** thoroughly, especially for complex multi-table relationships
+- **Avoid cascade conflicts** by using NO ACTION for circular or complex reference patterns
+
+**Anti-patterns to avoid:**
+```markdown
+# BAD: Multiple CASCADE paths to same table can cause conflicts
+- BlockerId: identifier @reference(User)     # CASCADE
+- BlockedUserId: identifier @reference(User) # CASCADE - can cause cascade conflicts!
+
+# GOOD: Use NO ACTION for blocking/audit systems
+- BlockerId: identifier @reference(User)!     # NO ACTION - preserve blocking data
+- BlockedUserId: identifier @reference(User)! # NO ACTION - preserve blocking data
+```
+- Apply security attributes consistently across models
+- Use events sparingly for critical business state changes

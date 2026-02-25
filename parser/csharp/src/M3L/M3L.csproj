@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RootNamespace>M3L</RootNamespace>
+    <PackageId>Iyulab.M3L</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>iyulab</Authors>
+    <Description>M3L parser — parse .m3l.md files into JSON AST</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageTags>m3l;data-modeling;parser;ast;markdown</PackageTags>
+  </PropertyGroup>
+
+</Project>

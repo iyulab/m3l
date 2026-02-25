@@ -8,6 +8,12 @@ import type {
   ProjectInfo,
 } from './types.js';
 
+/** AST schema version — bump major on breaking structure changes */
+export const AST_VERSION = '1.0';
+
+/** Parser package version — kept in sync with package.json */
+export const PARSER_VERSION = '0.1.0';
+
 /**
  * Resolve and merge multiple parsed file ASTs into a single M3LAST.
  * Handles: inheritance resolution, duplicate detection, reference validation.
@@ -81,6 +87,8 @@ export function resolve(
   }
 
   return {
+    parserVersion: PARSER_VERSION,
+    astVersion: AST_VERSION,
     project: projectInfo,
     sources,
     models: allModels,

@@ -35,7 +35,15 @@ export type FieldKind = 'stored' | 'computed' | 'lookup' | 'rollup';
 
 export interface FieldAttribute {
   name: string;
-  args?: unknown[];
+  args?: (string | number | boolean)[];
+}
+
+/** Structured representation of a backtick-wrapped framework attribute like `[MaxLength(100)]` */
+export interface CustomAttribute {
+  /** Content inside brackets, e.g., "MaxLength(100)" for `[MaxLength(100)]` */
+  content: string;
+  /** Original text including brackets, e.g., "[MaxLength(100)]" */
+  raw: string;
 }
 
 export interface EnumValue {
@@ -56,7 +64,7 @@ export interface FieldNode {
   default_value?: string;
   description?: string;
   attributes: FieldAttribute[];
-  framework_attrs?: string[];
+  framework_attrs?: CustomAttribute[];
   lookup?: { path: string };
   rollup?: {
     target: string;
@@ -136,6 +144,10 @@ export interface ParsedFile {
 }
 
 export interface M3LAST {
+  /** Parser package version (semver) */
+  parserVersion: string;
+  /** AST schema version — incremented on breaking AST structure changes */
+  astVersion: string;
   project: ProjectInfo;
   sources: string[];
   models: ModelNode[];

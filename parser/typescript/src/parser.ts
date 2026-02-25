@@ -5,6 +5,7 @@ import type {
   EnumNode,
   FieldNode,
   FieldAttribute,
+  CustomAttribute,
   EnumValue,
   FieldKind,
   ViewSourceDef,
@@ -574,7 +575,7 @@ function buildFieldNode(
     default_value: data.default_value as string | undefined,
     description: data.description as string | undefined,
     attributes: attrs,
-    framework_attrs: data.framework_attrs as string[] | undefined,
+    framework_attrs: parseCustomAttributes(data.framework_attrs as string[] | undefined),
     loc: { file: state.file, line: token.line, col: 1 },
   };
 
@@ -801,6 +802,15 @@ function applyExtendedAttribute(field: FieldNode, key: string, value: string): v
       field.attributes.push({ name: key, args: [parsed] });
       break;
   }
+}
+
+function parseCustomAttributes(rawAttrs: string[] | undefined): CustomAttribute[] | undefined {
+  if (!rawAttrs || rawAttrs.length === 0) return undefined;
+  return rawAttrs.map(raw => {
+    // raw is "[MaxLength(100)]" — strip brackets to get content
+    const content = raw.replace(/^\[|\]$/g, '');
+    return { content, raw };
+  });
 }
 
 function isEnumNode(el: ModelNode | EnumNode): el is EnumNode {

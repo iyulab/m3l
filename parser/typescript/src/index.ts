@@ -1,6 +1,6 @@
 export { lex } from './lexer.js';
 export { parseTokens, parseString as parseFileString } from './parser.js';
-export { resolve } from './resolver.js';
+export { resolve, AST_VERSION, PARSER_VERSION } from './resolver.js';
 export { validate } from './validator.js';
 export { readM3LFiles, readM3LString, readProjectConfig } from './reader.js';
 export type * from './types.js';

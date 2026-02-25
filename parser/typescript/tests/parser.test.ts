@@ -223,8 +223,11 @@ describe('parser', () => {
       '- password: string(100) `[DataType(DataType.Password)]` `[JsonIgnore]`',
     ].join('\n'));
     const field = result.models[0].fields[0];
-    expect(field.framework_attrs).toContain('[DataType(DataType.Password)]');
-    expect(field.framework_attrs).toContain('[JsonIgnore]');
+    expect(field.framework_attrs).toHaveLength(2);
+    expect(field.framework_attrs![0].content).toBe('DataType(DataType.Password)');
+    expect(field.framework_attrs![0].raw).toBe('[DataType(DataType.Password)]');
+    expect(field.framework_attrs![1].content).toBe('JsonIgnore');
+    expect(field.framework_attrs![1].raw).toBe('[JsonIgnore]');
   });
 
   it('should parse field with default value and attributes', () => {

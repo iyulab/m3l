@@ -55,6 +55,9 @@
     3. [Formal Grammar (PEG)](#103-formal-grammar-peg)
     4. [Type Catalog](#104-type-catalog)
     5. [Error Catalog](#105-error-catalog)
+    6. [Import Resolution](#106-import-resolution)
+    7. [Platform-Specific Expressions](#107-platform-specific-expressions)
+    8. [Standard Attribute Catalog](#108-standard-attribute-catalog)
 
 ## 1. Introduction
 
@@ -2499,3 +2502,65 @@ For cases where `@computed` expressions require platform-specific functions, use
 `@computed_raw` expressions are not guaranteed to be portable across platforms. The `platform` parameter is informational metadata for code generators.
 
 > **Note**: `@computed` expressions are treated as opaque strings by the parser. M3L does not define an expression language — the expression content is passed through to the implementation layer. `@computed_raw` provides an explicit signal that the expression is platform-specific.
+
+### 10.8 Standard Attribute Catalog
+
+The following catalog lists all standard `@` attributes defined by M3L. Parsers should recognize these as built-in. Any `@` attribute not in this catalog is treated as a custom/extension attribute.
+
+#### 10.8.1 Field Constraint Attributes
+
+| Attribute | Arguments | Target | Description |
+|---|---|---|---|
+| `@pk` | — | field | Primary key (alias for `@primary`) |
+| `@primary` | `(order)?` | field | Primary key with optional ordering |
+| `@unique` | `(field_list)?` | field, model | Unique constraint |
+| `@not_null` | — | field | Required (non-nullable) |
+| `@index` | `(field_list)?` | field, model | Database index |
+| `@generated` | — | field | Auto-generated value |
+| `@immutable` | — | field | Cannot be changed after creation |
+| `@default` | `(value)` | field | Default value (alternative to `= value` syntax) |
+
+#### 10.8.2 Reference and Relationship Attributes
+
+| Attribute | Arguments | Target | Description |
+|---|---|---|---|
+| `@reference` | `(Model)` + cascade suffix | field | Foreign key reference |
+| `@fk` | `(Model.field)` | field | Foreign key (explicit target field) |
+| `@on_delete` | `(action)` | field | Delete cascade action (cascade/set_null/restrict/no_action) |
+| `@on_update` | `(action)` | field | Update cascade action |
+
+#### 10.8.3 Search and Display Attributes
+
+| Attribute | Arguments | Target | Description |
+|---|---|---|---|
+| `@searchable` | — | field | Full-text search target |
+| `@visibility` | `(level)` | model | Model visibility (public/private/internal) |
+
+#### 10.8.4 Validation Attributes
+
+| Attribute | Arguments | Target | Description |
+|---|---|---|---|
+| `@min` | `(value)` | field | Minimum value |
+| `@max` | `(value)` | field | Maximum value |
+| `@validate` | `(rule)` | field | Custom validation rule |
+
+#### 10.8.5 Derived Field Attributes
+
+| Attribute | Arguments | Target | Description |
+|---|---|---|---|
+| `@computed` | `(expression)` | field | Computed field (platform-neutral expression) |
+| `@computed_raw` | `(expression, platform?)` | field | Platform-specific computed field |
+| `@lookup` | `(fk_path.field)` | field | Lookup field via FK chain |
+| `@rollup` | `(Model.fk, aggregate, where?)` | field | Rollup aggregation |
+| `@from` | `(Model.field)` | field (view) | View field source mapping |
+| `@persisted` | — | field | Materialize derived field to storage |
+
+#### 10.8.6 Model-Level Attributes
+
+| Attribute | Arguments | Target | Description |
+|---|---|---|---|
+| `@materialized` | — | view | Physically materialized view |
+| `@meta` | `(key, value)` | model | Arbitrary metadata key-value |
+| `@override` | — | field | Override inherited field definition |
+
+> Attributes not listed here are treated as extension attributes. Parsers may choose to pass them through to the AST or emit a warning, depending on configuration.

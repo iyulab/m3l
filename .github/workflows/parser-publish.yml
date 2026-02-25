@@ -1,10 +1,11 @@
-name: Parser (TypeScript) — Test & Publish
+name: "Parser: TypeScript — Test & Publish"
 
 on:
   push:
     branches: [main]
     paths:
       - 'parser/typescript/**'
+      - 'VERSION'
       - '.github/workflows/parser-publish.yml'
   pull_request:
     branches: [main]
@@ -59,10 +60,10 @@ jobs:
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
           if npm view "${PACKAGE_NAME}@${PACKAGE_VERSION}" version 2>/dev/null; then
             echo "published=true" >> "$GITHUB_OUTPUT"
-            echo "⏭️ ${PACKAGE_NAME}@${PACKAGE_VERSION} already published, skipping"
+            echo "skip: ${PACKAGE_NAME}@${PACKAGE_VERSION} already published"
           else
             echo "published=false" >> "$GITHUB_OUTPUT"
-            echo "📦 ${PACKAGE_NAME}@${PACKAGE_VERSION} not yet published"
+            echo "publish: ${PACKAGE_NAME}@${PACKAGE_VERSION}"
           fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

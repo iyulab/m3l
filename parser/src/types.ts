@@ -1,0 +1,147 @@
+/** Source location for error reporting */
+export interface SourceLocation {
+  file: string;
+  line: number;
+  col: number;
+}
+
+// --- Token types ---
+
+export type TokenType =
+  | 'namespace'
+  | 'model'
+  | 'enum'
+  | 'interface'
+  | 'view'
+  | 'section'
+  | 'field'
+  | 'nested_item'
+  | 'blockquote'
+  | 'horizontal_rule'
+  | 'blank'
+  | 'text';
+
+export interface Token {
+  type: TokenType;
+  raw: string;
+  line: number;
+  indent: number;
+  data?: Record<string, unknown>;
+}
+
+// --- AST types ---
+
+export type FieldKind = 'stored' | 'computed' | 'lookup' | 'rollup';
+
+export interface FieldAttribute {
+  name: string;
+  args?: unknown[];
+}
+
+export interface EnumValue {
+  name: string;
+  description?: string;
+  type?: string;
+  value?: unknown;
+}
+
+export interface FieldNode {
+  name: string;
+  label?: string;
+  type?: string;
+  params?: (string | number)[];
+  nullable: boolean;
+  array: boolean;
+  kind: FieldKind;
+  default_value?: string;
+  description?: string;
+  attributes: FieldAttribute[];
+  framework_attrs?: string[];
+  lookup?: { path: string };
+  rollup?: {
+    target: string;
+    fk: string;
+    aggregate: string;
+    field?: string;
+    where?: string;
+  };
+  computed?: { expression: string };
+  enum_values?: EnumValue[];
+  fields?: FieldNode[];
+  loc: SourceLocation;
+}
+
+export interface ModelNode {
+  name: string;
+  label?: string;
+  type: 'model' | 'enum' | 'interface' | 'view';
+  source: string;
+  line: number;
+  inherits: string[];
+  description?: string;
+  fields: FieldNode[];
+  sections: {
+    indexes: unknown[];
+    relations: unknown[];
+    behaviors: unknown[];
+    metadata: Record<string, unknown>;
+    [key: string]: unknown;
+  };
+  materialized?: boolean;
+  source_def?: ViewSourceDef;
+  refresh?: { strategy: string; interval?: string };
+  loc: SourceLocation;
+}
+
+export interface ViewSourceDef {
+  from: string;
+  joins?: { model: string; on: string }[];
+  where?: string;
+  order_by?: string;
+  group_by?: string[];
+}
+
+export interface EnumNode {
+  name: string;
+  label?: string;
+  type: 'enum';
+  source: string;
+  line: number;
+  description?: string;
+  values: EnumValue[];
+  loc: SourceLocation;
+}
+
+export interface ProjectInfo {
+  name?: string;
+  version?: string;
+}
+
+export interface Diagnostic {
+  code: string;
+  severity: 'error' | 'warning';
+  file: string;
+  line: number;
+  col: number;
+  message: string;
+}
+
+export interface ParsedFile {
+  source: string;
+  namespace?: string;
+  models: ModelNode[];
+  enums: EnumNode[];
+  interfaces: ModelNode[];
+  views: ModelNode[];
+}
+
+export interface M3LAST {
+  project: ProjectInfo;
+  sources: string[];
+  models: ModelNode[];
+  enums: EnumNode[];
+  interfaces: ModelNode[];
+  views: ModelNode[];
+  errors: Diagnostic[];
+  warnings: Diagnostic[];
+}

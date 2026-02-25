@@ -89,7 +89,7 @@ describe('A. Lexer tests for mes.m3l', () => {
     expect(partToken!.data?.inherits).toEqual(['BaseEntity', 'Auditable']);
   });
 
-  it('tokenizes kind section # Lookup, # Rollup, # Computed', () => {
+  it('tokenizes kind section ### Lookup, ### Rollup, ### Computed', () => {
     const kindSections = nonBlank.filter(
       t => t.type === 'section' && t.data?.kind_section === true
     );

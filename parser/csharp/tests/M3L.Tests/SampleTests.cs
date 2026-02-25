@@ -1267,7 +1267,7 @@ public class SampleTests
             var model = _ast.Models.First(m => m.Name == "ValidationShowcase");
             Assert.True(model.Sections.Extra.ContainsKey("Validations"),
                 "Custom section 'Validations' should be stored in Sections.Extra");
-            var validationItems = model.Sections.Extra["Validations"];
+            var validationItems = (List<object>)model.Sections.Extra["Validations"]!;
             // age_range and email_domain items are stored as section items
             Assert.True(validationItems.Count >= 2,
                 "Validations section should have at least 2 items (age_range, email_domain)");
@@ -1377,8 +1377,8 @@ public class SampleTests
             var model = _ast.Models.First(m => m.Name == "InheritanceOverride");
             var strField = model.Fields.First(f => f.Name == "str");
             Assert.NotNull(strField);
-            // The @override attribute should have been stripped
-            Assert.DoesNotContain(strField.Attributes, a => a.Name == "override");
+            // The @override attribute should be preserved so AST consumers can detect it
+            Assert.Contains(strField.Attributes, a => a.Name == "override");
         }
 
         // --- ConditionalFields ---
@@ -1482,12 +1482,12 @@ public class SampleTests
             // The parser checks for @computed to set FieldKind.Computed.
             // @computed_raw is treated as a regular attribute, so the field
             // stays as FieldKind.Stored (or whatever the section kind is).
-            // Since we're in the # Computed section, the kind is already Computed,
+            // Since we're in the ### Computed section, the kind is already Computed,
             // so the field will have Kind=Computed but no Computed def.
             var model = _ast.Models.First(m => m.Name == "ComputedVariants");
             var age = model.Fields.FirstOrDefault(f => f.Name == "age");
             Assert.NotNull(age);
-            // In # Computed section, so kind should be Computed from section
+            // In ### Computed section, so kind should be Computed from section
             Assert.Equal(FieldKind.Computed, age.Kind);
             // But the @computed_raw attribute doesn't create a ComputedDef
             // DEFECT: @computed_raw is not recognized by the parser as a computed field
@@ -1505,9 +1505,9 @@ public class SampleTests
             var model = _ast.Models.First(m => m.Name == "BehaviorShowcase");
             Assert.False(model.Sections.Extra.ContainsKey("behavior"),
                 "@behavior directive should not go to Extra section anymore");
-            // The @behavior directive should be included in Sections.Behaviors
+            // The @behavior directive should be included in Sections.Behaviors (with raw + args)
             Assert.True(model.Sections.Behaviors.Any(b =>
-                b is Dictionary<string, object?> dict && dict.GetValueOrDefault("type") as string == "directive"),
+                b is Dictionary<string, object?> dict && dict.ContainsKey("raw") && dict.ContainsKey("args")),
                 "BehaviorShowcase should have @behavior directive in Sections.Behaviors");
         }
 

@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace M3L.Models;
 
 public enum FieldKind { Stored, Computed, Lookup, Rollup }
@@ -6,6 +8,7 @@ public class FieldAttribute
 {
     public string Name { get; set; } = "";
     public List<object>? Args { get; set; }
+    public string? Cascade { get; set; }
 }
 
 public class CustomAttribute
@@ -64,6 +67,7 @@ public class RollupDef
 public class ComputedDef
 {
     public string Expression { get; set; } = "";
+    public string? Platform { get; set; }
 }
 
 public class ViewSourceDef
@@ -93,7 +97,8 @@ public class SectionData
     public List<object> Relations { get; set; } = new();
     public List<object> Behaviors { get; set; } = new();
     public Dictionary<string, object?> Metadata { get; set; } = new();
-    public Dictionary<string, List<object>> Extra { get; set; } = new();
+    [JsonExtensionData]
+    public Dictionary<string, object?> Extra { get; set; } = new();
 }
 
 public class ModelNode

@@ -115,7 +115,7 @@
 - software_version: string(50)? "소프트웨어 버전"
 - licence_valid_end: string(50)? "라이선스 만료일"
 
-# Lookup
+### Lookup
 - machine_name: string @lookup(machine_id.name) "MES 설비명"
 - machine_code: string @lookup(machine_id.code) "MES 설비코드"
 - raybox_server: string? @lookup(raybox_id.name) "레이박스 서버명"
@@ -159,11 +159,11 @@
 - uploaded_at: timestamp? "RayBox 업로드 시각"
 - last_finish_time: timestamp? "최근 완료 시각"
 
-# Lookup
+### Lookup
 - work_order_no: string? @lookup(work_order_id.order_no) "작업지시번호"
 - assigned_machine_name: string? @lookup(assigned_machine_id.name) "배정 설비명"
 
-# Rollup
+### Rollup
 - part_count: integer @rollup(CuttingTaskPart.cutting_task_id, count) "부품 종류수"
 - total_qty: integer @rollup(CuttingTaskPart.cutting_task_id, sum(quantity)) "총 부품수량"
 
@@ -262,7 +262,7 @@
 - outport_bytes: integer? "출력구 값"
 - inport_bytes: integer? "입력구 값"
 
-# Lookup
+### Lookup
 - machine_name: string @lookup(machine_id.name) "설비명"
 
 ---
@@ -276,7 +276,7 @@
 - now_state: MachineOnlineStatus "현재 상태"
 - changed_at: timestamp = now() @index "변경 시각"
 
-# Lookup
+### Lookup
 - machine_name: string @lookup(machine_id.name) "설비명"
 
 ---
@@ -300,11 +300,11 @@
 - part_count: integer? "완료 부품 수"
 - count: integer? "가공 수량"
 
-# Lookup
+### Lookup
 - machine_name: string @lookup(machine_id.name) "설비명"
 - task_name: string? @lookup(cutting_task_id.task_name) "절단작업명"
 
-# Rollup
+### Rollup
 - detail_part_count: integer @rollup(MachiningRecordPart.machining_record_id, count) "상세 부품 종류수"
 
 ## MachiningRecordPart(가공기록부품) : BaseEntity
@@ -344,7 +344,7 @@
 - duration_sec: integer? "지속시간 (초)"
 - acknowledged_by: string(100)? "확인자"
 
-# Lookup
+### Lookup
 - machine_name: string @lookup(machine_id.name) "설비명"
 
 ---
@@ -379,10 +379,10 @@
 - gas_time_sec: integer = 0 "개기시간"
 - alarm_time_sec: integer = 0 "알람시간"
 
-# Lookup
+### Lookup
 - machine_name: string @lookup(machine_id.name) "설비명"
 
-# Computed
+### Computed
 - total_time_sec: integer @computed("work_time_sec + idle_time_sec + alarm_time_sec") "총 운행시간"
 - start_rate: decimal(5, 2)? @computed("CASE WHEN (work_time_sec + idle_time_sec + alarm_time_sec) > 0 THEN work_time_sec * 100.0 / (work_time_sec + idle_time_sec + alarm_time_sec) END") "가동률 (%)"
 - cut_rate: decimal(5, 2)? @computed("CASE WHEN work_time_sec > 0 THEN laser_time_sec * 100.0 / work_time_sec END") "절단률 (%)"
@@ -407,7 +407,7 @@
 - gas_time_sec: integer = 0 "총 개기시간 (초)"
 - alarm_time_sec: integer = 0 "총 알람시간 (초)"
 
-# Computed
+### Computed
 - start_rate: decimal(5, 2)? @computed("CASE WHEN (work_time_sec + idle_time_sec + alarm_time_sec) > 0 THEN work_time_sec * 100.0 / (work_time_sec + idle_time_sec + alarm_time_sec) END") "가동률 (%)"
 - cut_rate: decimal(5, 2)? @computed("CASE WHEN work_time_sec > 0 THEN laser_time_sec * 100.0 / work_time_sec END") "절단률 (%)"
 
@@ -429,7 +429,7 @@
 - max_gas_time_sec: integer? "최대 일 개기시간"
 - min_gas_time_sec: integer? "최소 일 개기시간"
 
-# Lookup
+### Lookup
 - machine_name: string @lookup(machine_id.name) "설비명"
 
 ---
@@ -443,7 +443,7 @@
 - estimated_volume: decimal(10, 2)? "추정 소비량 (L)"
 - cost: decimal(12, 2)? "비용"
 
-# Lookup
+### Lookup
 - machine_name: string @lookup(machine_id.name) "설비명"
 
 ## ConsumableUsage(소모품사용) : BaseEntity
@@ -457,5 +457,5 @@
 - cost: decimal(12, 2)? "비용"
 - remark: string(500)?
 
-# Lookup
+### Lookup
 - machine_name: string @lookup(machine_id.name) "설비명"

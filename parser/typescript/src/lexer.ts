@@ -46,15 +46,20 @@ export function lex(content: string, file: string): Token[] {
       continue;
     }
 
-    // H3 — Section header
+    // H3 — Section header (including kind sections: ### Lookup, ### Rollup, ### Computed)
     const h3Match = raw.match(RE_H3);
     if (h3Match) {
+      const h3Name = h3Match[1].trim();
+      const data: Record<string, unknown> = { name: h3Name };
+      if (KIND_SECTIONS.has(h3Name)) {
+        data.kind_section = true;
+      }
       tokens.push({
         type: 'section',
         raw,
         line: lineNum,
         indent: 0,
-        data: { name: h3Match[1].trim() },
+        data,
       });
       continue;
     }
@@ -67,28 +72,17 @@ export function lex(content: string, file: string): Token[] {
       continue;
     }
 
-    // H1 — Namespace or kind-section context
+    // H1 — Namespace / Document title only
     const h1Match = raw.match(RE_H1);
     if (h1Match) {
       const h1Content = h1Match[1].trim();
-      // Check if this is a kind section (# Lookup, # Rollup, # Computed)
-      if (KIND_SECTIONS.has(h1Content)) {
-        tokens.push({
-          type: 'section',
-          raw,
-          line: lineNum,
-          indent: 0,
-          data: { name: h1Content, kind_section: true },
-        });
-      } else {
-        tokens.push({
-          type: 'namespace',
-          raw,
-          line: lineNum,
-          indent: 0,
-          data: parseNamespace(h1Content),
-        });
-      }
+      tokens.push({
+        type: 'namespace',
+        raw,
+        line: lineNum,
+        indent: 0,
+        data: parseNamespace(h1Content),
+      });
       continue;
     }
 
@@ -372,9 +366,25 @@ export function parseTypeAndAttrs(rest: string, data: Record<string, unknown>): 
     }
   }
 
-  // Parse attributes: @name or @name(balanced_args)
-  const attrs: { name: string; args?: string }[] = [];
-  while (pos < len && rest[pos] === '@') {
+  // Parse attributes: @name or @name(balanced_args), with optional cascade symbols (! !!)
+  const attrs: { name: string; args?: string; cascade?: string }[] = [];
+  while (pos < len && (rest[pos] === '@' || rest[pos] === '!' || rest[pos] === '?')) {
+    // Cascade symbols: !, !!, ? — attach to the previous attribute
+    if (rest[pos] === '!' || rest[pos] === '?') {
+      let symbol = rest[pos];
+      pos++;
+      if (symbol === '!' && pos < len && rest[pos] === '!') {
+        symbol = '!!';
+        pos++;
+      }
+      // Attach cascade to last attribute
+      if (attrs.length > 0) {
+        attrs[attrs.length - 1].cascade = symbol;
+      }
+      skipWS();
+      continue;
+    }
+
     pos++; // skip @
     const nameStart = pos;
     while (pos < len && /\w/.test(rest[pos])) pos++;

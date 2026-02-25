@@ -64,7 +64,7 @@ npx m3l validate ./models --strict --format json
 - bio(Biography): text?
 - birth_date: date?
 
-# Rollup
+### Rollup
 - book_count: integer @rollup(BookAuthor.author_id, count)
 
 > Stores information about book authors.
@@ -82,10 +82,10 @@ npx m3l validate ./models --strict --format json
   - borrowed: "Borrowed"
 - publisher_id: identifier @fk(Publisher.id)
 
-# Lookup
+### Lookup
 - publisher_name: string @lookup(publisher_id.name)
 
-# Computed
+### Computed
 - is_available: boolean @computed("status = 'available' AND quantity > 0")
 
 ## OverdueLoans ::view @materialized
@@ -110,9 +110,11 @@ npx m3l validate ./models --strict --format json
 | `- field: type` | Field definition |
 | `- field: type?` | Nullable field |
 | `- field: type[]` | Array field |
+| `- field: type?[]` | Array of nullable items |
 | `- field: type = val` | Field with default value |
 | `@attr` / `@attr(args)` | Attribute (constraint, index, etc.) |
-| `# Lookup` / `# Rollup` / `# Computed` | Kind section for derived fields |
+| `` `[FrameworkAttr]` `` | Custom framework attribute |
+| `### Lookup` / `### Rollup` / `### Computed` | Kind section for derived fields |
 | `### Section` | Named section (Indexes, Relations, Metadata, etc.) |
 | `> text` | Model/element description |
 | `"text"` | Inline description on field |
@@ -123,18 +125,54 @@ The parser produces an `M3LAST` object:
 
 ```typescript
 interface M3LAST {
+  parserVersion: string;   // Parser package version (semver)
+  astVersion: string;      // AST schema version
   project: { name?: string; version?: string };
-  sources: string[];         // parsed file paths
-  models: ModelNode[];       // models and interfaces
-  enums: EnumNode[];         // enum definitions
-  interfaces: ModelNode[];   // interface definitions
-  views: ModelNode[];        // derived views
-  errors: Diagnostic[];      // parse/resolve errors
-  warnings: Diagnostic[];    // validation warnings
+  sources: string[];
+  models: ModelNode[];
+  enums: EnumNode[];
+  interfaces: ModelNode[];
+  views: ModelNode[];
+  errors: Diagnostic[];
+  warnings: Diagnostic[];
 }
 ```
 
-Each `ModelNode` contains fields, sections (indexes, relations, metadata), inheritance info, and source locations for error reporting.
+### Key AST types
+
+```typescript
+interface FieldNode {
+  name: string;
+  label?: string;
+  type?: string;
+  params?: (string | number)[];
+  generic_params?: string[];     // map<K,V> → ["K", "V"]
+  nullable: boolean;
+  array: boolean;
+  arrayItemNullable: boolean;    // string?[] → true
+  kind: 'stored' | 'computed' | 'lookup' | 'rollup';
+  default_value?: string;
+  description?: string;
+  attributes: FieldAttribute[];
+  framework_attrs?: CustomAttribute[];
+  lookup?: { path: string };
+  rollup?: { target: string; fk: string; aggregate: string; field?: string; where?: string };
+  computed?: { expression: string };
+  enum_values?: EnumValue[];
+  fields?: FieldNode[];          // sub-fields for object type
+  loc: SourceLocation;
+}
+
+interface ModelNode {
+  name: string;
+  type: 'model' | 'enum' | 'interface' | 'view';
+  inherits: string[];
+  attributes: FieldAttribute[];  // model-level attributes (@public, etc.)
+  fields: FieldNode[];
+  sections: { indexes; relations; behaviors; metadata; [key: string]: unknown };
+  // ...
+}
+```
 
 ## Validation
 
@@ -143,20 +181,17 @@ The validator checks for semantic errors and style warnings:
 **Errors:**
 | Code | Description |
 |------|-------------|
-| E001 | Rollup FK field missing `@reference` |
-| E002 | Lookup FK field missing `@reference` |
-| E004 | View references non-existent model |
-| E005 | Duplicate model/enum name |
-| E006 | Duplicate field name within model |
-| E007 | Unresolved parent in inheritance |
+| M3L-E001 | Rollup FK field missing `@reference` |
+| M3L-E002 | Lookup FK field missing `@reference` |
+| M3L-E004 | View references non-existent model |
+| M3L-E006 | Duplicate field name within model |
 
 **Warnings (--strict):**
 | Code | Description |
 |------|-------------|
-| W001 | Model has no fields |
-| W002 | Model has no description |
-| W003 | Field missing label |
-| W004 | Enum has no values |
+| M3L-W001 | Field line exceeds 80 characters |
+| M3L-W002 | Object nesting exceeds 3 levels |
+| M3L-W004 | Lookup chain exceeds 3 hops |
 
 ## Multi-file Projects
 
@@ -196,6 +231,18 @@ const parsed = parseTokens(tokens, 'file.m3l.md');
 const ast = resolve([parsed]);
 const diagnostics = validate(ast, { strict: true });
 ```
+
+## Compatibility
+
+This TypeScript parser and the [C# parser](../csharp/) produce equivalent AST structures. Both share the same conformance test suite.
+
+| | TypeScript | C# |
+|---|---|---|
+| Package | `@iyulab/m3l` | `Iyulab.M3L` |
+| Runtime | Node.js 20+ | .NET 8.0+ |
+| AST Version | 1.0 | 1.0 |
+
+Version is managed centrally via the root `VERSION` file.
 
 ## License
 

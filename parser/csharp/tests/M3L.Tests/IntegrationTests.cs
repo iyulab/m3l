@@ -151,13 +151,13 @@ public class IntegrationTests
 - customer_id: identifier @reference(Customer)
 - amount: decimal(10,2)
 
-# Lookup
+### Lookup
 - customer_name: string @lookup(customer_id.name)
 
 ## Customer2
 - id: identifier @primary
 
-# Rollup
+### Rollup
 - order_count: integer @rollup(Order.customer_id, count)
 - total_spent: decimal(10,2) @rollup(Order.customer_id, sum(amount))";
         var file2 = Parser.ParseString(file2Content, "order.m3l.md");
@@ -193,7 +193,7 @@ public class IntegrationTests
     public void M3LParser_GetVersions_ReturnsVersions()
     {
         Assert.Equal("1.0", M3LParser.GetAstVersion());
-        Assert.Equal("0.1.0", M3LParser.GetParserVersion());
+        Assert.Equal("0.1.1", M3LParser.GetParserVersion());
     }
 
     [Fact]
@@ -203,7 +203,7 @@ public class IntegrationTests
 - id: identifier @primary
 - price: decimal
 
-# Computed from Rollup
+### Computed from Rollup
 - display_price: string @computed(""'$' || price"")
 ";
         var parser = new M3LParser();

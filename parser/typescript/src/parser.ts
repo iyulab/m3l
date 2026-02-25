@@ -109,11 +109,6 @@ function processToken(token: Token, state: ParserState): void {
 
 function handleNamespace(token: Token, state: ParserState): void {
   const data = token.data!;
-  // Check if this is a kind section (# Lookup, # Rollup, etc.)
-  if (data.kind_section) {
-    handleSection(token, state);
-    return;
-  }
   if (!state.currentElement) {
     state.namespace = data.name as string;
   }
@@ -641,23 +636,59 @@ function buildFieldNode(
     field.computed = { expression: expr };
   }
 
-  // Parse computed_raw: @computed_raw("expression", ...)
+  // Parse computed_raw: @computed_raw("expression", platform: "name")
   if (computedRawAttr && computedRawAttr.args?.[0]) {
-    const expr = (computedRawAttr.args[0] as string).replace(/^["']|["']$/g, '');
+    const rawArgs = computedRawAttr.args[0] as string;
+    const parts = splitComputedRawArgs(rawArgs);
+    const expr = parts.expression.replace(/^["']|["']$/g, '');
     field.computed = { expression: expr };
+    if (parts.platform) {
+      field.computed.platform = parts.platform;
+    }
   }
 
   return field;
 }
 
+/**
+ * Split @computed_raw args: "expr", platform: "name"
+ * Returns the expression (first positional arg) and optional named params.
+ */
+function splitComputedRawArgs(raw: string): { expression: string; platform?: string } {
+  // Find the first quoted string as the expression
+  const quoteChar = raw[0];
+  if (quoteChar === '"' || quoteChar === "'") {
+    // Find matching closing quote (not escaped)
+    let i = 1;
+    while (i < raw.length) {
+      if (raw[i] === '\\') { i += 2; continue; }
+      if (raw[i] === quoteChar) break;
+      i++;
+    }
+    const expression = raw.slice(0, i + 1); // includes quotes
+    const remainder = raw.slice(i + 1).trim();
+    // Parse named params from remainder: , platform: "sqlserver"
+    let platform: string | undefined;
+    const platformMatch = remainder.match(/platform\s*:\s*["']([^"']+)["']/);
+    if (platformMatch) {
+      platform = platformMatch[1];
+    }
+    return { expression, platform };
+  }
+  // No quotes — treat entire string as expression
+  return { expression: raw };
+}
+
 function parseAttributes(
-  rawAttrs: { name: string; args?: string }[] | undefined
+  rawAttrs: { name: string; args?: string; cascade?: string }[] | undefined
 ): FieldAttribute[] {
   if (!rawAttrs) return [];
-  return rawAttrs.map(a => ({
-    name: a.name,
-    args: a.args ? [a.args] : undefined,
-  }));
+  return rawAttrs.map(a => {
+    const attr: FieldAttribute = { name: a.name };
+    if (a.args) attr.args = [a.args];
+    if (a.cascade) attr.cascade = a.cascade;
+    return attr;
+  });
 }
 
 function parseTypeParams(params: string[] | undefined): (string | number)[] | undefined {
@@ -806,8 +837,11 @@ function parseArrayValue(value: string): string[] {
 function parseMetadataValue(value: unknown): unknown {
   if (typeof value !== 'string') return value;
   const str = value as string;
-  // Remove surrounding quotes
+  // If explicitly quoted, preserve as string (don't coerce "1.0" to number)
+  const wasQuoted = (str.startsWith('"') && str.endsWith('"')) ||
+                    (str.startsWith("'") && str.endsWith("'"));
   const unquoted = str.replace(/^["']|["']$/g, '');
+  if (wasQuoted) return unquoted;
   // Try number
   const n = Number(unquoted);
   if (!isNaN(n) && unquoted !== '') return n;

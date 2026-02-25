@@ -67,11 +67,6 @@ public static class Parser
 
     private static void HandleNamespace(Token token, ParserState state)
     {
-        if (token.Data.TryGetValue("kind_section", out var ks) && ks is true)
-        {
-            HandleSection(token, state);
-            return;
-        }
         if (state.CurrentElement == null)
             state.Namespace = token.Data.GetValueOrDefault("name") as string;
     }
@@ -256,15 +251,13 @@ public static class Parser
         {
             model.Sections.Behaviors.Add(new Dictionary<string, object?>
             {
-                ["type"] = "directive", ["raw"] = data.GetValueOrDefault("raw_content"),
+                ["raw"] = data.GetValueOrDefault("raw_content"),
                 ["args"] = attr.GetValueOrDefault("args"), ["loc"] = loc
             });
         }
         else
         {
-            if (!model.Sections.Extra.ContainsKey(attrName))
-                model.Sections.Extra[attrName] = new();
-            model.Sections.Extra[attrName].Add(new Dictionary<string, object?>
+            AddExtraItem(model.Sections, attrName, new Dictionary<string, object?>
             {
                 ["raw"] = data.GetValueOrDefault("raw_content"), ["args"] = attr.GetValueOrDefault("args")
             });
@@ -340,9 +333,7 @@ public static class Parser
         }
 
         // Generic section — store as section items, NOT as fields
-        if (!model.Sections.Extra.ContainsKey(section))
-            model.Sections.Extra[section] = new();
-        model.Sections.Extra[section].Add(new Dictionary<string, object?>
+        AddExtraItem(model.Sections, section, new Dictionary<string, object?>
         {
             ["name"] = data["name"],
             ["raw"] = token.Raw.Trim(),
@@ -544,10 +535,15 @@ public static class Parser
             field.Rollup = ParseRollupArgs(rollupArg);
 
         if (computedAttr?.Args is [string computedArg, ..])
-            field.Computed = new ComputedDef { Expression = computedArg.Trim('"', '\'') };
+            field.Computed = new ComputedDef { Expression = StripOuterQuotes(computedArg) };
 
         if (computedRawAttr?.Args is [string computedRawArg, ..])
-            field.Computed = new ComputedDef { Expression = computedRawArg.Trim('"', '\'') };
+        {
+            var crParts = SplitComputedRawArgs(computedRawArg);
+            field.Computed = new ComputedDef { Expression = StripOuterQuotes(crParts.Expression) };
+            if (crParts.Platform != null)
+                field.Computed.Platform = crParts.Platform;
+        }
 
         return field;
     }
@@ -558,6 +554,7 @@ public static class Parser
         {
             Name = (string)a["name"]!,
             Args = a.GetValueOrDefault("args") is string s ? new List<object> { s } : null,
+            Cascade = a.GetValueOrDefault("cascade") as string,
         }).ToList();
     }
 
@@ -664,7 +661,11 @@ public static class Parser
     private static object? ParseMetadataValue(object? value)
     {
         if (value is not string str) return value;
-        var unquoted = str.Trim('"', '\'');
+        // If explicitly quoted, preserve as string (don't coerce "1.0" to number)
+        bool wasQuoted = (str.StartsWith('"') && str.EndsWith('"')) ||
+                         (str.StartsWith('\'') && str.EndsWith('\''));
+        var unquoted = StripOuterQuotes(str);
+        if (wasQuoted) return unquoted;
         if (int.TryParse(unquoted, out var n)) return n;
         if (double.TryParse(unquoted, System.Globalization.NumberStyles.Float,
             System.Globalization.CultureInfo.InvariantCulture, out var d)) return d;
@@ -680,7 +681,7 @@ public static class Parser
         if (str == "true") return true;
         if (str == "false") return false;
         if (int.TryParse(str, out var n)) return n;
-        return str.Trim('"', '\'');
+        return StripOuterQuotes(str);
     }
 
     private static void ApplyExtendedAttribute(FieldNode field, string key, string value)
@@ -718,5 +719,65 @@ public static class Parser
     {
         if (data.GetValueOrDefault(key) is List<string> list) return list;
         return new();
+    }
+
+    /// <summary>
+    /// Strip only the outermost matching quote pair (" or ') from a string.
+    /// Unlike string.Trim('"','\''), this removes at most one char from each end.
+    /// </summary>
+    private static string StripOuterQuotes(string s)
+    {
+        if (s.Length >= 2)
+        {
+            char first = s[0], last = s[^1];
+            if ((first == '"' && last == '"') || (first == '\'' && last == '\''))
+                return s[1..^1];
+        }
+        return s;
+    }
+
+    /// <summary>
+    /// Split @computed_raw args: "expr", platform: "name"
+    /// Returns the expression (first positional arg) and optional named params.
+    /// </summary>
+    private static (string Expression, string? Platform) SplitComputedRawArgs(string raw)
+    {
+        if (raw.Length == 0) return (raw, null);
+        char quoteChar = raw[0];
+        if (quoteChar == '"' || quoteChar == '\'')
+        {
+            // Find matching closing quote (not escaped)
+            int i = 1;
+            while (i < raw.Length)
+            {
+                if (raw[i] == '\\') { i += 2; continue; }
+                if (raw[i] == quoteChar) break;
+                i++;
+            }
+            var expression = raw[..(i + 1)]; // includes quotes
+            var remainder = (i + 1 < raw.Length) ? raw[(i + 1)..].Trim() : "";
+            // Parse named params from remainder: , platform: "sqlserver"
+            string? platform = null;
+            var platformMatch = System.Text.RegularExpressions.Regex.Match(
+                remainder, @"platform\s*:\s*[""']([^""']+)[""']");
+            if (platformMatch.Success)
+                platform = platformMatch.Groups[1].Value;
+            return (expression, platform);
+        }
+        // No quotes — treat entire string as expression
+        return (raw, null);
+    }
+
+    /// <summary>
+    /// Add an item to an extra section list (stored as object? in JsonExtensionData dict).
+    /// </summary>
+    private static void AddExtraItem(SectionData sections, string key, object item)
+    {
+        if (!sections.Extra.TryGetValue(key, out var val) || val is not List<object> list)
+        {
+            list = new List<object>();
+            sections.Extra[key] = list;
+        }
+        list.Add(item);
     }
 }

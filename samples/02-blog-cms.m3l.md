@@ -51,10 +51,10 @@
   - subscriber: "Subscriber"
 - is_active: boolean = true
 
-# Computed
+### Computed
 - full_profile_url: string @computed("'/users/' + username")
 
-# Rollup
+### Rollup
 - post_count: integer @rollup(Post.author_id, count)
 - published_post_count: integer @rollup(Post.author_id, count, where: "status = 'published'")
 
@@ -66,7 +66,7 @@
 - slug: string(50) @unique @not_null
 - color: string(7)? "Hex color code like #FF5733"
 
-# Rollup
+### Rollup
 - usage_count: integer @rollup(PostTag.tag_id, count)
 
 ---
@@ -79,7 +79,7 @@
 - parent_id: identifier? @reference(Category)?
 - sort_order: integer = 0
 
-# Lookup
+### Lookup
 - parent_name: string @lookup(parent_id.name)
 
 ---
@@ -107,16 +107,16 @@
 - reading_time_min: integer?
 - view_count: long = 0 @min(0)
 
-# Lookup
+### Lookup
 - author_name: string @lookup(author_id.display_name)
 - author_avatar: url @lookup(author_id.avatar_url)
 - category_name: string @lookup(category_id.name)
 
-# Computed
+### Computed
 - is_published: boolean @computed("status = 'published' AND published_at <= now()")
 - word_count: integer @computed("LENGTH(content) / 5")
 
-# Rollup
+### Rollup
 - comment_count: integer @rollup(Comment.post_id, count)
 - avg_rating: decimal(3,2) @rollup(Comment.post_id, avg(rating))
 
@@ -164,14 +164,14 @@
 - is_approved: boolean = false
 - is_spam: boolean = false
 
-# Lookup
+### Lookup
 - post_title: string @lookup(post_id.title)
 - author_name: string @lookup(author_id.display_name)
 
-# Rollup
+### Rollup
 - reply_count: integer @rollup(Comment.parent_id, count)
 
-# Computed
+### Computed
 - display_name: string @computed("COALESCE(author_name, guest_name, 'Anonymous')")
 
 - @index(post_id, created_at)
@@ -190,7 +190,7 @@
 - uploaded_by: identifier @reference(User)!!
 - storage_path: string(500) @not_null
 
-# Computed
+### Computed
 - file_size_mb: float @computed("file_size / 1048576.0")
 - is_image: boolean @computed("mime_type LIKE 'image/%'")
 

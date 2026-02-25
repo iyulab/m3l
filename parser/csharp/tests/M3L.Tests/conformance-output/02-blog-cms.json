@@ -1,0 +1,2401 @@
+{
+  "parserVersion": "0.1.1",
+  "astVersion": "1.0",
+  "project": {
+    "name": "sample.blog"
+  },
+  "sources": [
+    "02-blog-cms.m3l.md"
+  ],
+  "models": [
+    {
+      "name": "User",
+      "nodeType": "model",
+      "source": "02-blog-cms.m3l.md",
+      "line": 37,
+      "inherits": [
+        "BaseModel"
+      ],
+      "description": "System user with authentication info.",
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            },
+            {
+              "name": "generated"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 10,
+            "col": 1
+          }
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "now()",
+          "attributes": [
+            {
+              "name": "immutable"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 11,
+            "col": 1
+          }
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "now()",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 12,
+            "col": 1
+          }
+        },
+        {
+          "name": "username",
+          "type": "string",
+          "params": [
+            50
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "unique"
+            },
+            {
+              "name": "not_null"
+            },
+            {
+              "name": "searchable"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 41,
+            "col": 1
+          }
+        },
+        {
+          "name": "email",
+          "type": "email",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "unique"
+            },
+            {
+              "name": "not_null"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 42,
+            "col": 1
+          }
+        },
+        {
+          "name": "password_hash",
+          "type": "string",
+          "params": [
+            255
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "not_null"
+            }
+          ],
+          "frameworkAttrs": [
+            {
+              "content": "JsonIgnore",
+              "raw": "[JsonIgnore]"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 43,
+            "col": 1
+          }
+        },
+        {
+          "name": "display_name",
+          "type": "string",
+          "params": [
+            100
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "not_null"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 44,
+            "col": 1
+          }
+        },
+        {
+          "name": "bio",
+          "type": "text",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 45,
+            "col": 1
+          }
+        },
+        {
+          "name": "avatar_url",
+          "type": "url",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 46,
+            "col": 1
+          }
+        },
+        {
+          "name": "role",
+          "type": "enum",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "\u0022author\u0022",
+          "attributes": [],
+          "enumValues": [
+            {
+              "name": "admin",
+              "description": "Administrator"
+            },
+            {
+              "name": "editor",
+              "description": "Editor"
+            },
+            {
+              "name": "author",
+              "description": "Author"
+            },
+            {
+              "name": "subscriber",
+              "description": "Subscriber"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 47,
+            "col": 1
+          }
+        },
+        {
+          "name": "is_active",
+          "type": "boolean",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "true",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 52,
+            "col": 1
+          }
+        },
+        {
+          "name": "full_profile_url",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "computed",
+          "attributes": [
+            {
+              "name": "computed",
+              "args": [
+                "\u0022\u0027/users/\u0027 \u002B username\u0022"
+              ]
+            }
+          ],
+          "computed": {
+            "expression": "\u0027/users/\u0027 \u002B username"
+          },
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 55,
+            "col": 1
+          }
+        },
+        {
+          "name": "post_count",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "rollup",
+          "attributes": [
+            {
+              "name": "rollup",
+              "args": [
+                "Post.author_id, count"
+              ]
+            }
+          ],
+          "rollup": {
+            "target": "Post",
+            "fk": "author_id",
+            "aggregate": "count"
+          },
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 58,
+            "col": 1
+          }
+        },
+        {
+          "name": "published_post_count",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "rollup",
+          "attributes": [
+            {
+              "name": "rollup",
+              "args": [
+                "Post.author_id, count, where: \u0022status = \u0027published\u0027\u0022"
+              ]
+            }
+          ],
+          "rollup": {
+            "target": "Post",
+            "fk": "author_id",
+            "aggregate": "count",
+            "where": "status = \u0027published\u0027"
+          },
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 59,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "materialized": false,
+      "loc": {
+        "file": "02-blog-cms.m3l.md",
+        "line": 37,
+        "col": 1
+      }
+    },
+    {
+      "name": "Tag",
+      "nodeType": "model",
+      "source": "02-blog-cms.m3l.md",
+      "line": 63,
+      "inherits": [
+        "BaseModel"
+      ],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            },
+            {
+              "name": "generated"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 10,
+            "col": 1
+          }
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "now()",
+          "attributes": [
+            {
+              "name": "immutable"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 11,
+            "col": 1
+          }
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "now()",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 12,
+            "col": 1
+          }
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "params": [
+            50
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "unique"
+            },
+            {
+              "name": "not_null"
+            },
+            {
+              "name": "searchable"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 65,
+            "col": 1
+          }
+        },
+        {
+          "name": "slug",
+          "type": "string",
+          "params": [
+            50
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "unique"
+            },
+            {
+              "name": "not_null"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 66,
+            "col": 1
+          }
+        },
+        {
+          "name": "color",
+          "type": "string",
+          "params": [
+            7
+          ],
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "description": "Hex color code like #FF5733",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 67,
+            "col": 1
+          }
+        },
+        {
+          "name": "usage_count",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "rollup",
+          "attributes": [
+            {
+              "name": "rollup",
+              "args": [
+                "PostTag.tag_id, count"
+              ]
+            }
+          ],
+          "rollup": {
+            "target": "PostTag",
+            "fk": "tag_id",
+            "aggregate": "count"
+          },
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 70,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "materialized": false,
+      "loc": {
+        "file": "02-blog-cms.m3l.md",
+        "line": 63,
+        "col": 1
+      }
+    },
+    {
+      "name": "Category",
+      "nodeType": "model",
+      "source": "02-blog-cms.m3l.md",
+      "line": 74,
+      "inherits": [
+        "BaseModel"
+      ],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            },
+            {
+              "name": "generated"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 10,
+            "col": 1
+          }
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "now()",
+          "attributes": [
+            {
+              "name": "immutable"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 11,
+            "col": 1
+          }
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "now()",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 12,
+            "col": 1
+          }
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "params": [
+            100
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "not_null"
+            },
+            {
+              "name": "searchable"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 76,
+            "col": 1
+          }
+        },
+        {
+          "name": "slug",
+          "type": "string",
+          "params": [
+            100
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "unique"
+            },
+            {
+              "name": "not_null"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 77,
+            "col": 1
+          }
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 78,
+            "col": 1
+          }
+        },
+        {
+          "name": "parent_id",
+          "type": "identifier",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "reference",
+              "args": [
+                "Category"
+              ],
+              "cascade": "?"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 79,
+            "col": 1
+          }
+        },
+        {
+          "name": "sort_order",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "0",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 80,
+            "col": 1
+          }
+        },
+        {
+          "name": "parent_name",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "lookup",
+          "attributes": [
+            {
+              "name": "lookup",
+              "args": [
+                "parent_id.name"
+              ]
+            }
+          ],
+          "lookup": {
+            "path": "parent_id.name"
+          },
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 83,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "materialized": false,
+      "loc": {
+        "file": "02-blog-cms.m3l.md",
+        "line": 74,
+        "col": 1
+      }
+    },
+    {
+      "name": "Post",
+      "nodeType": "model",
+      "source": "02-blog-cms.m3l.md",
+      "line": 87,
+      "inherits": [
+        "BaseModel",
+        "Trackable"
+      ],
+      "description": "Blog post with rich content and metadata.\nSupports multiple content formats and scheduled publishing.",
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            },
+            {
+              "name": "generated"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 10,
+            "col": 1
+          }
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "now()",
+          "attributes": [
+            {
+              "name": "immutable"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 11,
+            "col": 1
+          }
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "now()",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 12,
+            "col": 1
+          }
+        },
+        {
+          "name": "version",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "1",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 16,
+            "col": 1
+          }
+        },
+        {
+          "name": "is_deleted",
+          "type": "boolean",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "false",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 17,
+            "col": 1
+          }
+        },
+        {
+          "name": "deleted_at",
+          "type": "timestamp",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 18,
+            "col": 1
+          }
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "params": [
+            300
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "not_null"
+            },
+            {
+              "name": "searchable"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 92,
+            "col": 1
+          }
+        },
+        {
+          "name": "slug",
+          "type": "string",
+          "params": [
+            300
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "unique"
+            },
+            {
+              "name": "not_null"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 93,
+            "col": 1
+          }
+        },
+        {
+          "name": "excerpt",
+          "type": "string",
+          "params": [
+            500
+          ],
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "description": "Short summary for previews",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 94,
+            "col": 1
+          }
+        },
+        {
+          "name": "content",
+          "type": "text",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "not_null"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 95,
+            "col": 1
+          }
+        },
+        {
+          "name": "format",
+          "type": "ContentFormat",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "\u0022markdown\u0022",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 96,
+            "col": 1
+          }
+        },
+        {
+          "name": "status",
+          "type": "PostStatus",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "\u0022draft\u0022",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 97,
+            "col": 1
+          }
+        },
+        {
+          "name": "author_id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "reference",
+              "args": [
+                "User"
+              ],
+              "cascade": "!!"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 98,
+            "col": 1
+          }
+        },
+        {
+          "name": "category_id",
+          "type": "identifier",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "reference",
+              "args": [
+                "Category"
+              ],
+              "cascade": "?"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 99,
+            "col": 1
+          }
+        },
+        {
+          "name": "featured_image",
+          "type": "url",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 100,
+            "col": 1
+          }
+        },
+        {
+          "name": "is_featured",
+          "type": "boolean",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "false",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 101,
+            "col": 1
+          }
+        },
+        {
+          "name": "allow_comments",
+          "type": "boolean",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "true",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 102,
+            "col": 1
+          }
+        },
+        {
+          "name": "published_at",
+          "type": "timestamp",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 103,
+            "col": 1
+          }
+        },
+        {
+          "name": "scheduled_at",
+          "type": "timestamp",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 104,
+            "col": 1
+          }
+        },
+        {
+          "name": "seo_title",
+          "type": "string",
+          "params": [
+            70
+          ],
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "description": "SEO optimized title",
+          "attributes": [],
+          "frameworkAttrs": [
+            {
+              "content": "MaxLength(70)",
+              "raw": "[MaxLength(70)]"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 105,
+            "col": 1
+          }
+        },
+        {
+          "name": "seo_description",
+          "type": "string",
+          "params": [
+            160
+          ],
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "description": "Meta description",
+          "attributes": [],
+          "frameworkAttrs": [
+            {
+              "content": "MaxLength(160)",
+              "raw": "[MaxLength(160)]"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 106,
+            "col": 1
+          }
+        },
+        {
+          "name": "reading_time_min",
+          "type": "integer",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 107,
+            "col": 1
+          }
+        },
+        {
+          "name": "view_count",
+          "type": "long",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "0",
+          "attributes": [
+            {
+              "name": "min",
+              "args": [
+                "0"
+              ]
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 108,
+            "col": 1
+          }
+        },
+        {
+          "name": "author_name",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "lookup",
+          "attributes": [
+            {
+              "name": "lookup",
+              "args": [
+                "author_id.display_name"
+              ]
+            }
+          ],
+          "lookup": {
+            "path": "author_id.display_name"
+          },
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 111,
+            "col": 1
+          }
+        },
+        {
+          "name": "author_avatar",
+          "type": "url",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "lookup",
+          "attributes": [
+            {
+              "name": "lookup",
+              "args": [
+                "author_id.avatar_url"
+              ]
+            }
+          ],
+          "lookup": {
+            "path": "author_id.avatar_url"
+          },
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 112,
+            "col": 1
+          }
+        },
+        {
+          "name": "category_name",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "lookup",
+          "attributes": [
+            {
+              "name": "lookup",
+              "args": [
+                "category_id.name"
+              ]
+            }
+          ],
+          "lookup": {
+            "path": "category_id.name"
+          },
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 113,
+            "col": 1
+          }
+        },
+        {
+          "name": "is_published",
+          "type": "boolean",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "computed",
+          "attributes": [
+            {
+              "name": "computed",
+              "args": [
+                "\u0022status = \u0027published\u0027 AND published_at \u003C= now()\u0022"
+              ]
+            }
+          ],
+          "computed": {
+            "expression": "status = \u0027published\u0027 AND published_at \u003C= now()"
+          },
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 116,
+            "col": 1
+          }
+        },
+        {
+          "name": "word_count",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "computed",
+          "attributes": [
+            {
+              "name": "computed",
+              "args": [
+                "\u0022LENGTH(content) / 5\u0022"
+              ]
+            }
+          ],
+          "computed": {
+            "expression": "LENGTH(content) / 5"
+          },
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 117,
+            "col": 1
+          }
+        },
+        {
+          "name": "comment_count",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "rollup",
+          "attributes": [
+            {
+              "name": "rollup",
+              "args": [
+                "Comment.post_id, count"
+              ]
+            }
+          ],
+          "rollup": {
+            "target": "Comment",
+            "fk": "post_id",
+            "aggregate": "count"
+          },
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 120,
+            "col": 1
+          }
+        },
+        {
+          "name": "avg_rating",
+          "type": "decimal",
+          "params": [
+            3,
+            2
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "rollup",
+          "attributes": [
+            {
+              "name": "rollup",
+              "args": [
+                "Comment.post_id, avg(rating)"
+              ]
+            }
+          ],
+          "rollup": {
+            "target": "Comment",
+            "fk": "post_id",
+            "aggregate": "avg",
+            "field": "rating"
+          },
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 121,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [
+          {
+            "name": "idx_author_status",
+            "label": null,
+            "loc": {
+              "file": "02-blog-cms.m3l.md",
+              "line": 124,
+              "col": 1
+            },
+            "fields": [
+              "author_id",
+              "status"
+            ]
+          },
+          {
+            "name": "idx_published",
+            "label": null,
+            "loc": {
+              "file": "02-blog-cms.m3l.md",
+              "line": 126,
+              "col": 1
+            },
+            "fields": [
+              "published_at"
+            ],
+            "where": "status = \u0027published\u0027"
+          }
+        ],
+        "relations": [],
+        "behaviors": [
+          {
+            "name": "before_create",
+            "raw": "- before_create: generate_slug_from_title",
+            "loc": {
+              "file": "02-blog-cms.m3l.md",
+              "line": 131,
+              "col": 1
+            }
+          },
+          {
+            "name": "before_update",
+            "raw": "- before_update: increment_version",
+            "loc": {
+              "file": "02-blog-cms.m3l.md",
+              "line": 132,
+              "col": 1
+            }
+          },
+          {
+            "name": "after_publish",
+            "raw": "- after_publish: send_notifications",
+            "loc": {
+              "file": "02-blog-cms.m3l.md",
+              "line": 133,
+              "col": 1
+            }
+          }
+        ],
+        "metadata": {
+          "table_name": "posts",
+          "cache_ttl": 300
+        }
+      },
+      "materialized": false,
+      "loc": {
+        "file": "02-blog-cms.m3l.md",
+        "line": 87,
+        "col": 1
+      }
+    },
+    {
+      "name": "PostTag",
+      "nodeType": "model",
+      "source": "02-blog-cms.m3l.md",
+      "line": 141,
+      "inherits": [],
+      "description": "Many-to-many join between Post and Tag.",
+      "attributes": [],
+      "fields": [
+        {
+          "name": "post_id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "reference",
+              "args": [
+                "Post"
+              ]
+            },
+            {
+              "name": "on_delete",
+              "args": [
+                "cascade"
+              ]
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 145,
+            "col": 1
+          }
+        },
+        {
+          "name": "tag_id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "reference",
+              "args": [
+                "Tag"
+              ]
+            },
+            {
+              "name": "on_delete",
+              "args": [
+                "cascade"
+              ]
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 147,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {},
+        "PrimaryKey": [
+          {
+            "name": "fields",
+            "raw": "- fields: [post_id, tag_id]",
+            "value": "[post_id, tag_id]",
+            "loc": {
+              "file": "02-blog-cms.m3l.md",
+              "line": 151,
+              "col": 1
+            }
+          }
+        ]
+      },
+      "materialized": false,
+      "loc": {
+        "file": "02-blog-cms.m3l.md",
+        "line": 141,
+        "col": 1
+      }
+    },
+    {
+      "name": "Comment",
+      "nodeType": "model",
+      "source": "02-blog-cms.m3l.md",
+      "line": 155,
+      "inherits": [
+        "BaseModel"
+      ],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            },
+            {
+              "name": "generated"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 10,
+            "col": 1
+          }
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "now()",
+          "attributes": [
+            {
+              "name": "immutable"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 11,
+            "col": 1
+          }
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "now()",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 12,
+            "col": 1
+          }
+        },
+        {
+          "name": "post_id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "reference",
+              "args": [
+                "Post"
+              ]
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 157,
+            "col": 1
+          }
+        },
+        {
+          "name": "author_id",
+          "type": "identifier",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "reference",
+              "args": [
+                "User"
+              ],
+              "cascade": "?"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 158,
+            "col": 1
+          }
+        },
+        {
+          "name": "parent_id",
+          "type": "identifier",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "reference",
+              "args": [
+                "Comment"
+              ],
+              "cascade": "?"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 159,
+            "col": 1
+          }
+        },
+        {
+          "name": "guest_name",
+          "type": "string",
+          "params": [
+            100
+          ],
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "description": "Name for guest commenters",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 160,
+            "col": 1
+          }
+        },
+        {
+          "name": "guest_email",
+          "type": "email",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 161,
+            "col": 1
+          }
+        },
+        {
+          "name": "body",
+          "type": "text",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "not_null"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 162,
+            "col": 1
+          }
+        },
+        {
+          "name": "rating",
+          "type": "integer",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "description": "Optional post rating",
+          "attributes": [
+            {
+              "name": "min",
+              "args": [
+                "1"
+              ]
+            },
+            {
+              "name": "max",
+              "args": [
+                "5"
+              ]
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 163,
+            "col": 1
+          }
+        },
+        {
+          "name": "is_approved",
+          "type": "boolean",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "false",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 164,
+            "col": 1
+          }
+        },
+        {
+          "name": "is_spam",
+          "type": "boolean",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "false",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 165,
+            "col": 1
+          }
+        },
+        {
+          "name": "post_title",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "lookup",
+          "attributes": [
+            {
+              "name": "lookup",
+              "args": [
+                "post_id.title"
+              ]
+            }
+          ],
+          "lookup": {
+            "path": "post_id.title"
+          },
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 168,
+            "col": 1
+          }
+        },
+        {
+          "name": "author_name",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "lookup",
+          "attributes": [
+            {
+              "name": "lookup",
+              "args": [
+                "author_id.display_name"
+              ]
+            }
+          ],
+          "lookup": {
+            "path": "author_id.display_name"
+          },
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 169,
+            "col": 1
+          }
+        },
+        {
+          "name": "reply_count",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "rollup",
+          "attributes": [
+            {
+              "name": "rollup",
+              "args": [
+                "Comment.parent_id, count"
+              ]
+            }
+          ],
+          "rollup": {
+            "target": "Comment",
+            "fk": "parent_id",
+            "aggregate": "count"
+          },
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 172,
+            "col": 1
+          }
+        },
+        {
+          "name": "display_name",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "computed",
+          "attributes": [
+            {
+              "name": "computed",
+              "args": [
+                "\u0022COALESCE(author_name, guest_name, \u0027Anonymous\u0027)\u0022"
+              ]
+            }
+          ],
+          "computed": {
+            "expression": "COALESCE(author_name, guest_name, \u0027Anonymous\u0027)"
+          },
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 175,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [
+          {
+            "type": "directive",
+            "raw": "@index(post_id, created_at)",
+            "args": "post_id, created_at",
+            "loc": {
+              "file": "02-blog-cms.m3l.md",
+              "line": 177,
+              "col": 1
+            }
+          }
+        ],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "materialized": false,
+      "loc": {
+        "file": "02-blog-cms.m3l.md",
+        "line": 155,
+        "col": 1
+      }
+    },
+    {
+      "name": "MediaAsset",
+      "nodeType": "model",
+      "source": "02-blog-cms.m3l.md",
+      "line": 181,
+      "inherits": [
+        "BaseModel"
+      ],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            },
+            {
+              "name": "generated"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 10,
+            "col": 1
+          }
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "now()",
+          "attributes": [
+            {
+              "name": "immutable"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 11,
+            "col": 1
+          }
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "now()",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 12,
+            "col": 1
+          }
+        },
+        {
+          "name": "filename",
+          "type": "string",
+          "params": [
+            255
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "not_null"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 183,
+            "col": 1
+          }
+        },
+        {
+          "name": "original_name",
+          "type": "string",
+          "params": [
+            255
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "not_null"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 184,
+            "col": 1
+          }
+        },
+        {
+          "name": "mime_type",
+          "type": "string",
+          "params": [
+            100
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "not_null"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 185,
+            "col": 1
+          }
+        },
+        {
+          "name": "file_size",
+          "type": "long",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "description": "Size in bytes",
+          "attributes": [
+            {
+              "name": "not_null"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 186,
+            "col": 1
+          }
+        },
+        {
+          "name": "width",
+          "type": "integer",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "description": "Image width in pixels",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 187,
+            "col": 1
+          }
+        },
+        {
+          "name": "height",
+          "type": "integer",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "description": "Image height in pixels",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 188,
+            "col": 1
+          }
+        },
+        {
+          "name": "alt_text",
+          "type": "string",
+          "params": [
+            300
+          ],
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 189,
+            "col": 1
+          }
+        },
+        {
+          "name": "uploaded_by",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "reference",
+              "args": [
+                "User"
+              ],
+              "cascade": "!!"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 190,
+            "col": 1
+          }
+        },
+        {
+          "name": "storage_path",
+          "type": "string",
+          "params": [
+            500
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "not_null"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 191,
+            "col": 1
+          }
+        },
+        {
+          "name": "file_size_mb",
+          "type": "float",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "computed",
+          "attributes": [
+            {
+              "name": "computed",
+              "args": [
+                "\u0022file_size / 1048576.0\u0022"
+              ]
+            }
+          ],
+          "computed": {
+            "expression": "file_size / 1048576.0"
+          },
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 194,
+            "col": 1
+          }
+        },
+        {
+          "name": "is_image",
+          "type": "boolean",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "computed",
+          "attributes": [
+            {
+              "name": "computed",
+              "args": [
+                "\u0022mime_type LIKE \u0027image/%\u0027\u0022"
+              ]
+            }
+          ],
+          "computed": {
+            "expression": "mime_type LIKE \u0027image/%\u0027"
+          },
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 195,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "materialized": false,
+      "loc": {
+        "file": "02-blog-cms.m3l.md",
+        "line": 181,
+        "col": 1
+      }
+    }
+  ],
+  "enums": [
+    {
+      "name": "PostStatus",
+      "source": "02-blog-cms.m3l.md",
+      "line": 22,
+      "values": [
+        {
+          "name": "draft",
+          "description": "Draft"
+        },
+        {
+          "name": "review",
+          "description": "In Review"
+        },
+        {
+          "name": "published",
+          "description": "Published"
+        },
+        {
+          "name": "archived",
+          "description": "Archived"
+        }
+      ],
+      "loc": {
+        "file": "02-blog-cms.m3l.md",
+        "line": 22,
+        "col": 1
+      }
+    },
+    {
+      "name": "ContentFormat",
+      "source": "02-blog-cms.m3l.md",
+      "line": 29,
+      "values": [
+        {
+          "name": "markdown",
+          "description": "Markdown"
+        },
+        {
+          "name": "html",
+          "description": "HTML"
+        },
+        {
+          "name": "plain",
+          "description": "Plain Text"
+        }
+      ],
+      "loc": {
+        "file": "02-blog-cms.m3l.md",
+        "line": 29,
+        "col": 1
+      }
+    }
+  ],
+  "interfaces": [
+    {
+      "name": "BaseModel",
+      "nodeType": "interface",
+      "source": "02-blog-cms.m3l.md",
+      "line": 8,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            },
+            {
+              "name": "generated"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 10,
+            "col": 1
+          }
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "now()",
+          "attributes": [
+            {
+              "name": "immutable"
+            }
+          ],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 11,
+            "col": 1
+          }
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "now()",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 12,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "materialized": false,
+      "loc": {
+        "file": "02-blog-cms.m3l.md",
+        "line": 8,
+        "col": 1
+      }
+    },
+    {
+      "name": "Trackable",
+      "nodeType": "interface",
+      "source": "02-blog-cms.m3l.md",
+      "line": 14,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "version",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "1",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 16,
+            "col": 1
+          }
+        },
+        {
+          "name": "is_deleted",
+          "type": "boolean",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "false",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 17,
+            "col": 1
+          }
+        },
+        {
+          "name": "deleted_at",
+          "type": "timestamp",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "02-blog-cms.m3l.md",
+            "line": 18,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "materialized": false,
+      "loc": {
+        "file": "02-blog-cms.m3l.md",
+        "line": 14,
+        "col": 1
+      }
+    }
+  ],
+  "views": [
+    {
+      "name": "PublishedPosts",
+      "nodeType": "view",
+      "source": "02-blog-cms.m3l.md",
+      "line": 199,
+      "inherits": [],
+      "description": "All published posts with author info.",
+      "attributes": [],
+      "fields": [],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "materialized": false,
+      "sourceDef": {
+        "from": "Post",
+        "where": "status = \u0027published\u0027 AND is_deleted = false",
+        "orderBy": "published_at desc"
+      },
+      "loc": {
+        "file": "02-blog-cms.m3l.md",
+        "line": 199,
+        "col": 1
+      }
+    },
+    {
+      "name": "PopularPosts",
+      "nodeType": "view",
+      "source": "02-blog-cms.m3l.md",
+      "line": 210,
+      "inherits": [],
+      "description": "Most viewed posts in the last 30 days.",
+      "attributes": [],
+      "fields": [],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "materialized": true,
+      "sourceDef": {
+        "from": "Post",
+        "where": "status = \u0027published\u0027 AND published_at \u003E= DATE_ADD(now(), -30, \u0027day\u0027)",
+        "orderBy": "view_count desc"
+      },
+      "refresh": {
+        "strategy": "full",
+        "interval": "6 hours"
+      },
+      "loc": {
+        "file": "02-blog-cms.m3l.md",
+        "line": 210,
+        "col": 1
+      }
+    }
+  ],
+  "errors": [],
+  "warnings": []
+}

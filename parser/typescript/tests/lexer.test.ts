@@ -144,23 +144,23 @@ describe('lexer', () => {
     expect(nonBlank[0].data?.framework_attrs).toContain('[JsonIgnore]');
   });
 
-  it('should tokenize kind section (# Lookup)', () => {
-    const tokens = lex('# Lookup', 'test.m3l.md');
+  it('should tokenize kind section (### Lookup)', () => {
+    const tokens = lex('### Lookup', 'test.m3l.md');
     const nonBlank = tokens.filter(t => t.type !== 'blank');
     expect(nonBlank[0].type).toBe('section');
     expect(nonBlank[0].data?.kind_section).toBe(true);
     expect(nonBlank[0].data?.name).toBe('Lookup');
   });
 
-  it('should tokenize kind section (# Rollup)', () => {
-    const tokens = lex('# Rollup', 'test.m3l.md');
+  it('should tokenize kind section (### Rollup)', () => {
+    const tokens = lex('### Rollup', 'test.m3l.md');
     const nonBlank = tokens.filter(t => t.type !== 'blank');
     expect(nonBlank[0].type).toBe('section');
     expect(nonBlank[0].data?.kind_section).toBe(true);
   });
 
-  it('should tokenize kind section (# Computed)', () => {
-    const tokens = lex('# Computed', 'test.m3l.md');
+  it('should tokenize kind section (### Computed)', () => {
+    const tokens = lex('### Computed', 'test.m3l.md');
     const nonBlank = tokens.filter(t => t.type !== 'blank');
     expect(nonBlank[0].type).toBe('section');
     expect(nonBlank[0].data?.kind_section).toBe(true);

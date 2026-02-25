@@ -12,7 +12,7 @@ public static class Resolver
     public const string AstVersion = "1.0";
 
     /// <summary>Parser package version — kept in sync with .csproj.</summary>
-    public const string ParserVersion = "0.1.1";
+    public const string ParserVersion = "0.1.2";
 
     public static M3LAst Resolve(List<ParsedFile> files, ProjectInfo? project = null)
     {
@@ -185,14 +185,14 @@ public static class Resolver
         }
 
         // Handle @override: child fields with @override replace inherited fields
+        // Preserve @override in attributes so AST consumers can detect it
         var overrideNames = new HashSet<string>();
         foreach (var ownField in model.Fields)
         {
-            var overrideAttr = ownField.Attributes.FindIndex(a => a.Name == "override");
-            if (overrideAttr >= 0)
+            var hasOverride = ownField.Attributes.Any(a => a.Name == "override");
+            if (hasOverride)
             {
                 overrideNames.Add(ownField.Name);
-                ownField.Attributes.RemoveAt(overrideAttr);
             }
         }
 
@@ -224,6 +224,7 @@ public static class Resolver
         {
             Name = a.Name,
             Args = a.Args != null ? new List<object>(a.Args) : null,
+            Cascade = a.Cascade,
         })),
         FrameworkAttrs = f.FrameworkAttrs,
         Lookup = f.Lookup,

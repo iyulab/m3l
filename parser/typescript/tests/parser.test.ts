@@ -100,7 +100,7 @@ describe('parser', () => {
     const result = parse([
       '## Book',
       '- publisher_id: identifier @fk(Publisher.id)',
-      '# Lookup',
+      '### Lookup',
       '- publisher_name: string @lookup(publisher_id.name)',
     ].join('\n'));
     const lookupField = result.models[0].fields.find(f => f.name === 'publisher_name');
@@ -113,7 +113,7 @@ describe('parser', () => {
     const result = parse([
       '## Author',
       '- name: string(100)',
-      '# Rollup',
+      '### Rollup',
       '- book_count: integer @rollup(BookAuthor.author_id, count)',
     ].join('\n'));
     const rollup = result.models[0].fields.find(f => f.name === 'book_count');
@@ -128,7 +128,7 @@ describe('parser', () => {
     const result = parse([
       '## Book',
       '- title: string(200)',
-      '# Rollup',
+      '### Rollup',
       '- active_loans: integer @rollup(Loan.book_id, count, where: "status = \'ongoing\'")',
     ].join('\n'));
     const rollup = result.models[0].fields.find(f => f.name === 'active_loans');
@@ -139,7 +139,7 @@ describe('parser', () => {
     const result = parse([
       '## Member',
       '- name: string(100)',
-      '# Rollup',
+      '### Rollup',
       '- total_fines: decimal(8,2) @rollup(Loan.member_id, sum(fine_amount))',
     ].join('\n'));
     const rollup = result.models[0].fields.find(f => f.name === 'total_fines');
@@ -152,7 +152,7 @@ describe('parser', () => {
       '## Book',
       '- status: string',
       '- quantity: integer',
-      '# Computed',
+      '### Computed',
       '- is_available: boolean @computed("status = \'available\' AND quantity > 0")',
     ].join('\n'));
     const computed = result.models[0].fields.find(f => f.name === 'is_available');
@@ -161,11 +161,11 @@ describe('parser', () => {
     expect(computed!.computed?.expression).toBe("status = 'available' AND quantity > 0");
   });
 
-  it('should handle H1 kind sections within a model', () => {
+  it('should handle H3 kind sections within a model', () => {
     const result = parse([
       '## Author : BaseModel',
       '- name: string(100)',
-      '# Rollup',
+      '### Rollup',
       '- book_count: integer @rollup(BookAuthor.author_id, count)',
       '## Book',
       '- title: string(200)',

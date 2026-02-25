@@ -222,7 +222,7 @@
 - tax_rate: decimal(5,4)
 - birth_date: date
 
-# Computed
+### Computed
 - full_name: string @computed("first_name + ' ' + last_name")
 - tax_amount: decimal(10,2) @computed("price * tax_rate")
 - total_price: decimal(10,2) @computed("price + tax_amount") @persisted

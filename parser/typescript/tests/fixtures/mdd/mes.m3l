@@ -109,7 +109,7 @@
 - unit_price: decimal(12, 2)? "단가 (원/장 또는 원/kg)"
 - weight_per_unit: decimal(10, 3)? "단위 중량 (kg)"
 
-# Lookup
+### Lookup
 - material_name: string @lookup(material_id.name) "소재명"
 
 - @unique(material_id, thickness, width, length) "소재규격 복합 유니크"
@@ -131,7 +131,7 @@
 - unit_weight: decimal(10, 3)? "단중 (kg)"
 - is_active: boolean = true
 
-# Lookup
+### Lookup
 - customer_name: string? @lookup(customer_id.name) "거래처명"
 - material_name: string? @lookup(material_id.name) "소재명"
 
@@ -156,7 +156,7 @@
 - install_date: date? "설치일"
 - is_active: boolean = true
 
-# Lookup
+### Lookup
 - group_name: string? @lookup(machine_group_id.name) "설비그룹명"
 
 ---
@@ -203,10 +203,10 @@
 - actual_end: timestamp? "실제 종료"
 - remark: string(1000)?
 
-# Lookup
+### Lookup
 - customer_name: string? @lookup(customer_id.name) "거래처명"
 
-# Rollup
+### Rollup
 - item_count: integer @rollup(WorkOrderItem.work_order_id, count) "항목 수"
 - total_order_qty: decimal(10, 2) @rollup(WorkOrderItem.work_order_id, sum(order_qty)) "총 지시수량"
 - total_good_qty: decimal(10, 2) @rollup(WorkOrderItem.work_order_id, sum(good_qty)) "총 양품수량"
@@ -226,7 +226,7 @@
 - status: WorkOrderStatus = "CREATED"
 - remark: string(500)?
 
-# Lookup
+### Lookup
 - part_code: string @lookup(part_id.code) "부품코드"
 - part_name: string @lookup(part_id.name) "부품명"
 
@@ -248,7 +248,7 @@
 - production_type: ProductionType = "NORMAL"
 - remark: string(500)?
 
-# Lookup
+### Lookup
 - machine_name: string @lookup(machine_id.name) "설비명"
 - worker_name: string? @lookup(worker_id.name) "작업자명"
 - order_no: string? @lookup(work_order_id.order_no) "작업지시번호"
@@ -263,7 +263,7 @@
 - sampling_rule: string(200)? "샘플링 (전수, AQL 등)"
 - is_active: boolean = true
 
-# Lookup
+### Lookup
 - part_name: string @lookup(part_id.name) "부품명"
 
 ## InspectionItem(검사항목) : BaseEntity
@@ -293,7 +293,7 @@
 - result: InspectionResultType "판정"
 - remark: string(500)?
 
-# Lookup
+### Lookup
 - inspector_name: string? @lookup(inspector_id.name) "검사원명"
 - part_name: string? @lookup(part_id.name) "부품명"
 
@@ -318,7 +318,7 @@
 - detected_by: identifier? @reference(Worker) "발견자"
 - remark: string(500)?
 
-# Lookup
+### Lookup
 - defect_name: string @lookup(defect_code_id.name) "불량명"
 - part_name: string? @lookup(part_id.name) "부품명"
 
@@ -336,7 +336,7 @@
 - completed_at: timestamp? "완료일시"
 - status: CAPAStatus = "OPEN" @index
 
-# Lookup
+### Lookup
 - responsible_name: string? @lookup(responsible_id.name) "담당자명"
 
 ---
@@ -354,7 +354,7 @@
 - next_due_at: timestamp? @index "다음 예정일"
 - is_active: boolean = true
 
-# Lookup
+### Lookup
 - machine_name: string @lookup(machine_id.name) "설비명"
 
 ## MaintenanceRecord(보전기록) : BaseEntity
@@ -372,7 +372,7 @@
 - result: string(500)? "결과"
 - remark: string(1000)?
 
-# Lookup
+### Lookup
 - machine_name: string @lookup(machine_id.name) "설비명"
 - performed_by_name: string? @lookup(performed_by.name) "수행자명"
 
@@ -390,7 +390,7 @@
 - reported_by: identifier? @reference(Worker) "보고자"
 - remark: string(500)?
 
-# Lookup
+### Lookup
 - machine_name: string @lookup(machine_id.name) "설비명"
 - downtime_reason: string? @lookup(downtime_code_id.name) "비가동 사유"
 
@@ -411,10 +411,10 @@
 - performance: decimal(5, 4)? "성능"
 - quality_rate: decimal(5, 4)? "품질률"
 
-# Lookup
+### Lookup
 - machine_name: string @lookup(machine_id.name) "설비명"
 
-# Computed
+### Computed
 - oee: decimal(5, 4)? @computed("availability * performance * quality_rate") "OEE"
 
 - @unique(machine_id, record_date, shift) "OEE 복합 유니크"

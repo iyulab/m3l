@@ -10,6 +10,8 @@ M3L is a Markdown-based data modeling language. You write data models in readabl
 dotnet add package Iyulab.M3L
 ```
 
+**Supported runtimes:** .NET 8.0, .NET 9.0, .NET 10.0
+
 ## Quick Start
 
 ```csharp
@@ -50,7 +52,7 @@ foreach (var error in result.Errors)
 - bio(Biography): text?
 - birth_date: date?
 
-# Rollup
+### Rollup
 - book_count: integer @rollup(BookAuthor.author_id, count)
 
 > Stores information about book authors.
@@ -68,10 +70,10 @@ foreach (var error in result.Errors)
   - borrowed: "Borrowed"
 - publisher_id: identifier @fk(Publisher.id)
 
-# Lookup
+### Lookup
 - publisher_name: string @lookup(publisher_id.name)
 
-# Computed
+### Computed
 - is_available: boolean @computed("status = 'available' AND quantity > 0")
 
 ## OverdueLoans ::view @materialized
@@ -96,9 +98,11 @@ foreach (var error in result.Errors)
 | `- field: type` | Field definition |
 | `- field: type?` | Nullable field |
 | `- field: type[]` | Array field |
+| `- field: type?[]` | Array of nullable items |
 | `- field: type = val` | Field with default value |
 | `@attr` / `@attr(args)` | Attribute (constraint, index, etc.) |
-| `# Lookup` / `# Rollup` / `# Computed` | Kind section for derived fields |
+| `` `[FrameworkAttr]` `` | Custom framework attribute |
+| `### Lookup` / `### Rollup` / `### Computed` | Kind section for derived fields |
 | `### Section` | Named section (Indexes, Relations, Metadata, etc.) |
 | `> text` | Model/element description |
 | `"text"` | Inline description on field |
@@ -110,8 +114,8 @@ The parser produces an `M3LAst` object:
 ```csharp
 public class M3LAst
 {
-    public string ParserVersion { get; set; }
-    public string AstVersion { get; set; }
+    public string ParserVersion { get; set; }   // Parser package version (semver)
+    public string AstVersion { get; set; }      // AST schema version
     public ProjectInfo Project { get; set; }
     public List<string> Sources { get; set; }
     public List<ModelNode> Models { get; set; }
@@ -123,7 +127,38 @@ public class M3LAst
 }
 ```
 
-Each `ModelNode` contains fields, sections (indexes, relations, metadata), inheritance info, and source locations for error reporting.
+### Key AST types
+
+```csharp
+public class FieldNode
+{
+    public string Name { get; set; }
+    public string? Type { get; set; }
+    public List<string>? GenericParams { get; set; }  // map<K,V> → ["K", "V"]
+    public bool Nullable { get; set; }
+    public bool Array { get; set; }
+    public bool ArrayItemNullable { get; set; }       // string?[] → true
+    public FieldKind Kind { get; set; }               // Stored, Computed, Lookup, Rollup
+    public List<FieldAttribute> Attributes { get; set; }
+    public List<CustomAttribute>? FrameworkAttrs { get; set; }
+    public LookupDef? Lookup { get; set; }
+    public RollupDef? Rollup { get; set; }
+    public ComputedDef? Computed { get; set; }
+    public List<FieldNode>? Fields { get; set; }      // sub-fields for object type
+    // ...
+}
+
+public class ModelNode
+{
+    public string Name { get; set; }
+    public string NodeType { get; set; }              // "model", "interface", "view"
+    public List<string> Inherits { get; set; }
+    public List<FieldAttribute> Attributes { get; set; }  // model-level attrs
+    public List<FieldNode> Fields { get; set; }
+    public SectionData Sections { get; set; }
+    // ...
+}
+```
 
 ## Validation
 
@@ -195,7 +230,7 @@ ValidateResult result = Validator.Validate(ast, new ValidateOptions { Strict = t
 ### Version Info
 
 ```csharp
-string parserVersion = M3LParser.GetParserVersion(); // "0.1.0"
+string parserVersion = M3LParser.GetParserVersion(); // from VERSION file
 string astVersion = M3LParser.GetAstVersion();       // "1.0"
 ```
 
@@ -206,9 +241,10 @@ This C# parser is a direct port of the [TypeScript parser](../typescript/) and p
 | | TypeScript | C# |
 |---|---|---|
 | Package | `@iyulab/m3l` | `Iyulab.M3L` |
-| Runtime | Node.js 18+ | .NET 10+ |
+| Runtime | Node.js 20+ | .NET 8.0+ |
 | AST Version | 1.0 | 1.0 |
-| Parser Version | 0.1.0 | 0.1.0 |
+
+Version is managed centrally via the root `VERSION` file.
 
 ## License
 

@@ -86,8 +86,8 @@ In M3L, markdown header levels define document structure with specific meanings:
   - Example: `## Person` or `## StatusValue ::enum`
 
 - **### (H3)**: Sections within models
-  - Divides sections for indexes, behaviors, metadata, etc.
-  - Example: `### Indexes`, `### Relations`, `### Metadata`
+  - Divides sections for indexes, behaviors, metadata, kind contexts, etc.
+  - Example: `### Indexes`, `### Relations`, `### Metadata`, `### Lookup`, `### Rollup`, `### Computed`
 
 ### 1.3 Expression Patterns
 
@@ -1256,7 +1256,7 @@ Lookup fields reference a value from a related model by following a foreign key 
 - product_id: identifier @reference(Product)
 - quantity: integer @min(1)
 
-# Lookup fields
+### Lookup
 - product_name: string @lookup(product_id.name)
 - product_sku: string @lookup(product_id.sku)
 - product_price: decimal(10,2) @lookup(product_id.price)
@@ -1395,7 +1395,7 @@ Invalid example (parser error):
   - shipped: "Shipped"
   - cancelled: "Cancelled"
 
-# Rollup fields
+### Rollup
 - item_count: integer @rollup(OrderItem.order_id, count)
 - total_amount: decimal(12,2) @rollup(OrderItem.order_id, sum(subtotal))
 - avg_item_price: decimal(10,2) @rollup(OrderItem.order_id, avg(unit_price))
@@ -1408,7 +1408,7 @@ Invalid example (parser error):
 - id: identifier @primary
 - name: string(100)
 
-# Rollup fields
+### Rollup
 - order_count: integer @rollup(Order.customer_id, count)
 - total_spent: decimal(12,2) @rollup(Order.customer_id, sum(total_amount))
 - last_order_date: timestamp? @rollup(Order.customer_id, max(ordered_at))
@@ -1446,7 +1446,7 @@ Rollup results can be referenced by other Rollup or Computed fields:
 - order_count: integer @rollup(Order.customer_id, count)
 - total_spent: decimal(12,2) @rollup(Order.customer_id, sum(total_amount))
 
-# Computed using Rollup results
+### Computed from Rollup
 - avg_order_value: decimal(10,2) @computed("total_spent / NULLIF(order_count, 0)")
 - customer_tier: string @computed("CASE WHEN total_spent > 10000 THEN 'Gold' WHEN total_spent > 5000 THEN 'Silver' ELSE 'Bronze' END")
 ```
@@ -1885,12 +1885,12 @@ Defining changes between schema versions.
 - tier: string = "Bronze"
 - is_active: boolean = true
 
-# Rollup fields
+### Rollup
 - order_count: integer @rollup(Order.customer_id, count)
 - total_spent: decimal(12,2) @rollup(Order.customer_id, sum(total_amount))
 - last_order_date: timestamp? @rollup(Order.customer_id, max(ordered_at))
 
-# Computed from Rollup
+### Computed from Rollup
 - avg_order_value: decimal(10,2) @computed("total_spent / NULLIF(order_count, 0)")
 - computed_tier: string @computed("CASE WHEN total_spent > 10000 THEN 'Gold' WHEN total_spent > 5000 THEN 'Silver' ELSE 'Bronze' END")
 
@@ -1918,10 +1918,10 @@ Defining changes between schema versions.
   - is_primary: boolean = false
 - tags: string[]?
 
-# Lookup
+### Lookup
 - category_name: string? @lookup(category_id.name)
 
-# Computed
+### Computed
 - profit_margin: decimal(5,2)? @computed("CASE WHEN cost > 0 THEN ((price - cost) / cost) * 100 END")
 - is_in_stock: boolean @computed("stock_quantity > 0 AND is_active = true")
 
@@ -1957,15 +1957,15 @@ Defining changes between schema versions.
 - ordered_at: timestamp = now()
 - shipped_at: timestamp?
 
-# Lookup
+### Lookup
 - customer_name: string @lookup(customer_id.name)
 - customer_email: string @lookup(customer_id.email)
 
-# Rollup
+### Rollup
 - item_count: integer @rollup(OrderItem.order_id, count)
 - total_amount: decimal(12,2) @rollup(OrderItem.order_id, sum(subtotal))
 
-# Computed
+### Computed
 - days_since_order: integer @computed("DATEDIFF(DAY, ordered_at, GETDATE())")
 
 - @relation(customer, -> Customer, from: customer_id) "Customer who placed this order"
@@ -1978,12 +1978,12 @@ Defining changes between schema versions.
 - unit_price: decimal(10, 2)
 - discount: decimal(10, 2) = 0
 
-# Lookup
+### Lookup
 - product_name: string @lookup(product_id.name)
 - product_sku: string @lookup(product_id.sku)
 - customer_name: string @lookup(order_id.customer_id.name)  # 2-hop
 
-# Computed
+### Computed
 - subtotal: decimal(12, 2) @computed("quantity * unit_price - discount")
 
 - @relation(order, -> Order, from: order_id) "Order containing this item"

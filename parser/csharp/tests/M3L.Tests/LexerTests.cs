@@ -183,7 +183,7 @@ public class LexerTests
     [Fact]
     public void Lex_KindSection_ProducesKindSectionToken()
     {
-        var tokens = Lexer.Lex("# Lookup", "test.m3l.md");
+        var tokens = Lexer.Lex("### Lookup", "test.m3l.md");
         Assert.Single(tokens);
         Assert.Equal(TokenType.Section, tokens[0].Type);
         Assert.True(tokens[0].Data["kind_section"] is true);

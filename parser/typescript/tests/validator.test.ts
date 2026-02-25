@@ -15,7 +15,7 @@ describe('validator', () => {
     const ast = buildAST([
       '## Author',
       '- name: string(100)',
-      '# Rollup',
+      '### Rollup',
       '- book_count: integer @rollup(Book.author_id, count)',
       '## Book',
       '- title: string(200)',
@@ -29,7 +29,7 @@ describe('validator', () => {
     const ast = buildAST([
       '## Author',
       '- name: string(100)',
-      '# Rollup',
+      '### Rollup',
       '- book_count: integer @rollup(Book.author_id, count)',
       '## Book',
       '- title: string(200)',
@@ -43,7 +43,7 @@ describe('validator', () => {
     const ast = buildAST([
       '## Order',
       '- customer_id: identifier',
-      '# Lookup',
+      '### Lookup',
       '- customer_name: string @lookup(customer_id.name)',
     ].join('\n'));
     const result = validate(ast);
@@ -57,7 +57,7 @@ describe('validator', () => {
       '- name: string(100)',
       '## Order',
       '- customer_id: identifier @fk(Customer.id)',
-      '# Lookup',
+      '### Lookup',
       '- customer_name: string @lookup(customer_id.name)',
     ].join('\n'));
     const result = validate(ast);
@@ -116,7 +116,7 @@ describe('validator', () => {
   it('W004: lookup chain >3 hops (strict mode)', () => {
     const ast = buildAST([
       '## Model',
-      '# Lookup',
+      '### Lookup',
       '- deep_lookup: string @lookup(a.b.c.d)',
     ].join('\n'));
     const result = validate(ast, { strict: true });

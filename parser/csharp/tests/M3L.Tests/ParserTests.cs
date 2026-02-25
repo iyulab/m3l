@@ -149,7 +149,7 @@ public class ParserTests
     [Fact]
     public void ParseString_LookupField_ParsesLookupDef()
     {
-        var content = "## Order\n- customer_id: identifier @reference(Customer)\n\n# Lookup\n- customer_name: string @lookup(customer_id.name)";
+        var content = "## Order\n- customer_id: identifier @reference(Customer)\n\n### Lookup\n- customer_name: string @lookup(customer_id.name)";
         var result = Parser.ParseString(content, "test.m3l.md");
 
         var lookupField = result.Models[0].Fields.First(f => f.Name == "customer_name");
@@ -161,7 +161,7 @@ public class ParserTests
     [Fact]
     public void ParseString_RollupField_ParsesRollupDef()
     {
-        var content = "## Customer\n- id: identifier @primary\n\n# Rollup\n- order_count: integer @rollup(Order.customer_id, count)";
+        var content = "## Customer\n- id: identifier @primary\n\n### Rollup\n- order_count: integer @rollup(Order.customer_id, count)";
         var result = Parser.ParseString(content, "test.m3l.md");
 
         var rollupField = result.Models[0].Fields.First(f => f.Name == "order_count");
@@ -175,7 +175,7 @@ public class ParserTests
     [Fact]
     public void ParseString_ComputedField_ParsesComputedDef()
     {
-        var content = "## User\n- first_name: string\n- last_name: string\n\n# Computed\n- full_name: string @computed(\"first_name || ' ' || last_name\")";
+        var content = "## User\n- first_name: string\n- last_name: string\n\n### Computed\n- full_name: string @computed(\"first_name || ' ' || last_name\")";
         var result = Parser.ParseString(content, "test.m3l.md");
 
         var computedField = result.Models[0].Fields.First(f => f.Name == "full_name");
@@ -286,7 +286,7 @@ public class ParserTests
     [Fact]
     public void ParseString_RollupWithWhereClause_Parses()
     {
-        var content = "## Customer\n- id: identifier\n\n# Rollup\n- active_orders: integer @rollup(Order.customer_id, count, where: \"status = 'active'\")";
+        var content = "## Customer\n- id: identifier\n\n### Rollup\n- active_orders: integer @rollup(Order.customer_id, count, where: \"status = 'active'\")";
         var result = Parser.ParseString(content, "test.m3l.md");
 
         var field = result.Models[0].Fields.First(f => f.Name == "active_orders");
@@ -297,7 +297,7 @@ public class ParserTests
     [Fact]
     public void ParseString_RollupWithAggregateField_Parses()
     {
-        var content = "## Customer\n- id: identifier\n\n# Rollup\n- total_spent: decimal @rollup(Order.customer_id, sum(total_amount))";
+        var content = "## Customer\n- id: identifier\n\n### Rollup\n- total_spent: decimal @rollup(Order.customer_id, sum(total_amount))";
         var result = Parser.ParseString(content, "test.m3l.md");
 
         var field = result.Models[0].Fields.First(f => f.Name == "total_spent");

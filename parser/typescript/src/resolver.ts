@@ -12,7 +12,7 @@ import type {
 export const AST_VERSION = '1.0';
 
 /** Parser package version — kept in sync with package.json */
-export const PARSER_VERSION = '0.1.1';
+export const PARSER_VERSION = '0.1.2';
 
 /**
  * Resolve and merge multiple parsed file ASTs into a single M3LAST.
@@ -177,11 +177,10 @@ function resolveInheritance(
   // Handle @override: child fields with @override replace inherited fields
   const overrideNames = new Set<string>();
   for (const ownField of model.fields) {
-    const overrideIdx = ownField.attributes.findIndex(a => a.name === 'override');
-    if (overrideIdx >= 0) {
+    const hasOverride = ownField.attributes.some(a => a.name === 'override');
+    if (hasOverride) {
       overrideNames.add(ownField.name);
-      // Remove @override attribute from the child field
-      ownField.attributes.splice(overrideIdx, 1);
+      // Preserve @override in attributes so AST consumers can detect it
     }
   }
 

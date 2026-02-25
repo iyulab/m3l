@@ -1,0 +1,2525 @@
+{
+  "parserVersion": "0.1.1",
+  "astVersion": "1.0",
+  "project": {
+    "name": "sample.types"
+  },
+  "sources": [
+    "03-types-showcase.m3l.md"
+  ],
+  "models": [
+    {
+      "name": "AllPrimitiveTypes",
+      "nodeType": "model",
+      "source": "03-types-showcase.m3l.md",
+      "line": 8,
+      "inherits": [],
+      "description": "Every primitive type in M3L.",
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            },
+            {
+              "name": "generated"
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 12,
+            "col": 1
+          }
+        },
+        {
+          "name": "str",
+          "type": "string",
+          "params": [
+            200
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 13,
+            "col": 1
+          }
+        },
+        {
+          "name": "str_no_len",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 14,
+            "col": 1
+          }
+        },
+        {
+          "name": "txt",
+          "type": "text",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 15,
+            "col": 1
+          }
+        },
+        {
+          "name": "int_val",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 16,
+            "col": 1
+          }
+        },
+        {
+          "name": "lng_val",
+          "type": "long",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 17,
+            "col": 1
+          }
+        },
+        {
+          "name": "dec_val",
+          "type": "decimal",
+          "params": [
+            10,
+            2
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 18,
+            "col": 1
+          }
+        },
+        {
+          "name": "flt_val",
+          "type": "float",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 19,
+            "col": 1
+          }
+        },
+        {
+          "name": "bool_val",
+          "type": "boolean",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 20,
+            "col": 1
+          }
+        },
+        {
+          "name": "dt_val",
+          "type": "date",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 21,
+            "col": 1
+          }
+        },
+        {
+          "name": "tm_val",
+          "type": "time",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 22,
+            "col": 1
+          }
+        },
+        {
+          "name": "ts_val",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 23,
+            "col": 1
+          }
+        },
+        {
+          "name": "bin_val",
+          "type": "binary",
+          "params": [
+            1048576
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 24,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "materialized": false,
+      "loc": {
+        "file": "03-types-showcase.m3l.md",
+        "line": 8,
+        "col": 1
+      }
+    },
+    {
+      "name": "SemanticTypes",
+      "nodeType": "model",
+      "source": "03-types-showcase.m3l.md",
+      "line": 28,
+      "inherits": [],
+      "description": "Semantic shorthand types that expand to primitives.",
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 32,
+            "col": 1
+          }
+        },
+        {
+          "name": "contact_email",
+          "type": "email",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "description": "Expands to string(320) with RFC 5321 validation",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 33,
+            "col": 1
+          }
+        },
+        {
+          "name": "contact_phone",
+          "type": "phone",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "description": "Expands to string(20) with E.164 validation",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 34,
+            "col": 1
+          }
+        },
+        {
+          "name": "homepage",
+          "type": "url",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "description": "Expands to string(2048) with RFC 3986 validation",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 35,
+            "col": 1
+          }
+        },
+        {
+          "name": "monthly_revenue",
+          "type": "money",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "description": "Expands to decimal(19,4)",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 36,
+            "col": 1
+          }
+        },
+        {
+          "name": "completion_rate",
+          "type": "percentage",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "description": "Expands to decimal(5,2), range 0-100",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 37,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "materialized": false,
+      "loc": {
+        "file": "03-types-showcase.m3l.md",
+        "line": 28,
+        "col": 1
+      }
+    },
+    {
+      "name": "TypeModifiers",
+      "nodeType": "model",
+      "source": "03-types-showcase.m3l.md",
+      "line": 41,
+      "inherits": [],
+      "description": "Nullable, array, and combined modifiers.",
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 45,
+            "col": 1
+          }
+        },
+        {
+          "name": "required_str",
+          "type": "string",
+          "params": [
+            100
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "not_null"
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 46,
+            "col": 1
+          }
+        },
+        {
+          "name": "nullable_str",
+          "type": "string",
+          "params": [
+            100
+          ],
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 47,
+            "col": 1
+          }
+        },
+        {
+          "name": "str_array",
+          "type": "string",
+          "nullable": false,
+          "array": true,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 48,
+            "col": 1
+          }
+        },
+        {
+          "name": "int_array",
+          "type": "integer",
+          "nullable": false,
+          "array": true,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 49,
+            "col": 1
+          }
+        },
+        {
+          "name": "nullable_array",
+          "type": "string",
+          "nullable": true,
+          "array": true,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 50,
+            "col": 1
+          }
+        },
+        {
+          "name": "array_of_nullable",
+          "type": "string",
+          "nullable": false,
+          "array": true,
+          "arrayItemNullable": true,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 51,
+            "col": 1
+          }
+        },
+        {
+          "name": "nullable_ts",
+          "type": "timestamp",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 52,
+            "col": 1
+          }
+        },
+        {
+          "name": "required_bool",
+          "type": "boolean",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "false",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 53,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "materialized": false,
+      "loc": {
+        "file": "03-types-showcase.m3l.md",
+        "line": 41,
+        "col": 1
+      }
+    },
+    {
+      "name": "MapTypes",
+      "nodeType": "model",
+      "source": "03-types-showcase.m3l.md",
+      "line": 57,
+      "inherits": [],
+      "description": "Map type variations.",
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 61,
+            "col": 1
+          }
+        },
+        {
+          "name": "string_map",
+          "type": "map",
+          "genericParams": [
+            "string",
+            "string"
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 62,
+            "col": 1
+          }
+        },
+        {
+          "name": "config",
+          "type": "map",
+          "genericParams": [
+            "string",
+            "integer"
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 63,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "materialized": false,
+      "loc": {
+        "file": "03-types-showcase.m3l.md",
+        "line": 57,
+        "col": 1
+      }
+    },
+    {
+      "name": "ComplexNestedObject",
+      "nodeType": "model",
+      "source": "03-types-showcase.m3l.md",
+      "line": 67,
+      "inherits": [],
+      "description": "Object types with nested structures (up to 3 levels).",
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 71,
+            "col": 1
+          }
+        },
+        {
+          "name": "profile",
+          "type": "object",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "fields": [
+            {
+              "name": "first_name",
+              "type": "string",
+              "params": [
+                50
+              ],
+              "nullable": false,
+              "array": false,
+              "arrayItemNullable": false,
+              "kind": "stored",
+              "attributes": [
+                {
+                  "name": "last_name",
+                  "args": [
+                    "string(50) @not_null"
+                  ]
+                },
+                {
+                  "name": "contact",
+                  "args": [
+                    "object"
+                  ]
+                },
+                {
+                  "name": "email",
+                  "args": [
+                    "email"
+                  ]
+                },
+                {
+                  "name": "phone",
+                  "args": [
+                    "phone?"
+                  ]
+                },
+                {
+                  "name": "social",
+                  "args": [
+                    "object"
+                  ]
+                },
+                {
+                  "name": "twitter",
+                  "args": [
+                    "string(50)?"
+                  ]
+                },
+                {
+                  "name": "linkedin",
+                  "args": [
+                    "url?"
+                  ]
+                }
+              ],
+              "loc": {
+                "file": "03-types-showcase.m3l.md",
+                "line": 73,
+                "col": 1
+              }
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 72,
+            "col": 1
+          }
+        },
+        {
+          "name": "preferences",
+          "type": "json",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "description": "Unstructured settings data",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 81,
+            "col": 1
+          }
+        },
+        {
+          "name": "metadata",
+          "type": "json",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 82,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "materialized": false,
+      "loc": {
+        "file": "03-types-showcase.m3l.md",
+        "line": 67,
+        "col": 1
+      }
+    },
+    {
+      "name": "ArrayOfObjects",
+      "nodeType": "model",
+      "source": "03-types-showcase.m3l.md",
+      "line": 86,
+      "inherits": [],
+      "description": "Array fields containing structured objects.",
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 90,
+            "col": 1
+          }
+        },
+        {
+          "name": "addresses",
+          "type": "object",
+          "nullable": false,
+          "array": true,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "fields": [
+            {
+              "name": "street",
+              "type": "string",
+              "params": [
+                200
+              ],
+              "nullable": false,
+              "array": false,
+              "arrayItemNullable": false,
+              "kind": "stored",
+              "attributes": [
+                {
+                  "name": "city",
+                  "args": [
+                    "string(100)"
+                  ]
+                },
+                {
+                  "name": "country",
+                  "args": [
+                    "string(2)"
+                  ]
+                },
+                {
+                  "name": "is_primary",
+                  "args": [
+                    "boolean = false"
+                  ]
+                }
+              ],
+              "loc": {
+                "file": "03-types-showcase.m3l.md",
+                "line": 92,
+                "col": 1
+              }
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 91,
+            "col": 1
+          }
+        },
+        {
+          "name": "scores",
+          "type": "integer",
+          "nullable": false,
+          "array": true,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 96,
+            "col": 1
+          }
+        },
+        {
+          "name": "tags",
+          "type": "string",
+          "nullable": false,
+          "array": true,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 97,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "materialized": false,
+      "loc": {
+        "file": "03-types-showcase.m3l.md",
+        "line": 86,
+        "col": 1
+      }
+    },
+    {
+      "name": "ValidationShowcase",
+      "nodeType": "model",
+      "source": "03-types-showcase.m3l.md",
+      "line": 101,
+      "inherits": [],
+      "description": "Demonstrates all validation attributes and patterns.",
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 105,
+            "col": 1
+          }
+        },
+        {
+          "name": "age",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "description": "Age in years",
+          "attributes": [
+            {
+              "name": "min",
+              "args": [
+                "0"
+              ]
+            },
+            {
+              "name": "max",
+              "args": [
+                "150"
+              ]
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 106,
+            "col": 1
+          }
+        },
+        {
+          "name": "rating",
+          "type": "decimal",
+          "params": [
+            3,
+            2
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "description": "Star rating",
+          "attributes": [
+            {
+              "name": "min",
+              "args": [
+                "0"
+              ]
+            },
+            {
+              "name": "max",
+              "args": [
+                "5"
+              ]
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 107,
+            "col": 1
+          }
+        },
+        {
+          "name": "username",
+          "type": "string",
+          "params": [
+            30
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "validate",
+              "args": [
+                "pattern(\u0022^[a-zA-Z0-9_]\u002B$\u0022)"
+              ]
+            },
+            {
+              "name": "not_null"
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 108,
+            "col": 1
+          }
+        },
+        {
+          "name": "email",
+          "type": "email",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "not_null"
+            },
+            {
+              "name": "unique"
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 109,
+            "col": 1
+          }
+        },
+        {
+          "name": "percentage",
+          "type": "decimal",
+          "params": [
+            5,
+            2
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "min",
+              "args": [
+                "0"
+              ]
+            },
+            {
+              "name": "max",
+              "args": [
+                "100"
+              ]
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 110,
+            "col": 1
+          }
+        },
+        {
+          "name": "positive_int",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "min",
+              "args": [
+                "1"
+              ]
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 111,
+            "col": 1
+          }
+        },
+        {
+          "name": "short_code",
+          "type": "string",
+          "params": [
+            10
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "not_null"
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 112,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {},
+        "Validations": [
+          {
+            "name": "age_range",
+            "raw": "- age_range",
+            "value": null,
+            "loc": {
+              "file": "03-types-showcase.m3l.md",
+              "line": 115,
+              "col": 1
+            }
+          },
+          {
+            "name": "email_domain",
+            "raw": "- email_domain",
+            "value": null,
+            "loc": {
+              "file": "03-types-showcase.m3l.md",
+              "line": 118,
+              "col": 1
+            }
+          }
+        ]
+      },
+      "materialized": false,
+      "loc": {
+        "file": "03-types-showcase.m3l.md",
+        "line": 101,
+        "col": 1
+      }
+    },
+    {
+      "name": "DefaultValues",
+      "nodeType": "model",
+      "source": "03-types-showcase.m3l.md",
+      "line": 124,
+      "inherits": [],
+      "description": "Various default value patterns.",
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            },
+            {
+              "name": "generated"
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 128,
+            "col": 1
+          }
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "params": [
+            20
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "\u0022active\u0022",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 129,
+            "col": 1
+          }
+        },
+        {
+          "name": "count",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "0",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 130,
+            "col": 1
+          }
+        },
+        {
+          "name": "ratio",
+          "type": "float",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "1.0",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 131,
+            "col": 1
+          }
+        },
+        {
+          "name": "is_enabled",
+          "type": "boolean",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "true",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 132,
+            "col": 1
+          }
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "now()",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 133,
+            "col": 1
+          }
+        },
+        {
+          "name": "uuid_val",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "generate_uuid()",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 134,
+            "col": 1
+          }
+        },
+        {
+          "name": "empty_list",
+          "type": "string",
+          "nullable": false,
+          "array": true,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "[]",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 135,
+            "col": 1
+          }
+        },
+        {
+          "name": "quoted_default",
+          "type": "string",
+          "params": [
+            50
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "\u0022Hello \\\u0022World\\\u0022\u0022",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 136,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "materialized": false,
+      "loc": {
+        "file": "03-types-showcase.m3l.md",
+        "line": 124,
+        "col": 1
+      }
+    },
+    {
+      "name": "CompositeKeyExample",
+      "nodeType": "model",
+      "source": "03-types-showcase.m3l.md",
+      "line": 140,
+      "inherits": [],
+      "description": "Demonstrates composite primary key definition.",
+      "attributes": [],
+      "fields": [
+        {
+          "name": "tenant_id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "primary",
+              "args": [
+                "1"
+              ]
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 144,
+            "col": 1
+          }
+        },
+        {
+          "name": "entity_id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "primary",
+              "args": [
+                "2"
+              ]
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 145,
+            "col": 1
+          }
+        },
+        {
+          "name": "data",
+          "type": "text",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 146,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "materialized": false,
+      "loc": {
+        "file": "03-types-showcase.m3l.md",
+        "line": 140,
+        "col": 1
+      }
+    },
+    {
+      "name": "CompositeKeySection",
+      "nodeType": "model",
+      "source": "03-types-showcase.m3l.md",
+      "line": 150,
+      "inherits": [],
+      "description": "Composite key via ### PrimaryKey section.",
+      "attributes": [],
+      "fields": [
+        {
+          "name": "region",
+          "type": "string",
+          "params": [
+            10
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 154,
+            "col": 1
+          }
+        },
+        {
+          "name": "code",
+          "type": "string",
+          "params": [
+            20
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 155,
+            "col": 1
+          }
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "params": [
+            100
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 156,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {},
+        "PrimaryKey": [
+          {
+            "name": "fields",
+            "raw": "- fields: [region, code]",
+            "value": "[region, code]",
+            "loc": {
+              "file": "03-types-showcase.m3l.md",
+              "line": 159,
+              "col": 1
+            }
+          }
+        ]
+      },
+      "materialized": false,
+      "loc": {
+        "file": "03-types-showcase.m3l.md",
+        "line": 150,
+        "col": 1
+      }
+    },
+    {
+      "name": "ExtendedFormatField",
+      "nodeType": "model",
+      "source": "03-types-showcase.m3l.md",
+      "line": 163,
+      "inherits": [],
+      "description": "Fields using extended (multi-line) format.",
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 167,
+            "col": 1
+          }
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "params": [
+            20
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "description": "Current processing status",
+          "attributes": [
+            {
+              "name": "reference",
+              "args": [
+                "StatusEnum"
+              ]
+            },
+            {
+              "name": "on_delete",
+              "args": [
+                "set_null"
+              ]
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 168,
+            "col": 1
+          }
+        },
+        {
+          "name": "config",
+          "type": "json",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "description": "Application configuration data",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 172,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "materialized": false,
+      "loc": {
+        "file": "03-types-showcase.m3l.md",
+        "line": 163,
+        "col": 1
+      }
+    },
+    {
+      "name": "InheritanceOverride",
+      "nodeType": "model",
+      "source": "03-types-showcase.m3l.md",
+      "line": 177,
+      "inherits": [
+        "AllPrimitiveTypes"
+      ],
+      "description": "Override inherited field definition.",
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            },
+            {
+              "name": "generated"
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 12,
+            "col": 1
+          }
+        },
+        {
+          "name": "str_no_len",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 14,
+            "col": 1
+          }
+        },
+        {
+          "name": "txt",
+          "type": "text",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 15,
+            "col": 1
+          }
+        },
+        {
+          "name": "int_val",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 16,
+            "col": 1
+          }
+        },
+        {
+          "name": "lng_val",
+          "type": "long",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 17,
+            "col": 1
+          }
+        },
+        {
+          "name": "dec_val",
+          "type": "decimal",
+          "params": [
+            10,
+            2
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 18,
+            "col": 1
+          }
+        },
+        {
+          "name": "flt_val",
+          "type": "float",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 19,
+            "col": 1
+          }
+        },
+        {
+          "name": "bool_val",
+          "type": "boolean",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 20,
+            "col": 1
+          }
+        },
+        {
+          "name": "dt_val",
+          "type": "date",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 21,
+            "col": 1
+          }
+        },
+        {
+          "name": "tm_val",
+          "type": "time",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 22,
+            "col": 1
+          }
+        },
+        {
+          "name": "ts_val",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 23,
+            "col": 1
+          }
+        },
+        {
+          "name": "bin_val",
+          "type": "binary",
+          "params": [
+            1048576
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 24,
+            "col": 1
+          }
+        },
+        {
+          "name": "str",
+          "type": "string",
+          "params": [
+            500
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "description": "Overridden with larger size",
+          "attributes": [
+            {
+              "name": "override"
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 181,
+            "col": 1
+          }
+        },
+        {
+          "name": "extra_field",
+          "type": "boolean",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "false",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 182,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "materialized": false,
+      "loc": {
+        "file": "03-types-showcase.m3l.md",
+        "line": 177,
+        "col": 1
+      }
+    },
+    {
+      "name": "ConditionalFields",
+      "nodeType": "model",
+      "source": "03-types-showcase.m3l.md",
+      "line": 186,
+      "inherits": [],
+      "description": "Fields with conditional visibility.",
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 190,
+            "col": 1
+          }
+        },
+        {
+          "name": "type",
+          "type": "enum",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "defaultValue": "\u0022personal\u0022",
+          "attributes": [],
+          "enumValues": [
+            {
+              "name": "personal",
+              "description": "Personal Account"
+            },
+            {
+              "name": "business",
+              "description": "Business Account"
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 191,
+            "col": 1
+          }
+        },
+        {
+          "name": "company_name",
+          "type": "string",
+          "params": [
+            200
+          ],
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "if",
+              "args": [
+                "type == \u0022business\u0022"
+              ]
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 194,
+            "col": 1
+          }
+        },
+        {
+          "name": "tax_id",
+          "type": "string",
+          "params": [
+            20
+          ],
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "if",
+              "args": [
+                "type == \u0022business\u0022"
+              ]
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 195,
+            "col": 1
+          }
+        },
+        {
+          "name": "personal_id",
+          "type": "string",
+          "params": [
+            20
+          ],
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "if",
+              "args": [
+                "type == \u0022personal\u0022"
+              ]
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 196,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "materialized": false,
+      "loc": {
+        "file": "03-types-showcase.m3l.md",
+        "line": 186,
+        "col": 1
+      }
+    },
+    {
+      "name": "DocumentationShowcase",
+      "nodeType": "model",
+      "source": "03-types-showcase.m3l.md",
+      "line": 200,
+      "inherits": [],
+      "description": "This blockquote provides a detailed model description.\nIt spans multiple lines to demonstrate multi-line blockquote support.",
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 205,
+            "col": 1
+          }
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "params": [
+            100
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "description": "This is an inline description",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 206,
+            "col": 1
+          }
+        },
+        {
+          "name": "code",
+          "type": "string",
+          "params": [
+            10
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 207,
+            "col": 1
+          }
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "description": "Optional notes field",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 208,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "materialized": false,
+      "loc": {
+        "file": "03-types-showcase.m3l.md",
+        "line": 200,
+        "col": 1
+      }
+    },
+    {
+      "name": "ComputedVariants",
+      "nodeType": "model",
+      "source": "03-types-showcase.m3l.md",
+      "line": 214,
+      "inherits": [],
+      "description": "All types of computed fields.",
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 218,
+            "col": 1
+          }
+        },
+        {
+          "name": "first_name",
+          "type": "string",
+          "params": [
+            50
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 219,
+            "col": 1
+          }
+        },
+        {
+          "name": "last_name",
+          "type": "string",
+          "params": [
+            50
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 220,
+            "col": 1
+          }
+        },
+        {
+          "name": "price",
+          "type": "decimal",
+          "params": [
+            10,
+            2
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 221,
+            "col": 1
+          }
+        },
+        {
+          "name": "tax_rate",
+          "type": "decimal",
+          "params": [
+            5,
+            4
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 222,
+            "col": 1
+          }
+        },
+        {
+          "name": "birth_date",
+          "type": "date",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 223,
+            "col": 1
+          }
+        },
+        {
+          "name": "full_name",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "computed",
+          "attributes": [
+            {
+              "name": "computed",
+              "args": [
+                "\u0022first_name \u002B \u0027 \u0027 \u002B last_name\u0022"
+              ]
+            }
+          ],
+          "computed": {
+            "expression": "first_name \u002B \u0027 \u0027 \u002B last_name"
+          },
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 226,
+            "col": 1
+          }
+        },
+        {
+          "name": "tax_amount",
+          "type": "decimal",
+          "params": [
+            10,
+            2
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "computed",
+          "attributes": [
+            {
+              "name": "computed",
+              "args": [
+                "\u0022price * tax_rate\u0022"
+              ]
+            }
+          ],
+          "computed": {
+            "expression": "price * tax_rate"
+          },
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 227,
+            "col": 1
+          }
+        },
+        {
+          "name": "total_price",
+          "type": "decimal",
+          "params": [
+            10,
+            2
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "computed",
+          "attributes": [
+            {
+              "name": "computed",
+              "args": [
+                "\u0022price \u002B tax_amount\u0022"
+              ]
+            },
+            {
+              "name": "persisted"
+            }
+          ],
+          "computed": {
+            "expression": "price \u002B tax_amount"
+          },
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 228,
+            "col": 1
+          }
+        },
+        {
+          "name": "age",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "computed",
+          "attributes": [
+            {
+              "name": "computed_raw",
+              "args": [
+                "\u0022DATEDIFF(year, birth_date, GETDATE())\u0022, platform: \u0022sqlserver\u0022"
+              ]
+            }
+          ],
+          "computed": {
+            "expression": "DATEDIFF(year, birth_date, GETDATE())",
+            "platform": "sqlserver"
+          },
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 229,
+            "col": 1
+          }
+        },
+        {
+          "name": "pg_age",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "computed",
+          "attributes": [
+            {
+              "name": "computed_raw",
+              "args": [
+                "\u0022EXTRACT(YEAR FROM AGE(birth_date))\u0022, platform: \u0022postgresql\u0022"
+              ]
+            }
+          ],
+          "computed": {
+            "expression": "EXTRACT(YEAR FROM AGE(birth_date))",
+            "platform": "postgresql"
+          },
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 230,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "materialized": false,
+      "loc": {
+        "file": "03-types-showcase.m3l.md",
+        "line": 214,
+        "col": 1
+      }
+    },
+    {
+      "name": "BehaviorShowcase",
+      "nodeType": "model",
+      "source": "03-types-showcase.m3l.md",
+      "line": 234,
+      "inherits": [],
+      "description": "Demonstrates behavior definitions.",
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            },
+            {
+              "name": "generated"
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 238,
+            "col": 1
+          }
+        },
+        {
+          "name": "code",
+          "type": "string",
+          "params": [
+            20
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "unique"
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 239,
+            "col": 1
+          }
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "params": [
+            100
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 240,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [
+          {
+            "raw": "@behavior(before_create, generate_code)",
+            "args": "before_create, generate_code",
+            "loc": {
+              "file": "03-types-showcase.m3l.md",
+              "line": 242,
+              "col": 1
+            }
+          },
+          {
+            "name": "before_create",
+            "raw": "- before_create: validate_uniqueness",
+            "loc": {
+              "file": "03-types-showcase.m3l.md",
+              "line": 245,
+              "col": 1
+            }
+          },
+          {
+            "name": "after_create",
+            "raw": "- after_create: send_notification",
+            "loc": {
+              "file": "03-types-showcase.m3l.md",
+              "line": 247,
+              "col": 1
+            }
+          },
+          {
+            "name": "before_delete",
+            "raw": "- before_delete: check_dependencies",
+            "loc": {
+              "file": "03-types-showcase.m3l.md",
+              "line": 249,
+              "col": 1
+            }
+          }
+        ],
+        "metadata": {}
+      },
+      "materialized": false,
+      "loc": {
+        "file": "03-types-showcase.m3l.md",
+        "line": 234,
+        "col": 1
+      }
+    },
+    {
+      "name": "VersionedEntity",
+      "nodeType": "model",
+      "source": "03-types-showcase.m3l.md",
+      "line": 253,
+      "inherits": [],
+      "description": "Schema versioning demonstration.",
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            }
+          ],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 257,
+            "col": 1
+          }
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "params": [
+            100
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 258,
+            "col": 1
+          }
+        },
+        {
+          "name": "data",
+          "type": "json",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "03-types-showcase.m3l.md",
+            "line": 259,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {},
+        "Version": [
+          {
+            "name": "major",
+            "raw": "- major: 2",
+            "value": "2",
+            "loc": {
+              "file": "03-types-showcase.m3l.md",
+              "line": 262,
+              "col": 1
+            }
+          },
+          {
+            "name": "minor",
+            "raw": "- minor: 1",
+            "value": "1",
+            "loc": {
+              "file": "03-types-showcase.m3l.md",
+              "line": 263,
+              "col": 1
+            }
+          },
+          {
+            "name": "patch",
+            "raw": "- patch: 0",
+            "value": "0",
+            "loc": {
+              "file": "03-types-showcase.m3l.md",
+              "line": 264,
+              "col": 1
+            }
+          },
+          {
+            "name": "date",
+            "raw": "- date: \u00222026-01-15\u0022",
+            "value": "2026-01-15",
+            "loc": {
+              "file": "03-types-showcase.m3l.md",
+              "line": 265,
+              "col": 1
+            }
+          }
+        ],
+        "Migration (v1.0 \u2192 v2.0)": [
+          {
+            "name": "changed",
+            "raw": "- changed: \u0022name from string(50) to string(100)\u0022",
+            "value": "name from string(50) to string(100)",
+            "loc": {
+              "file": "03-types-showcase.m3l.md",
+              "line": 268,
+              "col": 1
+            }
+          },
+          {
+            "name": "added",
+            "raw": "- added: \u0022data field\u0022",
+            "value": "data field",
+            "loc": {
+              "file": "03-types-showcase.m3l.md",
+              "line": 269,
+              "col": 1
+            }
+          },
+          {
+            "name": "removed",
+            "raw": "- removed: \u0022legacy_code field\u0022",
+            "value": "legacy_code field",
+            "loc": {
+              "file": "03-types-showcase.m3l.md",
+              "line": 270,
+              "col": 1
+            }
+          }
+        ]
+      },
+      "materialized": false,
+      "loc": {
+        "file": "03-types-showcase.m3l.md",
+        "line": 253,
+        "col": 1
+      }
+    }
+  ],
+  "enums": [],
+  "interfaces": [],
+  "views": [],
+  "errors": [],
+  "warnings": []
+}

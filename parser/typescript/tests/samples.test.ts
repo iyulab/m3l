@@ -1388,8 +1388,8 @@ describe('Sample 03: Types Showcase (03-types-showcase.m3l.md)', () => {
       expect(strFields).toHaveLength(1);
       // The overriding field should have the new params (500)
       expect(strFields[0].params).toEqual([500]);
-      // The @override attribute should be removed from the field
-      expect(strFields[0].attributes.some(a => a.name === 'override')).toBe(false);
+      // The @override attribute should be preserved in the AST for consumers
+      expect(strFields[0].attributes.some(a => a.name === 'override')).toBe(true);
     });
 
     it('has extra_field', () => {
@@ -1486,7 +1486,7 @@ describe('Sample 03: Types Showcase (03-types-showcase.m3l.md)', () => {
      * [DEFECT] @computed_raw fields have kind="computed" but no computed.expression.
      *
      * The field `age: integer @computed_raw("DATEDIFF(year, birth_date, GETDATE())", platform: "sqlserver")`
-     * is correctly identified as kind="computed" (since it's in the # Computed section),
+     * is correctly identified as kind="computed" (since it's in the ### Computed section),
      * but the parser only extracts expression from @computed, not @computed_raw.
      * The computed_raw attribute with its platform-specific expression is stored in
      * attributes but not extracted into the computed field.

@@ -98,10 +98,10 @@
 - sort_order: integer = 0
 - is_active: boolean = true
 
-# Lookup
+### Lookup
 - parent_name: string @lookup(parent_id.name)
 
-# Rollup
+### Rollup
 - product_count: integer @rollup(Product.category_id, count)
 
 ---
@@ -121,10 +121,10 @@
 - is_active: boolean = true
 - tags: string[]
 
-# Lookup
+### Lookup
 - category_name: string @lookup(category_id.name)
 
-# Computed
+### Computed
 - profit_margin: decimal(5,2) @computed("(price - cost) / price * 100")
 - display_price: string @computed("FORMAT(price, '$#,##0.00')")
 
@@ -148,7 +148,7 @@
 - reorder_point: integer = 10
 - reorder_qty: integer = 50
 
-# Computed
+### Computed
 - available: integer @computed("quantity - reserved")
 - needs_reorder: boolean @computed("available <= reorder_point")
 
@@ -170,17 +170,17 @@
 - shipped_at: timestamp?
 - delivered_at: timestamp?
 
-# Lookup
+### Lookup
 - customer_name: string @lookup(customer_id.name)
 - customer_email: email @lookup(customer_id.email)
 - shipping_city: string @lookup(shipping_address_id.city)
 
-# Rollup
+### Rollup
 - item_count: integer @rollup(OrderItem.order_id, count)
 - subtotal: decimal(12,2) @rollup(OrderItem.order_id, sum(line_total))
 - total_quantity: integer @rollup(OrderItem.order_id, sum(quantity))
 
-# Computed
+### Computed
 - tax_amount: decimal(12,2) @computed("subtotal * 0.1")
 - grand_total: decimal(12,2) @computed("subtotal + tax_amount")
 
@@ -208,11 +208,11 @@
 - unit_price: decimal(10,2) @not_null
 - discount_pct: decimal(5,2) = 0 @min(0) @max(100)
 
-# Lookup
+### Lookup
 - product_name: string @lookup(product_id.name)
 - product_sku: string @lookup(product_id.sku)
 
-# Computed
+### Computed
 - discount_amount: decimal(10,2) @computed("unit_price * quantity * discount_pct / 100")
 - line_total: decimal(12,2) @computed("unit_price * quantity - discount_amount")
 

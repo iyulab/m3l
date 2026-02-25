@@ -14,7 +14,7 @@
 - address: string(300)?
 - is_active: boolean = true
 
-# Rollup
+### Rollup
 - total_items: integer @rollup(StockItem.warehouse_id, count)
 - total_value: decimal(14,2) @rollup(StockItem.warehouse_id, sum(total_value))
 
@@ -44,7 +44,7 @@
 - min_stock: integer = 0 @min(0) "Minimum stock level for reorder alert"
 - is_active: boolean = true
 
-# Rollup
+### Rollup
 - total_on_hand: integer @rollup(StockItem.item_id, sum(quantity))
 
 ---
@@ -61,13 +61,13 @@
 - batch_number: string(50)?
 - expiry_date: date?
 
-# Lookup
+### Lookup
 - warehouse_name: string @lookup(warehouse_id.name)
 - item_name: string @lookup(item_id.name)
 - item_sku: string @lookup(item_id.sku)
 - supplier_name: string @lookup(supplier_id.name)
 
-# Computed
+### Computed
 - total_value: decimal(14,2) @computed("quantity * unit_cost")
 - is_expired: boolean @computed("expiry_date IS NOT NULL AND expiry_date < CURRENT_DATE")
 - needs_reorder: boolean @computed("quantity <= min_stock")
@@ -98,7 +98,7 @@
 - notes: text?
 - moved_by: string(100) @not_null
 
-# Lookup
+### Lookup
 - item_name: string @lookup(stock_item_id.item_name)
 
 - @index(stock_item_id, created_at)

@@ -36,6 +36,7 @@ export type FieldKind = 'stored' | 'computed' | 'lookup' | 'rollup';
 export interface FieldAttribute {
   name: string;
   args?: (string | number | boolean)[];
+  cascade?: string;
 }
 
 /** Structured representation of a backtick-wrapped framework attribute like `[MaxLength(100)]` */
@@ -75,7 +76,7 @@ export interface FieldNode {
     field?: string;
     where?: string;
   };
-  computed?: { expression: string };
+  computed?: { expression: string; platform?: string };
   enum_values?: EnumValue[];
   fields?: FieldNode[];
   loc: SourceLocation;

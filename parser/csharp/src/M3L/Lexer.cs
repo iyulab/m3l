@@ -54,10 +54,14 @@ public static partial class Lexer
             var h3 = ReH3.Match(raw);
             if (h3.Success)
             {
+                var h3Name = h3.Groups[1].Value.Trim();
+                var h3Data = new Dictionary<string, object?> { ["name"] = h3Name };
+                if (KindSections.Contains(h3Name))
+                    h3Data["kind_section"] = true;
                 tokens.Add(new Token
                 {
                     Type = TokenType.Section, Raw = raw, Line = lineNum,
-                    Data = new() { ["name"] = h3.Groups[1].Value.Trim() }
+                    Data = h3Data
                 });
                 continue;
             }
@@ -73,22 +77,11 @@ public static partial class Lexer
             if (h1.Success)
             {
                 var h1Content = h1.Groups[1].Value.Trim();
-                if (KindSections.Contains(h1Content))
+                tokens.Add(new Token
                 {
-                    tokens.Add(new Token
-                    {
-                        Type = TokenType.Section, Raw = raw, Line = lineNum,
-                        Data = new() { ["name"] = h1Content, ["kind_section"] = true }
-                    });
-                }
-                else
-                {
-                    tokens.Add(new Token
-                    {
-                        Type = TokenType.Namespace, Raw = raw, Line = lineNum,
-                        Data = ParseNamespace(h1Content)
-                    });
-                }
+                    Type = TokenType.Namespace, Raw = raw, Line = lineNum,
+                    Data = ParseNamespace(h1Content)
+                });
                 continue;
             }
 
@@ -373,10 +366,29 @@ public static partial class Lexer
             }
         }
 
-        // Attributes
+        // Attributes (with optional cascade symbols: !, !!, ?)
         var attrs = new List<Dictionary<string, object?>>();
-        while (pos < len && rest[pos] == '@')
+        while (pos < len && (rest[pos] == '@' || rest[pos] == '!' || rest[pos] == '?'))
         {
+            // Cascade symbols: !, !!, ? — attach to the previous attribute
+            if (rest[pos] == '!' || rest[pos] == '?')
+            {
+                var symbol = rest[pos].ToString();
+                pos++;
+                if (symbol == "!" && pos < len && rest[pos] == '!')
+                {
+                    symbol = "!!";
+                    pos++;
+                }
+                // Attach cascade to last attribute
+                if (attrs.Count > 0)
+                {
+                    attrs[^1]["cascade"] = symbol;
+                }
+                SkipWs();
+                continue;
+            }
+
             pos++;
             int nameStart = pos;
             while (pos < len && char.IsLetterOrDigit(rest[pos]) || (pos < len && rest[pos] == '_')) pos++;

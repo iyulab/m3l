@@ -1,0 +1,74 @@
+name: Parser — Test & Publish
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'parser/**'
+      - '.github/workflows/parser-publish.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'parser/**'
+      - '.github/workflows/parser-publish.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: parser
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: parser/package-lock.json
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+  publish:
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: parser
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Check if version already published
+        id: check
+        run: |
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          if npm view "${PACKAGE_NAME}@${PACKAGE_VERSION}" version 2>/dev/null; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+            echo "⏭️ ${PACKAGE_NAME}@${PACKAGE_VERSION} already published, skipping"
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+            echo "📦 ${PACKAGE_NAME}@${PACKAGE_VERSION} not yet published"
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish to npm
+        if: steps.check.outputs.published == 'false'
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

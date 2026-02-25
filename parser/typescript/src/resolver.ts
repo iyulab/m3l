@@ -174,9 +174,23 @@ function resolveInheritance(
     collectFields(parentName, model);
   }
 
+  // Handle @override: child fields with @override replace inherited fields
+  const overrideNames = new Set<string>();
+  for (const ownField of model.fields) {
+    const overrideIdx = ownField.attributes.findIndex(a => a.name === 'override');
+    if (overrideIdx >= 0) {
+      overrideNames.add(ownField.name);
+      // Remove @override attribute from the child field
+      ownField.attributes.splice(overrideIdx, 1);
+    }
+  }
+
+  // Remove inherited fields that are overridden
+  const filteredInherited = inheritedFields.filter(f => !overrideNames.has(f.name));
+
   // Prepend inherited fields before model's own fields
-  if (inheritedFields.length > 0) {
-    model.fields = [...inheritedFields, ...model.fields];
+  if (filteredInherited.length > 0) {
+    model.fields = [...filteredInherited, ...model.fields];
   }
 }
 

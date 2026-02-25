@@ -184,6 +184,21 @@ public static class Resolver
             CollectFields(parentName, model);
         }
 
+        // Handle @override: child fields with @override replace inherited fields
+        var overrideNames = new HashSet<string>();
+        foreach (var ownField in model.Fields)
+        {
+            var overrideAttr = ownField.Attributes.FindIndex(a => a.Name == "override");
+            if (overrideAttr >= 0)
+            {
+                overrideNames.Add(ownField.Name);
+                ownField.Attributes.RemoveAt(overrideAttr);
+            }
+        }
+
+        // Remove overridden inherited fields
+        inheritedFields.RemoveAll(f => overrideNames.Contains(f.Name));
+
         // Prepend inherited fields before model's own fields
         if (inheritedFields.Count > 0)
         {
@@ -197,6 +212,7 @@ public static class Resolver
         Name = f.Name,
         Label = f.Label,
         Type = f.Type,
+        GenericParams = f.GenericParams != null ? new List<string>(f.GenericParams) : null,
         Params = f.Params != null ? new List<object>(f.Params) : null,
         Nullable = f.Nullable,
         Array = f.Array,

@@ -29,6 +29,7 @@ public class FieldNode
     public string Name { get; set; } = "";
     public string? Label { get; set; }
     public string? Type { get; set; }
+    public List<string>? GenericParams { get; set; }
     public List<object>? Params { get; set; }
     public bool Nullable { get; set; }
     public bool Array { get; set; }
@@ -103,6 +104,7 @@ public class ModelNode
     public int Line { get; set; }
     public List<string> Inherits { get; set; } = new();
     public string? Description { get; set; }
+    public List<FieldAttribute> Attributes { get; set; } = new();
     public List<FieldNode> Fields { get; set; } = new();
     public SectionData Sections { get; set; } = new();
     public bool Materialized { get; set; }

@@ -16,7 +16,7 @@ const RE_MODEL_DEF = /^([\w][\w.]*(?:\([^)]*\))?)\s*(?::\s*(.+?))?(\s+@.+)?$/;
 
 // Field line patterns
 const RE_FIELD_NAME = /^([\w]+)(?:\(([^)]*)\))?\s*(?::\s*(.+))?$/;
-const RE_TYPE_PART = /^([\w]+)(?:\(([^)]*)\))?(\?)?(\[\])?/;
+const RE_TYPE_PART = /^([\w]+)(?:<([^>]+)>)?(?:\(([^)]*)\))?(\?)?(\[\])?(\?)?/;
 const RE_FRAMEWORK_ATTR = /`\[([^\]]+)\]`/g;
 const RE_INLINE_COMMENT = /\s+#\s+(.+)$/;
 
@@ -305,7 +305,7 @@ function parseFieldLine(content: string): Record<string, unknown> {
   return data;
 }
 
-function parseTypeAndAttrs(rest: string, data: Record<string, unknown>): void {
+export function parseTypeAndAttrs(rest: string, data: Record<string, unknown>): void {
   let pos = 0;
   const len = rest.length;
   const skipWS = () => { while (pos < len && rest[pos] === ' ') pos++; };
@@ -319,15 +319,22 @@ function parseTypeAndAttrs(rest: string, data: Record<string, unknown>): void {
     }
   }
 
-  // Parse type: word(params)?[]?
+  // Parse type: word<generics>?(params)?[]??
   const typeMatch = rest.match(RE_TYPE_PART);
   if (typeMatch) {
     data.type_name = typeMatch[1];
+    // Group 2: generic params from <K,V>
     if (typeMatch[2]) {
-      data.type_params = typeMatch[2].split(',').map(s => s.trim());
+      data.type_generic_params = typeMatch[2].split(',').map(s => s.trim());
     }
-    data.nullable = typeMatch[3] === '?';
-    data.array = typeMatch[4] === '[]';
+    // Group 3: size/type params from (params)
+    if (typeMatch[3]) {
+      data.type_params = typeMatch[3].split(',').map(s => s.trim());
+    }
+    // Group 4: nullable before [], Group 6: nullable after []
+    data.nullable = typeMatch[4] === '?' || typeMatch[6] === '?';
+    // Group 5: array
+    data.array = typeMatch[5] === '[]';
     pos = typeMatch[0].length;
     skipWS();
   }

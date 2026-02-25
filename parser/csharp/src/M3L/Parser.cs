@@ -90,6 +90,16 @@ public static class Parser
             Inherits = GetStringList(data, "inherits"),
             Loc = new SourceLocation(state.File, token.Line, 1),
         };
+        // D-C01: Read model-level attributes from data
+        if (data.GetValueOrDefault("attributes") is List<Dictionary<string, object?>> modelAttrs)
+        {
+            model.Attributes = modelAttrs.Select(a => new FieldAttribute
+            {
+                Name = (string)a["name"]!,
+                Args = a.GetValueOrDefault("args") is List<string> argList ? argList.Cast<object>().ToList() : null,
+            }).ToList();
+        }
+
         state.CurrentElement = model;
         state.CurrentSection = null;
         state.CurrentKind = FieldKind.Stored;
@@ -242,6 +252,14 @@ public static class Parser
                 ["args"] = attr.GetValueOrDefault("args"), ["loc"] = loc
             });
         }
+        else if (attrName == "behavior")
+        {
+            model.Sections.Behaviors.Add(new Dictionary<string, object?>
+            {
+                ["type"] = "directive", ["raw"] = data.GetValueOrDefault("raw_content"),
+                ["args"] = attr.GetValueOrDefault("args"), ["loc"] = loc
+            });
+        }
         else
         {
             if (!model.Sections.Extra.ContainsKey(attrName))
@@ -321,10 +339,16 @@ public static class Parser
             return;
         }
 
-        // Generic section — treat as fields
-        var f = BuildFieldNode(data, token, state);
-        model.Fields.Add(f);
-        state.LastField = f;
+        // Generic section — store as section items, NOT as fields
+        if (!model.Sections.Extra.ContainsKey(section))
+            model.Sections.Extra[section] = new();
+        model.Sections.Extra[section].Add(new Dictionary<string, object?>
+        {
+            ["name"] = data["name"],
+            ["raw"] = token.Raw.Trim(),
+            ["value"] = data.GetValueOrDefault("type_name") ?? data.GetValueOrDefault("description") ?? data.GetValueOrDefault("raw_value"),
+            ["loc"] = loc
+        });
     }
 
     private static void HandleNestedItem(Token token, ParserState state)
@@ -396,6 +420,27 @@ public static class Parser
                 return;
             }
 
+            // D-003: Sub-field for object type parent
+            if (key != null && value != null && field.Type == "object")
+            {
+                field.Fields ??= new();
+                var pseudoData = new Dictionary<string, object?> { ["name"] = key };
+                // Quick type parse
+                var subTypeMatch = new System.Text.RegularExpressions.Regex(@"^([\w]+)(?:<([^>]+)>)?(?:\(([^)]*)\))?(\?)?(\[\])?").Match(value);
+                if (subTypeMatch.Success)
+                {
+                    pseudoData["type_name"] = subTypeMatch.Groups[1].Value;
+                    if (subTypeMatch.Groups[3].Success && subTypeMatch.Groups[3].Value.Length > 0)
+                        pseudoData["type_params"] = subTypeMatch.Groups[3].Value.Split(',').Select(s => s.Trim()).ToList();
+                    pseudoData["nullable"] = subTypeMatch.Groups[4].Success && subTypeMatch.Groups[4].Value == "?";
+                    pseudoData["array"] = subTypeMatch.Groups[5].Success && subTypeMatch.Groups[5].Value == "[]";
+                }
+                var subField = BuildFieldNode(pseudoData, token, state);
+                field.Fields.Add(subField);
+                state.LastField = subField;
+                return;
+            }
+
             if (key != null)
             {
                 ApplyExtendedAttribute(field, key, value ?? "");
@@ -458,10 +503,12 @@ public static class Parser
         var lookupAttr = attrs.Find(a => a.Name == "lookup");
         var rollupAttr = attrs.Find(a => a.Name == "rollup");
         var computedAttr = attrs.Find(a => a.Name == "computed");
+        var computedRawAttr = attrs.Find(a => a.Name == "computed_raw");
 
         if (lookupAttr != null) kind = FieldKind.Lookup;
         else if (rollupAttr != null) kind = FieldKind.Rollup;
         else if (computedAttr != null) kind = FieldKind.Computed;
+        else if (computedRawAttr != null) kind = FieldKind.Computed;
 
         var fwRaw = data.GetValueOrDefault("framework_attrs") as List<string>;
         List<CustomAttribute>? fwAttrs = null;
@@ -477,6 +524,7 @@ public static class Parser
             Name = (string)data["name"]!,
             Label = data.GetValueOrDefault("label") as string,
             Type = data.GetValueOrDefault("type_name") as string,
+            GenericParams = data.GetValueOrDefault("type_generic_params") as List<string>,
             Params = ParseTypeParams(data.GetValueOrDefault("type_params")),
             Nullable = data.GetValueOrDefault("nullable") is true,
             Array = data.GetValueOrDefault("array") is true,
@@ -496,6 +544,9 @@ public static class Parser
 
         if (computedAttr?.Args is [string computedArg, ..])
             field.Computed = new ComputedDef { Expression = computedArg.Trim('"', '\'') };
+
+        if (computedRawAttr?.Args is [string computedRawArg, ..])
+            field.Computed = new ComputedDef { Expression = computedRawArg.Trim('"', '\'') };
 
         return field;
     }

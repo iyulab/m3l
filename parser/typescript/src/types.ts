@@ -58,6 +58,7 @@ export interface FieldNode {
   label?: string;
   type?: string;
   params?: (string | number)[];
+  generic_params?: string[];
   nullable: boolean;
   array: boolean;
   kind: FieldKind;
@@ -87,6 +88,7 @@ export interface ModelNode {
   line: number;
   inherits: string[];
   description?: string;
+  attributes: FieldAttribute[];
   fields: FieldNode[];
   sections: {
     indexes: unknown[];

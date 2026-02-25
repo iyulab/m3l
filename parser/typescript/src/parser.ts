@@ -11,7 +11,7 @@ import type {
   ViewSourceDef,
   SourceLocation,
 } from './types.js';
-import { lex } from './lexer.js';
+import { lex, parseTypeAndAttrs } from './lexer.js';
 
 interface ParserState {
   file: string;
@@ -123,6 +123,7 @@ function handleModelStart(token: Token, state: ParserState): void {
   finalizeElement(state);
 
   const data = token.data!;
+  const modelAttrs = parseAttributes(data.attributes as { name: string; args?: string }[] | undefined);
   const model: ModelNode = {
     name: data.name as string,
     label: data.label as string | undefined,
@@ -130,6 +131,7 @@ function handleModelStart(token: Token, state: ParserState): void {
     source: state.file,
     line: token.line,
     inherits: (data.inherits as string[]) || [],
+    attributes: modelAttrs,
     fields: [],
     sections: {
       indexes: [],
@@ -179,6 +181,7 @@ function handleViewStart(token: Token, state: ParserState): void {
     source: state.file,
     line: token.line,
     inherits: [],
+    attributes: [],
     materialized: (data.materialized as boolean) || false,
     fields: [],
     sections: {
@@ -302,15 +305,24 @@ function handleDirective(
       loc: { file: state.file, line: token.line, col: 1 },
     });
   } else {
-    // Generic directive
-    const sectionName = attr.name;
-    if (!model.sections[sectionName]) {
-      model.sections[sectionName] = [];
+    // Generic directive — normalize singular form
+    let sectionName = attr.name;
+    if (sectionName === 'behavior') sectionName = 'behaviors';
+
+    if (sectionName === 'behaviors') {
+      model.sections.behaviors.push({
+        raw: data.raw_content,
+        args: attr.args,
+      });
+    } else {
+      if (!model.sections[sectionName]) {
+        model.sections[sectionName] = [];
+      }
+      (model.sections[sectionName] as unknown[]).push({
+        raw: data.raw_content,
+        args: attr.args,
+      });
     }
-    (model.sections[sectionName] as unknown[]).push({
-      raw: data.raw_content,
-      args: attr.args,
-    });
   }
 }
 
@@ -401,10 +413,17 @@ function handleSectionItem(
     return;
   }
 
-  // Generic section — treat as fields
-  const field = buildFieldNode(data, token, state);
-  model.fields.push(field);
-  state.lastField = field;
+  // Generic section — store as section items, NOT as fields
+  if (!model.sections[section]) {
+    model.sections[section] = [];
+  }
+  (model.sections[section] as unknown[]).push({
+    name: data.name,
+    raw: token.raw.trim(),
+    value: data.type_name || data.description || data.raw_value,
+    loc,
+  });
+  state.lastField = null;
 }
 
 function handleNestedItem(token: Token, state: ParserState): void {
@@ -477,6 +496,29 @@ function handleNestedItem(token: Token, state: ParserState): void {
         description: strMatch ? strMatch[1] : undefined,
       });
       return;
+    }
+
+    // Sub-field for object/nested type
+    if (key && value) {
+      // Walk up to find the nearest object-type ancestor for this indent level
+      const parentField = field;
+      if (parentField.type === 'object') {
+        if (!parentField.fields) parentField.fields = [];
+        // Re-parse value as type and attributes
+        const subData: Record<string, unknown> = { name: key };
+        parseTypeAndAttrs(value, subData);
+        // Only treat as sub-field if a type was extracted
+        if (subData.type_name) {
+          const subField = buildFieldNode(subData, token, state);
+          parentField.fields.push(subField);
+          // If the sub-field is also an object, set it as lastField for deeper nesting
+          if (subField.type === 'object') {
+            state.lastField = subField;
+          }
+          // Otherwise keep lastField pointing to the parent object for siblings
+          return;
+        }
+      }
     }
 
     // Extended format field attributes
@@ -558,17 +600,20 @@ function buildFieldNode(
   const lookupAttr = attrs.find(a => a.name === 'lookup');
   const rollupAttr = attrs.find(a => a.name === 'rollup');
   const computedAttr = attrs.find(a => a.name === 'computed');
+  const computedRawAttr = attrs.find(a => a.name === 'computed_raw');
   const fromAttr = attrs.find(a => a.name === 'from');
 
   if (lookupAttr) kind = 'lookup';
   else if (rollupAttr) kind = 'rollup';
   else if (computedAttr) kind = 'computed';
+  else if (computedRawAttr) kind = 'computed';
 
   const field: FieldNode = {
     name: data.name as string,
     label: data.label as string | undefined,
     type: data.type_name as string | undefined,
     params: parseTypeParams(data.type_params as string[] | undefined),
+    generic_params: data.type_generic_params as string[] | undefined,
     nullable: (data.nullable as boolean) || false,
     array: (data.array as boolean) || false,
     kind,
@@ -592,6 +637,12 @@ function buildFieldNode(
   // Parse computed: @computed("expression")
   if (computedAttr && computedAttr.args?.[0]) {
     const expr = (computedAttr.args[0] as string).replace(/^["']|["']$/g, '');
+    field.computed = { expression: expr };
+  }
+
+  // Parse computed_raw: @computed_raw("expression", ...)
+  if (computedRawAttr && computedRawAttr.args?.[0]) {
+    const expr = (computedRawAttr.args[0] as string).replace(/^["']|["']$/g, '');
     field.computed = { expression: expr };
   }
 
@@ -799,7 +850,7 @@ function applyExtendedAttribute(field: FieldNode, key: string, value: string): v
       field.attributes.push({ name: 'on_delete', args: [value] });
       break;
     default:
-      field.attributes.push({ name: key, args: [parsed] });
+      field.attributes.push({ name: key, args: [parsed as string | number | boolean] });
       break;
   }
 }

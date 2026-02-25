@@ -19,7 +19,7 @@ public static partial class Lexer
     private static readonly Regex ReTypeIndicator = new(@"^([\w][\w.]*(?:\([^)]*\))?)\s*::(\w+)(.*)$");
     private static readonly Regex ReModelDef = new(@"^([\w][\w.]*(?:\([^)]*\))?)\s*(?::\s*(.+?))?(\s+@.+)?$");
     private static readonly Regex ReFieldName = new(@"^([\w]+)(?:\(([^)]*)\))?\s*(?::\s*(.+))?$");
-    private static readonly Regex ReTypePart = new(@"^([\w]+)(?:\(([^)]*)\))?(\?)?(\[\])?");
+    private static readonly Regex ReTypePart = new(@"^([\w]+)(?:<([^>]+)>)?(?:\(([^)]*)\))?(\?)?(\[\])?(\?)?");
     private static readonly Regex ReFrameworkAttr = new(@"`\[([^\]]+)\]`");
     private static readonly Regex ReInlineComment = new(@"\s+#\s+(.+)$");
     private static readonly Regex ReImport = new(@"^@import\s+[""'](.+?)[""']\s*$");
@@ -320,9 +320,12 @@ public static partial class Lexer
         {
             data["type_name"] = typeMatch.Groups[1].Value;
             if (typeMatch.Groups[2].Success && typeMatch.Groups[2].Value.Length > 0)
-                data["type_params"] = typeMatch.Groups[2].Value.Split(',').Select(s => s.Trim()).ToList();
-            data["nullable"] = typeMatch.Groups[3].Success && typeMatch.Groups[3].Value == "?";
-            data["array"] = typeMatch.Groups[4].Success && typeMatch.Groups[4].Value == "[]";
+                data["type_generic_params"] = typeMatch.Groups[2].Value.Split(',').Select(s => s.Trim()).ToList();
+            if (typeMatch.Groups[3].Success && typeMatch.Groups[3].Value.Length > 0)
+                data["type_params"] = typeMatch.Groups[3].Value.Split(',').Select(s => s.Trim()).ToList();
+            data["nullable"] = (typeMatch.Groups[4].Success && typeMatch.Groups[4].Value == "?")
+                             || (typeMatch.Groups[6].Success && typeMatch.Groups[6].Value == "?");
+            data["array"] = typeMatch.Groups[5].Success && typeMatch.Groups[5].Value == "[]";
             pos = typeMatch.Length;
             SkipWs();
         }

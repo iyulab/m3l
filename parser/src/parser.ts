@@ -249,7 +249,7 @@ function handleField(token: Token, state: ParserState): void {
       const strMatch = raw.match(/^"(.*)"$/);
       if (strMatch) {
         enumVal.description = strMatch[1];
-        delete (enumVal as Record<string, unknown>).type;
+        enumVal.type = undefined;
       }
     }
     state.currentElement.values.push(enumVal);

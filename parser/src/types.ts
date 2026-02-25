@@ -145,3 +145,12 @@ export interface M3LAST {
   errors: Diagnostic[];
   warnings: Diagnostic[];
 }
+
+export interface ValidateOptions {
+  strict?: boolean;
+}
+
+export interface ValidateResult {
+  errors: Diagnostic[];
+  warnings: Diagnostic[];
+}

@@ -3,16 +3,9 @@ import type {
   ModelNode,
   FieldNode,
   Diagnostic,
+  ValidateOptions,
+  ValidateResult,
 } from './types.js';
-
-export interface ValidateOptions {
-  strict?: boolean;
-}
-
-export interface ValidateResult {
-  errors: Diagnostic[];
-  warnings: Diagnostic[];
-}
 
 /**
  * Validate a resolved M3L AST for semantic errors and style warnings.

@@ -6,6 +6,7 @@
    2. [Document Structure](#12-document-structure)
    3. [Expression Patterns](#13-expression-patterns)
    4. [Notation Principles](#14-notation-principles)
+   5. [Markdown Rendering Principles](#15-markdown-rendering-principles)
 2. [Basic Syntax](#2-basic-syntax)
    1. [Namespace Definition](#21-namespace-definition)
    2. [Model Definition](#22-model-definition)
@@ -58,7 +59,7 @@ M3L (Meta Model Markup Language) is a markdown-based language for defining data 
 - **Platform Independence**: Not bound to any specific programming language or database
 - **Flexibility**: Offering various expression styles for different contexts while maintaining consistency
 - **Extensibility**: Flexible structure accommodating various data modeling requirements
-- **Compatibility**: Compatible with standard markdown for easy rendering in existing tools
+- **Compatibility**: M3L documents are valid markdown files that render as meaningful, readable documentation in standard viewers (GitHub, Notion, Obsidian, etc.) without requiring a dedicated M3L parser. Syntax choices must not break or degrade the viewing experience in common markdown renderers
 - **AI-Friendly**: Structured format that AI agents can easily interpret and process
 
 ### 1.2 Document Structure
@@ -116,6 +117,44 @@ M3L provides multiple ways to express the same concepts:
 - **Flexibility**: Provides various expression styles to choose the most appropriate for each situation
 - **Consistency**: Similar concepts are expressed in similar ways throughout a document
 - **Progressive Disclosure**: Simple elements can be expressed simply, complex elements have dedicated constructs
+
+### 1.5 Markdown Rendering Principles
+
+M3L files serve dual purposes: machine-parseable schema definitions and human-readable documentation. The following principles govern syntax decisions:
+
+1. **No Rendering Breakage**: M3L syntax must not produce broken links, unintended formatting, or layout corruption in major markdown viewers
+2. **Visual Semantics**: Different structural elements (fields, enums, sections) should be visually distinguishable when rendered
+3. **Scannable Layout**: Documents should be navigable via standard markdown features (TOC generation, header anchors, search)
+4. **Graceful Density**: Single lines should remain readable without horizontal scrolling on typical screen widths (~100 characters)
+5. **Standard Elements Only**: M3L uses only standard markdown elements (headers, lists, blockquotes, inline code, horizontal rules, HTML comments). No extended markdown syntax (footnotes, definition lists, task lists) is required.
+
+#### 1.5.1 Markdown-Safe Characters
+
+The following table shows M3L special characters and their markdown safety status:
+
+| Character | M3L Usage | Markdown Meaning | Safety |
+|---|---|---|---|
+| `#` | Inline comment | Header | ⚠️ Safe in list items only |
+| `@` | Attribute prefix | Email (in some parsers) | ✅ Safe |
+| `?` | Nullable suffix | — | ✅ Safe |
+| `!` | NO ACTION cascade | Bold/emphasis (in combos) | ✅ Safe |
+| `!!` | RESTRICT cascade | — | ✅ Safe |
+| `>` | Blockquote docs | Blockquote | ✅ Intentional |
+| `[]` | Framework attrs | Link syntax | 🔴 Wrap in backticks |
+| `()` | Type parameters | Link URL | ✅ Safe in list context |
+| `::` | Type indicator | — | ✅ Safe |
+| `<>` | Many-to-many rel | HTML tag | ⚠️ May be stripped |
+| `---` | Model separator | Horizontal rule | ✅ Intentional |
+| `` ` `` | Framework attr wrap | Inline code | ✅ Intentional |
+
+**`<>` Notation**: The many-to-many relationship symbol `<>` may be interpreted as an HTML tag in some viewers and stripped from output. In rendered documentation contexts, prefer the explicit Relations section format:
+
+```markdown
+### Relations
+- tags
+  - target: Tag
+  - cardinality: many-to-many
+```
 
 ## 2. Basic Syntax
 
@@ -222,6 +261,32 @@ Model visibility can be defined:
 ## SystemSettings @private
 ```
 
+#### 2.2.5 Model Separation
+
+Models are primarily separated by `##` headers. For documents with complex or lengthy models, horizontal rules (`---`) may be used between models to provide additional visual separation:
+
+```markdown
+## Product : BaseModel
+- name: string(200)
+- price: decimal(10,2) @min(0)
+
+### Relations
+- @relation(category, -> Category, from: category_id)
+
+---
+
+## Order : BaseModel
+- order_number: string(20) @unique
+- customer_id: identifier @reference(Customer)
+```
+
+**Usage Guidelines:**
+- Horizontal rules are optional — omit them for short, simple models
+- Place the rule between the last content of one model and the next model's `##` header
+- Use consistently within a document: either all model boundaries have rules, or none do
+- Do NOT use horizontal rules within a model (between fields and sections)
+- The M3L parser treats horizontal rules as whitespace (ignored)
+
 ### 2.3 Field Definition
 
 Fields define individual attributes of a model.
@@ -294,6 +359,36 @@ Field-specific metadata can be added:
   - metadata:
     - importance: 2.0
     - display_priority: 1
+```
+
+#### 2.3.4 Line Length Guidelines
+
+To maintain readability in markdown viewers, field definitions should follow these guidelines:
+
+**Short Form (recommended, ~80 characters or fewer):**
+Use when a field has up to 3 attributes.
+
+```markdown
+- email: string(320) @unique @index "Primary contact email"
+- price: decimal(10,2) @min(0)
+```
+
+**Threshold: When to Switch to Extended Form**
+Switch to extended format when any of these apply:
+- Total line length exceeds approximately 80 characters
+- Field has more than 3 `@` attributes
+- Description text is longer than a short phrase
+- Complex validation or business rules need explanation
+
+**Extended Form (for complex definitions):**
+
+```markdown
+- blocked_user_id: identifier
+  - reference: User
+  - on_delete: no_action
+  - index: true
+  - searchable: true
+  - description: "The user who has been blocked from this account"
 ```
 
 ### 2.4 Data Type Notation
@@ -422,14 +517,16 @@ Default values can be more than simple constants. M3L supports various forms of 
 
 #### 2.5.6 Custom Framework Attributes
 
-M3L allows for custom framework-specific attributes using square brackets:
+M3L allows custom framework-specific attributes using square brackets wrapped in backticks. The backtick wrapping prevents markdown renderers from misinterpreting brackets as link syntax:
 
 ```markdown
-- password: string(100) [DataType(DataType.Password)][JsonIgnore]
-- created_at: timestamp = now() [Insert("@now")]
+- password: string(100) `[DataType(DataType.Password)]` `[JsonIgnore]`
+- created_at: timestamp = now() `[Insert("@now")]`
 ```
 
-These custom attributes can be used to provide platform-specific metadata that will be processed by implementation-specific parsers.
+These attributes are rendered as inline code in markdown viewers, visually distinguishing them from M3L's native `@` attributes. The parser strips backticks and processes the inner `[...]` content.
+
+> **Migration**: Existing `[Attr]` syntax (without backticks) remains supported for backward compatibility. The backtick-wrapped form is recommended for all new documents.
 
 ## 3. Special Elements
 
@@ -552,14 +649,33 @@ Enums can inherit values from other enums:
 
 #### 3.1.7 Inline Enum Definition
 
-For enums used only once, they can be defined inline with the field:
+For enums used only within a single field, define values inline. The `values:` key is recommended to visually distinguish enum values from field attributes in the extended format:
 
+**Recommended (with `values:` key):**
+```markdown
+- status: enum = "active"
+  - values:
+    - active: "Active"
+    - inactive: "Inactive"
+    - suspended: "Suspended"
+
+- priority: enum = "medium"
+  - values:
+    - low: "Low priority"
+    - medium: "Medium priority"
+    - high: "High priority"
+    - critical: "Critical - immediate attention"
+```
+
+**Also valid (without `values:` key):**
 ```markdown
 - status: enum = "active"
   - active: "Active"
   - inactive: "Inactive"
   - suspended: "Suspended"
 ```
+
+> The `values:` key serves as a visual landmark that distinguishes "enum values follow" from extended format attributes (`type:`, `unique:`, etc.). Both forms are valid; the `values:` form is recommended for clarity in rendered markdown.
 
 ### 3.2 Relationship Definition
 
@@ -823,34 +939,60 @@ Multi-line format:
 
 ### 4.2 Comments and Documentation
 
-M3L provides two types of comments:
+M3L provides multiple documentation mechanisms with distinct purposes, ordered by preference:
 
-#### 4.2.1 Visible Comments
+#### 4.2.1 Description Strings `"text"` — Primary Documentation
 
-Documentation using markdown blockquotes (`>`):
+Rendered as part of the field definition. Recommended for all user-facing descriptions:
+
 ```markdown
-> This is visible documentation that appears in the rendered output,
-> which should be processed by documentation generators.
+- email: string(320) @unique "Primary contact email"
+- name: string(200) "Product display name, shown in catalog"
 ```
 
-Header comments using `#`:
-```markdown
-## Timestampable # Timestampable interface
-```
+#### 4.2.2 Blockquotes `>` — Model and Section Documentation
 
-Description for fields:
+Rendered as styled quote blocks. Use for multi-line descriptions, usage notes, and design rationale:
+
 ```markdown
+## User
+> User account information for the platform.
+> Supports both Google OAuth and email authentication.
+
 - username: string(50) @unique @index
   > Unique identifier used for login
 ```
 
-#### 4.2.2 Hidden Comments
+#### 4.2.3 Header Comments `#` — Inline Model Annotations
 
-Developer comments using HTML comment syntax:
+Brief annotations appended to model headers:
+
 ```markdown
-<!-- This is a hidden comment for development purposes.
-     It doesn't appear in rendered markdown and
-     should be ignored by the parser. -->
+## Timestampable ::interface # Common timestamp fields
+```
+
+#### 4.2.4 Inline Comments `#` — Developer Notes
+
+Not intended for end-user documentation. Use sparingly for technical notes that aid schema developers:
+
+```markdown
+- cache_key: string(100)  # TTL: 3600s, invalidated on profile update
+- tenant_id: identifier @index  # Shard key for multi-tenancy
+```
+
+**Guidelines:**
+- Prefer description strings (`"..."`) over `#` comments for field explanations
+- Use `#` comments only for technical/implementation notes that should not appear in generated documentation
+- `#` comments must appear after all field attributes on the same line
+- Avoid `#` at the beginning of a line outside of header contexts
+
+#### 4.2.5 Hidden Comments `<!-- -->` — Development Notes
+
+Completely hidden in rendered output. Use for TODOs, temporary notes, and parser directives:
+
+```markdown
+<!-- TODO: Migrate to composite key after v2.0 release -->
+<!-- This model is deprecated, see UserV2 -->
 ```
 
 ### 4.3 Behavior Definition
@@ -1404,6 +1546,45 @@ With specified structure:
   - value:
     - title: string
     - description: string
+```
+
+#### 4.9.4 Nesting Depth Guidelines
+
+Object nesting should not exceed 3 levels for readability in markdown viewers. Deeper structures should be extracted into separate models.
+
+**Acceptable (3 levels):**
+
+```markdown
+- shipping: object
+  - address: object
+    - street: string(200)
+    - city: string(100)
+    - postal_code: string(20)
+  - method: string
+```
+
+**Avoid (4+ levels):**
+
+```markdown
+- config: object
+  - display: object
+    - theme: object
+      - colors: object          # Level 4 — extract to separate model
+        - primary: string
+        - secondary: string
+```
+
+**Refactored:**
+
+```markdown
+## ThemeColors
+- primary: string(7)
+- secondary: string(7)
+- accent: string(7)
+
+## DisplayConfig
+- theme_colors: ThemeColors     # Reference instead of deep nesting
+- font_size: integer = 14
 ```
 
 ### 4.10 Validation Rules

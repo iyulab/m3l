@@ -12,7 +12,7 @@ import type {
 export const AST_VERSION = '1.0';
 
 /** Parser package version — kept in sync with package.json */
-export const PARSER_VERSION = '0.1.0';
+export const PARSER_VERSION = '0.1.1';
 
 /**
  * Resolve and merge multiple parsed file ASTs into a single M3LAST.

@@ -17,8 +17,15 @@
     .\update-version.ps1 -DryRun
 #>
 param(
-    [switch]$DryRun
+    [switch]$DryRun,
+    [Parameter(Position=0)]
+    [string]$Command
 )
+
+# Support positional "check" command as alias for -DryRun
+if ($Command -eq 'check') {
+    $DryRun = $true
+}
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -109,6 +116,17 @@ Update-File `
     -Pattern 'ParserVersion\s*=\s*"[\d.]+"' `
     -Replacement "ParserVersion = `"$version`"" `
     -Label 'ParserVersion'
+
+Write-Host ""
+
+# --- Tests (version assertions) ---
+Write-Host "[Tests]" -ForegroundColor White
+
+Update-File `
+    -Path (Join-Path $root 'parser/csharp/tests/M3L.Tests/IntegrationTests.cs') `
+    -Pattern 'Assert\.Equal\("[\d.]+",\s*M3LParser\.GetParserVersion\(\)\)' `
+    -Replacement "Assert.Equal(`"$version`", M3LParser.GetParserVersion())" `
+    -Label 'C# test version assertion'
 
 Write-Host ""
 

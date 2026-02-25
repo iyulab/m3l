@@ -23,10 +23,13 @@
    2. [Comments and Documentation](#42-comments-and-documentation)
    3. [Behavior Definition](#43-behavior-definition)
    4. [Computed Fields](#44-computed-fields)
-   5. [Conditional Fields](#45-conditional-fields)
-   6. [Complex Data Structures](#46-complex-data-structures)
-   7. [Validation Rules](#47-validation-rules)
-   8. [Templates and Generics](#48-templates-and-generics)
+   5. [Lookup Fields](#45-lookup-fields)
+   6. [Rollup Fields](#46-rollup-fields)
+   7. [Derived Views](#47-derived-views)
+   8. [Conditional Fields](#48-conditional-fields)
+   9. [Complex Data Structures](#49-complex-data-structures)
+   10. [Validation Rules](#410-validation-rules)
+   11. [Templates and Generics](#411-templates-and-generics)
 5. [External References](#5-external-references)
    1. [Imports](#51-imports)
    2. [External Schema References](#52-external-schema-references)
@@ -98,6 +101,11 @@ M3L provides multiple ways to express the same concepts:
     - target: Person
     - from: author_id
   ```
+
+- **Derived Patterns**: Cross-model expressions for lookup, aggregation, and view composition
+  - Lookup: `@lookup(fk_field.target_field)` — Reference a value through a relationship
+  - Rollup: `@rollup(Target.fk, aggregate(field))` — Aggregate across a 1:N relationship
+  - View: `## ViewName ::view` — Compose multiple models into a read-only virtual model
 
 ### 1.4 Notation Principles
 
@@ -315,6 +323,22 @@ M3L provides consistent rules for denoting data types:
 - is_active: boolean = true # Boolean with default value true
 ```
 
+#### 2.4.5 Derived Field Type Inference
+
+Derived fields can infer their type from the source:
+
+- **Lookup**: Follows the source field type. `@lookup(product_id.name)` inherits the type of `Product.name`.
+- **Rollup**: Determined by aggregate function — `count` → `integer`, `sum` → source type, `avg` → `decimal`.
+- **Computed**: Inferred from expression or explicitly specified.
+
+```markdown
+# Explicit type (recommended)
+- product_name: string @lookup(product_id.name)
+
+# Type inference (follows source field type)
+- product_name: @lookup(product_id.name)
+```
+
 ### 2.5 Attribute Notation
 
 In M3L, the `@` prefix is used to define attributes of fields or models. These can be interpreted as constraints, validations, behaviors, etc.
@@ -408,6 +432,12 @@ M3L allows for custom framework-specific attributes using square brackets:
 These custom attributes can be used to provide platform-specific metadata that will be processed by implementation-specific parsers.
 
 ## 3. Special Elements
+
+M3L uses type indicators after `::` to define special element types:
+
+- `::enum` — Enumeration type (predefined set of values)
+- `::interface` — Interface type (shared field definitions)
+- `::view` — Derived view type (read-only, virtual model composed from other models)
 
 ### 3.1 Enum Definition
 
@@ -846,9 +876,9 @@ Behaviors define events and actions associated with a model.
   - condition: status_changed
 ```
 
-### 4.4 Computed Fields
+### 4.4 Computed Fields (Row-Level)
 
-Computed fields derive their values from expressions and other fields, providing calculated columns in the database.
+Computed fields derive their values from expressions and other fields **within the same row**, providing calculated columns in the database. For cross-model derivations, see [Lookup Fields (4.5)](#45-lookup-fields) and [Rollup Fields (4.6)](#46-rollup-fields).
 
 #### 4.4.1 Basic Computed Fields
 
@@ -957,17 +987,378 @@ Computed fields derive their values from expressions and other fields, providing
 - json_extract: string @computed("JSON_EXTRACT(metadata, '$.category')")
 ```
 
-### 4.5 Conditional Fields
+### 4.5 Lookup Fields
+
+Lookup fields reference a value from a related model by following a foreign key relationship. They are **read-only** and computed at runtime unless `@persisted` is specified.
+
+#### 4.5.1 Basic Lookup
+
+```markdown
+- fieldName: type @lookup(fk_field.target_field)
+```
+
+**Single-hop reference:**
+
+```markdown
+## OrderItem
+- product_id: identifier @reference(Product)
+- quantity: integer @min(1)
+
+# Lookup fields
+- product_name: string @lookup(product_id.name)
+- product_sku: string @lookup(product_id.sku)
+- product_price: decimal(10,2) @lookup(product_id.price)
+```
+
+**Multi-hop chain reference:**
+
+```markdown
+## OrderItem
+- order_id: identifier @reference(Order)
+
+# 2-hop: OrderItem → Order → Customer
+- customer_name: string @lookup(order_id.customer_id.name)
+- customer_email: string @lookup(order_id.customer_id.email)
+```
+
+#### 4.5.2 Lookup with Persistence
+
+Frequently accessed Lookup fields can be denormalized with `@persisted`:
+
+```markdown
+# Realtime reference (default)
+- product_name: string @lookup(product_id.name)
+
+# Denormalized storage (performance optimization)
+- product_name: string @lookup(product_id.name) @persisted
+```
+
+`@persisted` Lookup fields require a synchronization strategy when the source changes, handled by Behaviors or the implementation layer.
+
+#### 4.5.3 Extended Format
+
+For complex Lookup definitions, use the extended format following the same flat structure as Computed Fields (4.4.2):
+
+```markdown
+- customer_name: string
+  - lookup: order_id.customer_id.name
+  - fallback: "Unknown Customer"
+  - description: "Customer name via order reference"
+```
+
+Simple Format and Extended Format correspondence:
+
+```markdown
+# Simple — single line
+- product_name: string @lookup(product_id.name)
+
+# Extended — when additional settings are needed
+- product_name: string
+  - lookup: product_id.name
+  - fallback: "N/A"
+  - persisted: true
+  - description: "Product name from reference"
+```
+
+#### 4.5.4 Lookup Constraints
+
+- **Maximum chain depth**: Up to 3-hop recommended. Beyond that, use Derived Views (4.7).
+- **No circular references**: The parser must raise an error if a Lookup chain loops back to itself.
+- **Nullable propagation**: If any reference in the chain is nullable, the result is also nullable.
+- **Reference validation**: Each FK field in the Lookup path must have a `@reference` attribute declared. `@lookup(product_id.name)` requires `product_id` to have `@reference(Product)`, otherwise the parser raises an error.
+
+```markdown
+# category_id is nullable → result is nullable
+- category_name: string? @lookup(category_id.name)
+
+# Chain intermediate is nullable: order.customer_id? → result nullable
+- customer_name: string? @lookup(order_id.customer_id.name)
+```
+
+### 4.6 Rollup Fields
+
+Rollup fields aggregate values from child records in a 1:N relationship. They are **read-only** and computed at runtime unless `@persisted` is specified.
+
+#### 4.6.1 Basic Rollup
+
+```markdown
+- fieldName: type @rollup(TargetModel.fk_field, aggregate(target_field?))
+```
+
+Components:
+- **TargetModel**: The model to aggregate from
+- **fk_field**: The foreign key field in the target model that references the current model
+- **aggregate**: The aggregation function
+- **target_field**: The field to aggregate (optional for `count`)
+
+#### 4.6.2 Reference Validation
+
+Rollup **consumes** relationships but does not **define** them. The Single Source of Truth for relationships is `@reference`.
+
+Validation rules:
+1. In `@rollup(TargetModel.fk_field, ...)`, the `fk_field` in `TargetModel` must have `@reference(CurrentModel)` declared.
+2. If the `@reference` does not exist, the parser must raise an error.
+3. If a `### Relations` section exists, the parser may use it for additional validation, but it is not required.
+
+```markdown
+## OrderItem
+- order_id: identifier @reference(Order)   # This @reference must exist
+
+## Order
+- item_count: integer @rollup(OrderItem.order_id, count)  # Valid: OrderItem.order_id has @reference(Order)
+```
+
+Invalid example (parser error):
+
+```markdown
+## OrderItem
+- order_id: identifier    # No @reference
+
+## Order
+- item_count: integer @rollup(OrderItem.order_id, count)
+  # ERROR: OrderItem.order_id does not have @reference(Order) declared
+```
+
+#### 4.6.3 Supported Aggregate Functions
+
+| Function | Description | Target Field | Result Type |
+|---|---|---|---|
+| `count` | Record count | Not required | `integer` |
+| `sum(field)` | Sum | Numeric field | Source type |
+| `avg(field)` | Average | Numeric field | `decimal` |
+| `min(field)` | Minimum | Numeric/Date | Source type |
+| `max(field)` | Maximum | Numeric/Date | Source type |
+| `list(field)` | Value list | Any type | `source_type[]` |
+| `count_distinct(field)` | Distinct count | Any type | `integer` |
+
+#### 4.6.4 Usage Examples
+
+```markdown
+## Order
+- id: identifier @primary
+- customer_id: identifier @reference(Customer)
+- status: enum = "pending"
+  - pending: "Pending"
+  - paid: "Paid"
+  - shipped: "Shipped"
+  - cancelled: "Cancelled"
+
+# Rollup fields
+- item_count: integer @rollup(OrderItem.order_id, count)
+- total_amount: decimal(12,2) @rollup(OrderItem.order_id, sum(subtotal))
+- avg_item_price: decimal(10,2) @rollup(OrderItem.order_id, avg(unit_price))
+- max_quantity: integer @rollup(OrderItem.order_id, max(quantity))
+- product_names: string[] @rollup(OrderItem.order_id, list(product_name))
+```
+
+```markdown
+## Customer
+- id: identifier @primary
+- name: string(100)
+
+# Rollup fields
+- order_count: integer @rollup(Order.customer_id, count)
+- total_spent: decimal(12,2) @rollup(Order.customer_id, sum(total_amount))
+- last_order_date: timestamp? @rollup(Order.customer_id, max(ordered_at))
+- unique_products: integer @rollup(Order.customer_id, count_distinct(product_id))
+```
+
+#### 4.6.5 Conditional Rollup
+
+Filters can be added to aggregation:
+
+```markdown
+# Simple format
+- active_orders: integer @rollup(Order.customer_id, count, where: "status != 'cancelled'")
+- paid_total: decimal(12,2) @rollup(Order.customer_id, sum(total_amount), where: "status = 'paid'")
+```
+
+Extended format (for complex conditions):
+
+```markdown
+- monthly_revenue: decimal(12,2)
+  - rollup: OrderItem.order_id
+  - function: sum(subtotal)
+  - where: "status != 'cancelled' AND ordered_at >= date_add(today(), -30, 'day')"
+  - description: "Revenue from non-cancelled items in the last 30 days"
+```
+
+> **Expression note**: The `where` clause follows the same platform-specific expression convention as `@computed`. M3L focuses on **declaring the intent** (that this is a conditional aggregation), while the specific expression syntax is delegated to the implementation layer.
+
+#### 4.6.6 Rollup Chaining
+
+Rollup results can be referenced by other Rollup or Computed fields:
+
+```markdown
+## Customer
+- order_count: integer @rollup(Order.customer_id, count)
+- total_spent: decimal(12,2) @rollup(Order.customer_id, sum(total_amount))
+
+# Computed using Rollup results
+- avg_order_value: decimal(10,2) @computed("total_spent / NULLIF(order_count, 0)")
+- customer_tier: string @computed("CASE WHEN total_spent > 10000 THEN 'Gold' WHEN total_spent > 5000 THEN 'Silver' ELSE 'Bronze' END")
+```
+
+#### 4.6.7 Rollup Constraints
+
+- Rollup is only available on **direct 1:N relationships**. For M:N, define through the intermediate table.
+- The `where` clause in conditional Rollup can only reference stored/computed fields of the target model. Referencing other Rollup results is not allowed (prevents circular dependencies).
+- `@persisted` Rollup requires a materialization strategy; update triggers must be defined in the implementation layer.
+
+### 4.7 Derived Views
+
+Derived Views are virtual models composed from multiple models. They correspond to database Views and use the `::view` type indicator.
+
+#### 4.7.1 Basic Syntax
+
+```markdown
+## ViewName ::view
+> View description
+
+### Source
+- from: PrimaryModel
+- join: TargetModel on JoinCondition   # optional
+- where: "filter condition"             # optional
+- order_by: field direction             # optional
+- group_by: [fields]                    # optional (aggregate views)
+
+- fieldName: type @from(Model.field)
+- fieldName: type @rollup(...)
+- fieldName: type @computed("...")
+```
+
+Components:
+- `::view` — Declares this model as a derived view, not a stored table
+- `### Source` — Data source definition section, following the same H3 section pattern as `### Indexes`, `### Relations`, and `### Metadata`
+- `@from(Model.field)` — Maps a field from the source model
+
+> **Section separation principle**: View directives (`from`, `join`, `where`, etc.) are placed inside a `### Source` section, separate from field definitions. This follows the existing M3L pattern where model-level meta information is always separated into H3 sections.
+
+> **`@from` vs `@lookup`**: Both reference fields from other models but work in different contexts. `@lookup` is an inline navigation — it declares an FK path and the runtime auto-joins. `@from` is an explicit projection — it selects from models already joined in `### Source`. Principle: **Lookup navigates, From projects.**
+
+#### 4.7.2 Simple View (Single Source)
+
+```markdown
+## ActiveProducts ::view
+> Active products available for sale
+
+### Source
+- from: Product
+- where: "is_active = true AND stock_quantity > 0"
+- order_by: name asc
+
+- id: identifier @from(Product.id)
+- name: string @from(Product.name)
+- price: decimal(10,2) @from(Product.price)
+- stock: integer @from(Product.stock_quantity)
+```
+
+#### 4.7.3 Join View (Multi Source)
+
+```markdown
+## OrderDetail ::view
+> Order detail information - combines order, customer, and item data
+
+### Source
+- from: Order
+- join: Customer on Order.customer_id = Customer.id
+- join: OrderItem on Order.id = OrderItem.order_id
+- join: Product on OrderItem.product_id = Product.id
+
+- order_number: string @from(Order.order_number)
+- ordered_at: timestamp @from(Order.ordered_at)
+- status: string @from(Order.status)
+- customer_name: string @from(Customer.name)
+- customer_email: string @from(Customer.email)
+- product_name: string @from(Product.name)
+- quantity: integer @from(OrderItem.quantity)
+- unit_price: decimal(10,2) @from(OrderItem.unit_price)
+- subtotal: decimal(12,2) @from(OrderItem.subtotal)
+```
+
+#### 4.7.4 Aggregate View
+
+```markdown
+## CustomerStats ::view
+> Per-customer order statistics
+
+### Source
+- from: Customer
+- group_by: [Customer.id, Customer.name, Customer.email]
+
+- customer_name: string @from(Customer.name)
+- email: string @from(Customer.email)
+- total_orders: integer @rollup(Order.customer_id, count)
+- total_spent: decimal(12,2) @rollup(Order.customer_id, sum(total_amount))
+- last_order: timestamp? @rollup(Order.customer_id, max(ordered_at))
+- avg_order_value: decimal(10,2) @computed("total_spent / NULLIF(total_orders, 0)")
+- tier: string @computed("CASE WHEN total_spent > 10000 THEN 'Gold' WHEN total_spent > 5000 THEN 'Silver' ELSE 'Bronze' END")
+```
+
+#### 4.7.5 Materialized View
+
+Physically stored views for performance optimization:
+
+```markdown
+## MonthlySalesReport ::view @materialized
+> Monthly sales report - refreshed daily
+
+### Source
+- from: Order
+- where: "status IN ('paid', 'shipped', 'delivered')"
+- group_by: [year_month]
+
+### Refresh
+- strategy: scheduled
+- interval: "daily 02:00"
+
+- year_month: string @computed("FORMAT(ordered_at, 'yyyy-MM')")
+- order_count: integer @rollup(Order.customer_id, count)
+- total_revenue: decimal(12,2) @rollup(Order.customer_id, sum(total_amount))
+- unique_customers: integer @computed("COUNT(DISTINCT customer_id)")
+```
+
+#### 4.7.6 View Nesting
+
+A view can use another view as its data source by specifying it in the `from` directive:
+
+```markdown
+## ActiveCustomerStats ::view
+> Customer statistics filtered to active customers only
+
+### Source
+- from: CustomerStats
+- where: "total_orders > 0 AND last_order > date_add(today(), -365, 'day')"
+
+- customer_name: string @from(CustomerStats.customer_name)
+- email: string @from(CustomerStats.email)
+- total_orders: integer @from(CustomerStats.total_orders)
+- total_spent: decimal(12,2) @from(CustomerStats.total_spent)
+- last_order: timestamp? @from(CustomerStats.last_order)
+- churn_risk: string @computed("CASE WHEN last_order < date_add(today(), -180, 'day') THEN 'High' WHEN last_order < date_add(today(), -90, 'day') THEN 'Medium' ELSE 'Low' END")
+```
+
+> **Nesting instead of inheritance**: View extension does not use the `:` (inheritance) syntax. In M3L, `:` means field inheritance (`## Product : BaseModel`), but view extension is query composition (source + filter + projection) — a semantically different operation. Following the SQL pattern `CREATE VIEW AS SELECT ... FROM another_view WHERE ...`, views are nested explicitly via `from`.
+
+#### 4.7.7 View Constraints
+
+- Derived Views are **read-only**. They cannot be targets of INSERT/UPDATE/DELETE operations.
+- Views can reference other views via `from`, but **maximum nesting depth of 2** is recommended.
+- `@materialized` views must specify a refresh strategy in the `### Refresh` section.
+- Joins require **explicit conditions only** (no implicit joins).
+- M3L Views focus on **declarative composition**. Complex subqueries, UNION, window functions, etc. are delegated to the implementation layer.
+
+### 4.8 Conditional Fields
 
 Fields that exist or are required only under certain conditions.
 
-#### 4.5.1 Basic Conditional Fields
+#### 4.8.1 Basic Conditional Fields
 
 ```markdown
 - expiry_date: date @if(status == "temporary")
 ```
 
-#### 4.5.2 Complex Conditional Fields
+#### 4.8.2 Complex Conditional Fields
 
 ```markdown
 - company_name: string(100)
@@ -975,11 +1366,11 @@ Fields that exist or are required only under certain conditions.
   - visible: "account_type == 'business'"
 ```
 
-### 4.6 Complex Data Structures
+### 4.9 Complex Data Structures
 
 Defining complex nested data structures.
 
-#### 4.6.1 Object Types
+#### 4.9.1 Object Types
 
 ```markdown
 - address: object
@@ -989,7 +1380,7 @@ Defining complex nested data structures.
   - country: string(2)
 ```
 
-#### 4.6.2 Array of Objects
+#### 4.9.2 Array of Objects
 
 ```markdown
 - addresses: object[]
@@ -999,7 +1390,7 @@ Defining complex nested data structures.
   - country: string
 ```
 
-#### 4.6.3 Map Types
+#### 4.9.3 Map Types
 
 ```markdown
 - preferences: map<string, string>
@@ -1015,17 +1406,17 @@ With specified structure:
     - description: string
 ```
 
-### 4.7 Validation Rules
+### 4.10 Validation Rules
 
 Rules for validating field values.
 
-#### 4.7.1 Basic Validation
+#### 4.10.1 Basic Validation
 
 ```markdown
 - username: string(50) @validate(pattern("[a-zA-Z0-9_]+"))
 ```
 
-#### 4.7.2 Multiple Validation Rules
+#### 4.10.2 Multiple Validation Rules
 
 ```markdown
 - email: string
@@ -1035,7 +1426,7 @@ Rules for validating field values.
     - unique: true
 ```
 
-#### 4.7.3 Cross-Field Validation
+#### 4.10.3 Cross-Field Validation
 
 ```markdown
 ### Validations
@@ -1045,11 +1436,11 @@ Rules for validating field values.
   - trigger: [create, password_update]
 ```
 
-### 4.8 Templates and Generics
+### 4.11 Templates and Generics
 
 Defining reusable templates with generic parameters.
 
-#### 4.8.1 Generic Types
+#### 4.11.1 Generic Types
 
 ```markdown
 ## List<T>
@@ -1057,7 +1448,7 @@ Defining reusable templates with generic parameters.
 - count: integer @computed("items.length")
 ```
 
-#### 4.8.2 Using Generic Types
+#### 4.11.2 Using Generic Types
 
 ```markdown
 ## ProductList : List<Product>
@@ -1183,6 +1574,21 @@ Defining changes between schema versions.
 ```markdown
 # Order Processing Data Model
 
+## Customer : BaseModel
+- name: string(100)
+- email: string(320) @unique
+- tier: string = "Bronze"
+- is_active: boolean = true
+
+# Rollup fields
+- order_count: integer @rollup(Order.customer_id, count)
+- total_spent: decimal(12,2) @rollup(Order.customer_id, sum(total_amount))
+- last_order_date: timestamp? @rollup(Order.customer_id, max(ordered_at))
+
+# Computed from Rollup
+- avg_order_value: decimal(10,2) @computed("total_spent / NULLIF(order_count, 0)")
+- computed_tier: string @computed("CASE WHEN total_spent > 10000 THEN 'Gold' WHEN total_spent > 5000 THEN 'Silver' ELSE 'Bronze' END")
+
 ## Product : BaseModel
 - sku: string(50) @unique
 - name: string(200)
@@ -1207,6 +1613,13 @@ Defining changes between schema versions.
   - is_primary: boolean = false
 - tags: string[]?
 
+# Lookup
+- category_name: string? @lookup(category_id.name)
+
+# Computed
+- profit_margin: decimal(5,2)? @computed("CASE WHEN cost > 0 THEN ((price - cost) / cost) * 100 END")
+- is_in_stock: boolean @computed("stock_quantity > 0 AND is_active = true")
+
 - @index(name, sku, name: "product_search", fulltext: true)
 
 - @relation(category, -> Category, from: category_id) "Category this product belongs to"
@@ -1217,12 +1630,11 @@ Defining changes between schema versions.
 - customer_id: identifier @reference(Customer)
 - status: enum = "pending"
   - pending: "Pending payment"
-  - paid: "Paid" 
+  - paid: "Paid"
   - processing: "Processing"
   - shipped: "Shipped"
-  - delivered: "Delivered" 
+  - delivered: "Delivered"
   - cancelled: "Cancelled"
-- total_amount: decimal(12, 2) @min(0)
 - shipping_address: object
   - street: string
   - city: string
@@ -1240,6 +1652,17 @@ Defining changes between schema versions.
 - ordered_at: timestamp = now()
 - shipped_at: timestamp?
 
+# Lookup
+- customer_name: string @lookup(customer_id.name)
+- customer_email: string @lookup(customer_id.email)
+
+# Rollup
+- item_count: integer @rollup(OrderItem.order_id, count)
+- total_amount: decimal(12,2) @rollup(OrderItem.order_id, sum(subtotal))
+
+# Computed
+- days_since_order: integer @computed("DATEDIFF(DAY, ordered_at, GETDATE())")
+
 - @relation(customer, -> Customer, from: customer_id) "Customer who placed this order"
 - @relation(items, <- OrderItem.order_id) "Items in this order"
 
@@ -1249,10 +1672,51 @@ Defining changes between schema versions.
 - quantity: integer @min(1)
 - unit_price: decimal(10, 2)
 - discount: decimal(10, 2) = 0
+
+# Lookup
+- product_name: string @lookup(product_id.name)
+- product_sku: string @lookup(product_id.sku)
+- customer_name: string @lookup(order_id.customer_id.name)  # 2-hop
+
+# Computed
 - subtotal: decimal(12, 2) @computed("quantity * unit_price - discount")
 
 - @relation(order, -> Order, from: order_id) "Order containing this item"
 - @relation(product, -> Product, from: product_id) "Product in this order item"
+
+## OrderSummary ::view
+> Order summary view for dashboard
+
+### Source
+- from: Order
+- join: Customer on Order.customer_id = Customer.id
+- where: "Order.status != 'cancelled'"
+- order_by: Order.ordered_at desc
+
+- order_number: string @from(Order.order_number)
+- ordered_at: timestamp @from(Order.ordered_at)
+- status: string @from(Order.status)
+- customer_name: string @from(Customer.name)
+- customer_tier: string @from(Customer.tier)
+- item_count: integer @rollup(OrderItem.order_id, count)
+- total_amount: decimal(12,2) @rollup(OrderItem.order_id, sum(subtotal))
+
+## CustomerDashboard ::view
+> Per-customer comprehensive statistics
+
+### Source
+- from: Customer
+- where: "is_active = true"
+- group_by: [Customer.id, Customer.name, Customer.email, Customer.tier]
+
+- name: string @from(Customer.name)
+- email: string @from(Customer.email)
+- tier: string @from(Customer.tier)
+- order_count: integer @rollup(Order.customer_id, count)
+- total_spent: decimal(12,2) @rollup(Order.customer_id, sum(total_amount))
+- active_orders: integer @rollup(Order.customer_id, count, where: "status IN ('pending', 'paid', 'processing')")
+- last_order: timestamp? @rollup(Order.customer_id, max(ordered_at))
+- avg_order_value: decimal(10,2) @computed("total_spent / NULLIF(order_count, 0)")
 ```
 
 ## 8. M3L Simple Extensions

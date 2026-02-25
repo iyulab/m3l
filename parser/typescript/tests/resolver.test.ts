@@ -53,7 +53,7 @@ describe('resolver', () => {
     const a = parseSource('## User\n- name: string', 'a.m3l.md');
     const b = parseSource('## User\n- email: string', 'b.m3l.md');
     const merged = resolve([a, b]);
-    expect(merged.errors.some(e => e.code === 'E005')).toBe(true);
+    expect(merged.errors.some(e => e.code === 'M3L-E005')).toBe(true);
   });
 
   it('should categorize enums, interfaces, views into separate arrays', () => {
@@ -76,7 +76,7 @@ describe('resolver', () => {
   it('should report unresolved inheritance references (E007)', () => {
     const src = parseSource('## User : NonExistent\n- name: string', 'test.m3l.md');
     const merged = resolve([src]);
-    expect(merged.errors.some(e => e.code === 'E007')).toBe(true);
+    expect(merged.errors.some(e => e.code === 'M3L-E007')).toBe(true);
   });
 
   it('should use namespace as project name', () => {

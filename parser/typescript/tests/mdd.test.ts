@@ -544,8 +544,8 @@ describe('F. Validator tests', () => {
 
     // In mes.m3l, all FK fields have @reference, so E001/E002 errors should be minimal or zero
     // for references within the same file
-    const e001Errors = result.errors.filter(e => e.code === 'E001');
-    const e002Errors = result.errors.filter(e => e.code === 'E002');
+    const e001Errors = result.errors.filter(e => e.code === 'M3L-E001');
+    const e002Errors = result.errors.filter(e => e.code === 'M3L-E002');
 
     // WorkOrder rollup targets WorkOrderItem.work_order_id which has @reference(WorkOrder)
     // so there should be no E001 for that rollup
@@ -565,7 +565,7 @@ describe('F. Validator tests', () => {
 
     // raybox.m3l references Machine, WorkOrder, etc. from mes.m3l which are not in this standalone AST
     // Inheritance resolution should report E007 for unresolved parents like BaseEntity, Auditable
-    const e007Errors = result.errors.filter(e => e.code === 'E007');
+    const e007Errors = result.errors.filter(e => e.code === 'M3L-E007');
     expect(e007Errors.length).toBeGreaterThan(0);
   });
 
@@ -576,7 +576,7 @@ describe('F. Validator tests', () => {
     const result = validate(ast);
 
     // With both files merged, BaseEntity and Auditable should be resolved
-    const e007Errors = result.errors.filter(e => e.code === 'E007');
+    const e007Errors = result.errors.filter(e => e.code === 'M3L-E007');
     expect(e007Errors.length).toBe(0);
   });
 });

@@ -20,7 +20,7 @@ export function validate(ast: M3LAST, options: ValidateOptions = {}): ValidateRe
     modelMap.set(m.name, m);
   }
 
-  // E001: @rollup FK missing @reference
+  // M3L-E001: @rollup FK missing @reference
   for (const model of allModels) {
     for (const field of model.fields) {
       if (field.kind === 'rollup' && field.rollup) {
@@ -29,7 +29,7 @@ export function validate(ast: M3LAST, options: ValidateOptions = {}): ValidateRe
     }
   }
 
-  // E002: @lookup path FK missing @reference
+  // M3L-E002: @lookup path FK missing @reference
   for (const model of allModels) {
     for (const field of model.fields) {
       if (field.kind === 'lookup' && field.lookup) {
@@ -38,12 +38,12 @@ export function validate(ast: M3LAST, options: ValidateOptions = {}): ValidateRe
     }
   }
 
-  // E004: View @from references model not found
+  // M3L-E004: View @from references model not found
   for (const view of ast.views) {
     if (view.source_def?.from) {
       if (!modelMap.has(view.source_def.from)) {
         errors.push({
-          code: 'E004',
+          code: 'M3L-E004',
           severity: 'error',
           file: view.source,
           line: view.line,
@@ -54,13 +54,13 @@ export function validate(ast: M3LAST, options: ValidateOptions = {}): ValidateRe
     }
   }
 
-  // E005: Duplicate field names (already checked in resolver, but re-check for safety)
+  // M3L-E006: Duplicate field names (already checked in resolver, but re-check for safety)
   for (const model of allModels) {
     const seen = new Set<string>();
     for (const field of model.fields) {
       if (seen.has(field.name)) {
         errors.push({
-          code: 'E005',
+          code: 'M3L-E006',
           severity: 'error',
           file: field.loc.file,
           line: field.loc.line,
@@ -76,18 +76,18 @@ export function validate(ast: M3LAST, options: ValidateOptions = {}): ValidateRe
   if (options.strict) {
     for (const model of allModels) {
       for (const field of model.fields) {
-        // W001: Field line length > 80 chars
+        // M3L-W001: Field line length > 80 chars
         // We check the source loc raw length — approximate using field attributes count
         checkFieldLineLength(field, model, warnings);
 
-        // W003: Framework attrs without backtick (already processed in lexer, skip)
+        // M3L-W003: Framework attrs without backtick (already processed in lexer, skip)
 
-        // W004: Lookup chain > 3 hops
+        // M3L-W004: Lookup chain > 3 hops
         if (field.kind === 'lookup' && field.lookup) {
           const hops = field.lookup.path.split('.').length;
           if (hops > 3) {
             warnings.push({
-              code: 'W004',
+              code: 'M3L-W004',
               severity: 'warning',
               file: field.loc.file,
               line: field.loc.line,
@@ -98,11 +98,11 @@ export function validate(ast: M3LAST, options: ValidateOptions = {}): ValidateRe
         }
       }
 
-      // W002: Object nesting > 3 levels
+      // M3L-W002: Object nesting > 3 levels
       checkNestingDepth(model.fields, 1, model, warnings);
     }
 
-    // W006: Inline enum missing values: key
+    // M3L-W006: Inline enum missing values: key
     for (const model of allModels) {
       for (const field of model.fields) {
         if (field.type === 'enum' && field.enum_values && field.enum_values.length > 0) {
@@ -128,7 +128,7 @@ function validateRollupReference(
   const rollup = field.rollup!;
   const targetModel = modelMap.get(rollup.target);
   if (!targetModel) {
-    // Target model doesn't exist — this is E007 (already caught in resolver)
+    // Target model doesn't exist — this is M3L-E007 (already caught in resolver)
     return;
   }
 
@@ -144,7 +144,7 @@ function validateRollupReference(
   );
   if (!hasReference) {
     errors.push({
-      code: 'E001',
+      code: 'M3L-E001',
       severity: 'error',
       file: field.loc.file,
       line: field.loc.line,
@@ -175,7 +175,7 @@ function validateLookupReference(
   );
   if (!hasReference) {
     errors.push({
-      code: 'E002',
+      code: 'M3L-E002',
       severity: 'error',
       file: field.loc.file,
       line: field.loc.line,
@@ -207,7 +207,7 @@ function checkFieldLineLength(
 
   if (len > 80) {
     warnings.push({
-      code: 'W001',
+      code: 'M3L-W001',
       severity: 'warning',
       file: field.loc.file,
       line: field.loc.line,
@@ -227,7 +227,7 @@ function checkNestingDepth(
     if (field.fields && field.fields.length > 0) {
       if (depth >= 3) {
         warnings.push({
-          code: 'W002',
+          code: 'M3L-W002',
           severity: 'warning',
           file: field.loc.file,
           line: field.loc.line,

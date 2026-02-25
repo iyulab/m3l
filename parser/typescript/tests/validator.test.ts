@@ -22,7 +22,7 @@ describe('validator', () => {
       '- author_id: identifier',
     ].join('\n'));
     const result = validate(ast);
-    expect(result.errors.some(e => e.code === 'E001')).toBe(true);
+    expect(result.errors.some(e => e.code === 'M3L-E001')).toBe(true);
   });
 
   it('E001: should pass when FK has @fk', () => {
@@ -36,7 +36,7 @@ describe('validator', () => {
       '- author_id: identifier @fk(Author.id)',
     ].join('\n'));
     const result = validate(ast);
-    expect(result.errors.filter(e => e.code === 'E001')).toHaveLength(0);
+    expect(result.errors.filter(e => e.code === 'M3L-E001')).toHaveLength(0);
   });
 
   it('E002: @lookup path FK missing @reference', () => {
@@ -47,7 +47,7 @@ describe('validator', () => {
       '- customer_name: string @lookup(customer_id.name)',
     ].join('\n'));
     const result = validate(ast);
-    expect(result.errors.some(e => e.code === 'E002')).toBe(true);
+    expect(result.errors.some(e => e.code === 'M3L-E002')).toBe(true);
   });
 
   it('E002: should pass when FK has @fk', () => {
@@ -61,7 +61,7 @@ describe('validator', () => {
       '- customer_name: string @lookup(customer_id.name)',
     ].join('\n'));
     const result = validate(ast);
-    expect(result.errors.filter(e => e.code === 'E002')).toHaveLength(0);
+    expect(result.errors.filter(e => e.code === 'M3L-E002')).toHaveLength(0);
   });
 
   it('E004: View references non-existent model', () => {
@@ -71,17 +71,17 @@ describe('validator', () => {
       '- from: NonExistentModel',
     ].join('\n'));
     const result = validate(ast);
-    expect(result.errors.some(e => e.code === 'E004')).toBe(true);
+    expect(result.errors.some(e => e.code === 'M3L-E004')).toBe(true);
   });
 
-  it('E005: duplicate field names within a model', () => {
+  it('M3L-E006: duplicate field names within a model', () => {
     const ast = buildAST([
       '## User',
       '- name: string(100)',
       '- name: string(200)',
     ].join('\n'));
     const result = validate(ast);
-    expect(result.errors.some(e => e.code === 'E005')).toBe(true);
+    expect(result.errors.some(e => e.code === 'M3L-E006')).toBe(true);
   });
 
   it('should pass validation on clean input', () => {
@@ -101,7 +101,7 @@ describe('validator', () => {
       '- very_long_field_name_here: string(200) @not_null @unique @searchable @index "A very long description"',
     ].join('\n'));
     const result = validate(ast, { strict: true });
-    expect(result.warnings.some(w => w.code === 'W001')).toBe(true);
+    expect(result.warnings.some(w => w.code === 'M3L-W001')).toBe(true);
   });
 
   it('should not report warnings without strict mode', () => {
@@ -110,7 +110,7 @@ describe('validator', () => {
       '- very_long_field_name: string(200) @not_null @unique @searchable "Long desc"',
     ].join('\n'));
     const result = validate(ast, { strict: false });
-    expect(result.warnings.filter(w => w.code === 'W001')).toHaveLength(0);
+    expect(result.warnings.filter(w => w.code === 'M3L-W001')).toHaveLength(0);
   });
 
   it('W004: lookup chain >3 hops (strict mode)', () => {
@@ -120,6 +120,6 @@ describe('validator', () => {
       '- deep_lookup: string @lookup(a.b.c.d)',
     ].join('\n'));
     const result = validate(ast, { strict: true });
-    expect(result.warnings.some(w => w.code === 'W004')).toBe(true);
+    expect(result.warnings.some(w => w.code === 'M3L-W004')).toBe(true);
   });
 });

@@ -9,7 +9,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 describe('integration', () => {
   it('should parse the full library sample', () => {
     const content = readFileSync(
-      join(__dirname, '../../samples/sample_library.m3l.md'),
+      join(__dirname, '../../../samples/sample_library.m3l.md'),
       'utf-8'
     );
     const ast = parseString(content, 'sample_library.m3l.md');
@@ -76,7 +76,7 @@ describe('integration', () => {
 
   it('should produce valid JSON output', () => {
     const content = readFileSync(
-      join(__dirname, '../../samples/sample_library.m3l.md'),
+      join(__dirname, '../../../samples/sample_library.m3l.md'),
       'utf-8'
     );
     const ast = parseString(content, 'sample_library.m3l.md');
@@ -90,7 +90,7 @@ describe('integration', () => {
 
   it('should parse inheritance correctly in library sample', () => {
     const content = readFileSync(
-      join(__dirname, '../../samples/sample_library.m3l.md'),
+      join(__dirname, '../../../samples/sample_library.m3l.md'),
       'utf-8'
     );
     const ast = parseString(content, 'sample_library.m3l.md');

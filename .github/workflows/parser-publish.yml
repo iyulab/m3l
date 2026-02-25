@@ -1,15 +1,15 @@
-name: Parser — Test & Publish
+name: Parser (TypeScript) — Test & Publish
 
 on:
   push:
     branches: [main]
     paths:
-      - 'parser/**'
+      - 'parser/typescript/**'
       - '.github/workflows/parser-publish.yml'
   pull_request:
     branches: [main]
     paths:
-      - 'parser/**'
+      - 'parser/typescript/**'
       - '.github/workflows/parser-publish.yml'
 
 jobs:
@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: parser
+        working-directory: parser/typescript
     steps:
       - uses: actions/checkout@v4
 
@@ -25,7 +25,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: parser/package-lock.json
+          cache-dependency-path: parser/typescript/package-lock.json
 
       - run: npm ci
       - run: npm run lint
@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: parser
+        working-directory: parser/typescript
     permissions:
       contents: read
     steps:

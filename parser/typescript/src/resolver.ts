@@ -103,7 +103,7 @@ function checkDuplicate<T extends { name: string; source: string; line: number }
   const existing = allMap.get(name);
   if (existing) {
     errors.push({
-      code: 'E005',
+      code: 'M3L-E005',
       severity: 'error',
       file: item.source,
       line: item.line,
@@ -134,7 +134,7 @@ function resolveInheritance(
     if (!parent) {
       if (!allNamedMap.has(name)) {
         errors.push({
-          code: 'E007',
+          code: 'M3L-E007',
           severity: 'error',
           file: fromModel.source,
           line: fromModel.line,
@@ -178,7 +178,7 @@ function checkDuplicateFields(model: ModelNode, errors: Diagnostic[]): void {
     const existing = seen.get(field.name);
     if (existing) {
       errors.push({
-        code: 'E005',
+        code: 'M3L-E005',
         severity: 'error',
         file: field.loc.file,
         line: field.loc.line,

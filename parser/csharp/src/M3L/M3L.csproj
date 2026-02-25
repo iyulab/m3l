@@ -1,17 +1,44 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <RootNamespace>M3L</RootNamespace>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <!-- NuGet Package Metadata -->
+  <PropertyGroup>
     <PackageId>Iyulab.M3L</PackageId>
     <Version>0.1.0</Version>
     <Authors>iyulab</Authors>
-    <Description>M3L parser — parse .m3l.md files into JSON AST</Description>
+    <Company>iyulab</Company>
+    <Description>M3L (Meta Model Markup Language) parser for .NET — parse .m3l.md Markdown files into a structured AST for code generation, validation, and tooling.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageTags>m3l;data-modeling;parser;ast;markdown</PackageTags>
+    <PackageTags>m3l;data-modeling;parser;ast;markdown;code-generation;schema</PackageTags>
+    <PackageProjectUrl>https://github.com/iyulab/m3l</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/iyulab/m3l</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Copyright>Copyright (c) iyulab</Copyright>
   </PropertyGroup>
+
+  <!-- SourceLink for debugging -->
+  <PropertyGroup>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
 </Project>

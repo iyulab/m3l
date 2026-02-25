@@ -12,7 +12,7 @@ public static class Resolver
     public const string AstVersion = "1.0";
 
     /// <summary>Parser package version — kept in sync with .csproj.</summary>
-    public const string ParserVersion = "0.1.2";
+    public const string ParserVersion = "0.1.3";
 
     public static M3LAst Resolve(List<ParsedFile> files, ProjectInfo? project = null)
     {
@@ -23,6 +23,7 @@ public static class Resolver
         var allEnums = new List<EnumNode>();
         var allInterfaces = new List<ModelNode>();
         var allViews = new List<ModelNode>();
+        var allAttrRegistry = new List<AttributeRegistryEntry>();
         var sources = new List<string>();
 
         foreach (var file in files)
@@ -32,6 +33,7 @@ public static class Resolver
             allEnums.AddRange(file.Enums);
             allInterfaces.AddRange(file.Interfaces);
             allViews.AddRange(file.Views);
+            allAttrRegistry.AddRange(file.AttributeRegistry);
         }
 
         // Build name maps
@@ -78,6 +80,29 @@ public static class Resolver
             CheckDuplicateFields(model, errors);
         }
 
+        // Tag isRegistered on attributes matching the registry
+        if (allAttrRegistry.Count > 0)
+        {
+            var registeredNames = new HashSet<string>(allAttrRegistry.Select(r => r.Name));
+            void TagAttrs(List<FieldAttribute> attrs)
+            {
+                foreach (var a in attrs)
+                {
+                    if (registeredNames.Contains(a.Name))
+                        a.IsRegistered = true;
+                }
+            }
+            void TagModel(ModelNode m)
+            {
+                TagAttrs(m.Attributes);
+                foreach (var f in m.Fields)
+                    TagAttrs(f.Attributes);
+            }
+            foreach (var m in allModels) TagModel(m);
+            foreach (var v in allViews) TagModel(v);
+            foreach (var i in allInterfaces) TagModel(i);
+        }
+
         // Detect namespace from first file if available
         var projectInfo = project ?? new ProjectInfo();
         if (string.IsNullOrEmpty(projectInfo.Name))
@@ -96,6 +121,7 @@ public static class Resolver
             Enums = allEnums,
             Interfaces = allInterfaces,
             Views = allViews,
+            AttributeRegistry = allAttrRegistry,
             Errors = errors,
             Warnings = warnings,
         };
@@ -225,6 +251,8 @@ public static class Resolver
             Name = a.Name,
             Args = a.Args != null ? new List<object>(a.Args) : null,
             Cascade = a.Cascade,
+            IsStandard = a.IsStandard,
+            IsRegistered = a.IsRegistered,
         })),
         FrameworkAttrs = f.FrameworkAttrs,
         Lookup = f.Lookup,

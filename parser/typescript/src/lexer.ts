@@ -11,7 +11,7 @@ const RE_LIST_ITEM = /^(\s*)- (.+)$/;
 const RE_BLANK = /^\s*$/;
 
 // H2 sub-patterns
-const RE_TYPE_INDICATOR = /^([\w][\w.]*(?:\([^)]*\))?)\s*::(\w+)(.*)$/;
+const RE_TYPE_INDICATOR = /^(@?[\w][\w.]*(?:\([^)]*\))?)\s*::(\w+)(.*)$/;
 const RE_MODEL_DEF = /^([\w][\w.]*(?:\([^)]*\))?)\s*(?::\s*(.+?))?(\s+@.+)?$/;
 
 // Field line patterns
@@ -154,11 +154,11 @@ export function lex(content: string, file: string): Token[] {
 }
 
 function tokenizeH2(content: string, raw: string, line: number): Token {
-  // Check for type indicator: ## Name ::enum, ::interface, ::view
+  // Check for type indicator: ## Name ::enum, ::interface, ::view, ::attribute
   const typeMatch = content.match(RE_TYPE_INDICATOR);
   if (typeMatch) {
     const namepart = typeMatch[1];
-    const typeIndicator = typeMatch[2] as 'enum' | 'interface' | 'view';
+    const typeIndicator = typeMatch[2];
     const rest = typeMatch[3]?.trim() || '';
 
     const { name, label } = parseNameLabel(namepart);
@@ -174,7 +174,8 @@ function tokenizeH2(content: string, raw: string, line: number): Token {
       data.description = descMatch[1];
     }
 
-    return { type: typeIndicator, raw, line, indent: 0, data };
+    const tokenType = typeIndicator === 'attribute' ? 'attribute_def' : typeIndicator as 'enum' | 'interface' | 'view';
+    return { type: tokenType, raw, line, indent: 0, data };
   }
 
   // Regular model: ## Name : Parent1, Parent2

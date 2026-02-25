@@ -9,6 +9,10 @@ public class FieldAttribute
     public string Name { get; set; } = "";
     public List<object>? Args { get; set; }
     public string? Cascade { get; set; }
+    /// <summary>Whether this is a standard M3L attribute (from the official catalog)</summary>
+    public bool? IsStandard { get; set; }
+    /// <summary>Whether this attribute is registered in an Attribute Registry (::attribute definition)</summary>
+    public bool? IsRegistered { get; set; }
 }
 
 public class CustomAttribute
@@ -17,6 +21,14 @@ public class CustomAttribute
     public string Content { get; set; } = "";
     /// <summary>Original text including brackets, e.g. "[MaxLength(100)]"</summary>
     public string Raw { get; set; } = "";
+    /// <summary>Parsed structure — name and arguments extracted from the content</summary>
+    public ParsedCustomAttribute? Parsed { get; set; }
+}
+
+public class ParsedCustomAttribute
+{
+    public string Name { get; set; } = "";
+    public List<object> Arguments { get; set; } = new();
 }
 
 public class EnumValue
@@ -146,6 +158,17 @@ public class Diagnostic
     public string Message { get; set; } = "";
 }
 
+public class AttributeRegistryEntry
+{
+    public string Name { get; set; } = "";
+    public string? Description { get; set; }
+    public List<string> Target { get; set; } = new();
+    public string Type { get; set; } = "boolean";
+    public List<int>? Range { get; set; }
+    public bool Required { get; set; }
+    public object? DefaultValue { get; set; }
+}
+
 public class ParsedFile
 {
     public string Source { get; set; } = "";
@@ -154,6 +177,7 @@ public class ParsedFile
     public List<EnumNode> Enums { get; set; } = new();
     public List<ModelNode> Interfaces { get; set; } = new();
     public List<ModelNode> Views { get; set; } = new();
+    public List<AttributeRegistryEntry> AttributeRegistry { get; set; } = new();
 }
 
 public class M3LAst
@@ -166,6 +190,7 @@ public class M3LAst
     public List<EnumNode> Enums { get; set; } = new();
     public List<ModelNode> Interfaces { get; set; } = new();
     public List<ModelNode> Views { get; set; } = new();
+    public List<AttributeRegistryEntry> AttributeRegistry { get; set; } = new();
     public List<Diagnostic> Errors { get; set; } = new();
     public List<Diagnostic> Warnings { get; set; } = new();
 }

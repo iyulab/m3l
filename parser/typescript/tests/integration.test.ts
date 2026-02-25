@@ -2,7 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { parseString } from '../src/index.js';
+import { parseString, STANDARD_ATTRIBUTES } from '../src/index.js';
+import { lex } from '../src/lexer.js';
+import { parseTokens } from '../src/parser.js';
+import { resolve } from '../src/resolver.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -83,6 +86,87 @@ describe('integration', () => {
     const parsed = JSON.parse(json);
     expect(parsed.models).toBeDefined();
     expect(parsed.views).toBeDefined();
+  });
+
+  it('should support full extensibility scenario: registry + isStandard + isRegistered + custom attrs', () => {
+    const registrySource = [
+      '## @pii ::attribute',
+      '> Personal identifiable information marker',
+      '- target: [field]',
+      '- type: boolean',
+      '- default: false',
+      '',
+      '## @audit_level ::attribute',
+      '> Audit compliance level (1-5)',
+      '- target: [field, model]',
+      '- type: integer',
+      '- range: [1, 5]',
+      '- required: false',
+      '- default: 1',
+    ].join('\n');
+
+    const modelSource = [
+      '## Customer @audit_level(3)',
+      '> CRM customer information',
+      '- id: identifier @primary @generated',
+      '- name: string(100) @searchable',
+      '- email: email @unique @pii',
+      '- ssn: string(11) @pii `[JsonIgnore]`',
+      '- score: float `[Range(0, 100)]`',
+    ].join('\n');
+
+    const regTokens = lex(registrySource, 'registry.m3l.md');
+    const regFile = parseTokens(regTokens, 'registry.m3l.md');
+    const modelTokens = lex(modelSource, 'model.m3l.md');
+    const modelFile = parseTokens(modelTokens, 'model.m3l.md');
+    const ast = resolve([regFile, modelFile]);
+
+    // 1. Registry entries parsed correctly
+    expect(ast.attributeRegistry).toHaveLength(2);
+    expect(ast.attributeRegistry[0].name).toBe('pii');
+    expect(ast.attributeRegistry[1].name).toBe('audit_level');
+    expect(ast.attributeRegistry[1].range).toEqual([1, 5]);
+
+    const customer = ast.models.find(m => m.name === 'Customer')!;
+
+    // 2. Model-level attribute: isStandard=undefined, isRegistered=true
+    const modelAudit = customer.attributes.find(a => a.name === 'audit_level');
+    expect(modelAudit).toBeDefined();
+    expect(modelAudit!.isStandard).toBeUndefined();
+    expect(modelAudit!.isRegistered).toBe(true);
+    // Note: model-level args are currently stored as string[] from lexer
+    expect(modelAudit!.args).toBeDefined();
+
+    // 3. Standard attributes: isStandard=true, isRegistered=undefined
+    const primary = customer.fields[0].attributes.find(a => a.name === 'primary');
+    expect(primary?.isStandard).toBe(true);
+    expect(primary?.isRegistered).toBeUndefined();
+
+    const generated = customer.fields[0].attributes.find(a => a.name === 'generated');
+    expect(generated?.isStandard).toBe(true);
+
+    // 4. Registered extension attributes: isStandard=undefined, isRegistered=true
+    const piiOnEmail = customer.fields[2].attributes.find(a => a.name === 'pii');
+    expect(piiOnEmail?.isStandard).toBeUndefined();
+    expect(piiOnEmail?.isRegistered).toBe(true);
+
+    const piiOnSsn = customer.fields[3].attributes.find(a => a.name === 'pii');
+    expect(piiOnSsn?.isRegistered).toBe(true);
+
+    // 5. Custom framework attributes: parsed structure
+    const jsonIgnore = customer.fields[3].framework_attrs?.find(a => a.content === 'JsonIgnore');
+    expect(jsonIgnore).toBeDefined();
+    expect(jsonIgnore!.parsed?.name).toBe('JsonIgnore');
+    expect(jsonIgnore!.parsed?.arguments).toEqual([]);
+
+    const rangeAttr = customer.fields[4].framework_attrs?.find(a => a.content === 'Range(0, 100)');
+    expect(rangeAttr).toBeDefined();
+    expect(rangeAttr!.parsed?.name).toBe('Range');
+    expect(rangeAttr!.parsed?.arguments).toEqual([0, 100]);
+
+    // 6. STANDARD_ATTRIBUTES export is available and has expected entries
+    expect(STANDARD_ATTRIBUTES.has('primary')).toBe(true);
+    expect(STANDARD_ATTRIBUTES.has('pii')).toBe(false);
   });
 
   it('should parse inheritance correctly in ecommerce sample', () => {

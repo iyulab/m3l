@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.1.1",
+  "parserVersion": "0.1.2",
   "astVersion": "1.0",
   "project": {
     "name": "sample.blog"
@@ -30,7 +30,8 @@
               "name": "pk"
             },
             {
-              "name": "generated"
+              "name": "generated",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -49,7 +50,8 @@
           "default_value": "now()",
           "attributes": [
             {
-              "name": "immutable"
+              "name": "immutable",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -85,13 +87,16 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "unique"
+              "name": "unique",
+              "isStandard": true
             },
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             },
             {
-              "name": "searchable"
+              "name": "searchable",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -109,10 +114,12 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "unique"
+              "name": "unique",
+              "isStandard": true
             },
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -133,13 +140,18 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             }
           ],
           "framework_attrs": [
             {
               "content": "JsonIgnore",
-              "raw": "[JsonIgnore]"
+              "raw": "[JsonIgnore]",
+              "parsed": {
+                "name": "JsonIgnore",
+                "arguments": []
+              }
             }
           ],
           "loc": {
@@ -160,7 +172,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -257,7 +270,8 @@
               "name": "computed",
               "args": [
                 "\"'/users/' + username\""
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -281,7 +295,8 @@
               "name": "rollup",
               "args": [
                 "Post.author_id, count"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -307,7 +322,8 @@
               "name": "rollup",
               "args": [
                 "Post.author_id, count, where: \"status = 'published'\""
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -358,7 +374,8 @@
               "name": "pk"
             },
             {
-              "name": "generated"
+              "name": "generated",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -377,7 +394,8 @@
           "default_value": "now()",
           "attributes": [
             {
-              "name": "immutable"
+              "name": "immutable",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -413,13 +431,16 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "unique"
+              "name": "unique",
+              "isStandard": true
             },
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             },
             {
-              "name": "searchable"
+              "name": "searchable",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -440,10 +461,12 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "unique"
+              "name": "unique",
+              "isStandard": true
             },
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -482,7 +505,8 @@
               "name": "rollup",
               "args": [
                 "PostTag.tag_id, count"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -531,7 +555,8 @@
               "name": "pk"
             },
             {
-              "name": "generated"
+              "name": "generated",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -550,7 +575,8 @@
           "default_value": "now()",
           "attributes": [
             {
-              "name": "immutable"
+              "name": "immutable",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -586,10 +612,12 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             },
             {
-              "name": "searchable"
+              "name": "searchable",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -610,10 +638,12 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "unique"
+              "name": "unique",
+              "isStandard": true
             },
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -649,7 +679,8 @@
               "args": [
                 "Category"
               ],
-              "cascade": "?"
+              "cascade": "?",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -685,7 +716,8 @@
               "name": "lookup",
               "args": [
                 "parent_id.name"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -733,7 +765,8 @@
               "name": "pk"
             },
             {
-              "name": "generated"
+              "name": "generated",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -752,7 +785,8 @@
           "default_value": "now()",
           "attributes": [
             {
-              "name": "immutable"
+              "name": "immutable",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -832,10 +866,12 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             },
             {
-              "name": "searchable"
+              "name": "searchable",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -856,10 +892,12 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "unique"
+              "name": "unique",
+              "isStandard": true
             },
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -895,7 +933,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -947,7 +986,8 @@
               "args": [
                 "User"
               ],
-              "cascade": "!!"
+              "cascade": "!!",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -969,7 +1009,8 @@
               "args": [
                 "Category"
               ],
-              "cascade": "?"
+              "cascade": "?",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1065,7 +1106,13 @@
           "framework_attrs": [
             {
               "content": "MaxLength(70)",
-              "raw": "[MaxLength(70)]"
+              "raw": "[MaxLength(70)]",
+              "parsed": {
+                "name": "MaxLength",
+                "arguments": [
+                  70
+                ]
+              }
             }
           ],
           "loc": {
@@ -1089,7 +1136,13 @@
           "framework_attrs": [
             {
               "content": "MaxLength(160)",
-              "raw": "[MaxLength(160)]"
+              "raw": "[MaxLength(160)]",
+              "parsed": {
+                "name": "MaxLength",
+                "arguments": [
+                  160
+                ]
+              }
             }
           ],
           "loc": {
@@ -1125,7 +1178,8 @@
               "name": "min",
               "args": [
                 "0"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1146,7 +1200,8 @@
               "name": "lookup",
               "args": [
                 "author_id.display_name"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1170,7 +1225,8 @@
               "name": "lookup",
               "args": [
                 "author_id.avatar_url"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1194,7 +1250,8 @@
               "name": "lookup",
               "args": [
                 "category_id.name"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1218,7 +1275,8 @@
               "name": "computed",
               "args": [
                 "\"status = 'published' AND published_at <= now()\""
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1242,7 +1300,8 @@
               "name": "computed",
               "args": [
                 "\"LENGTH(content) / 5\""
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1266,7 +1325,8 @@
               "name": "rollup",
               "args": [
                 "Comment.post_id, count"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1296,7 +1356,8 @@
               "name": "rollup",
               "args": [
                 "Comment.post_id, avg(rating)"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1401,7 +1462,8 @@
               "name": "reference",
               "args": [
                 "Post"
-              ]
+              ],
+              "isStandard": true
             },
             {
               "name": "on_delete",
@@ -1428,7 +1490,8 @@
               "name": "reference",
               "args": [
                 "Tag"
-              ]
+              ],
+              "isStandard": true
             },
             {
               "name": "on_delete",
@@ -1491,7 +1554,8 @@
               "name": "pk"
             },
             {
-              "name": "generated"
+              "name": "generated",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1510,7 +1574,8 @@
           "default_value": "now()",
           "attributes": [
             {
-              "name": "immutable"
+              "name": "immutable",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1546,7 +1611,8 @@
               "name": "reference",
               "args": [
                 "Post"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1568,7 +1634,8 @@
               "args": [
                 "User"
               ],
-              "cascade": "?"
+              "cascade": "?",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1590,7 +1657,8 @@
               "args": [
                 "Comment"
               ],
-              "cascade": "?"
+              "cascade": "?",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1640,7 +1708,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1662,13 +1731,15 @@
               "name": "min",
               "args": [
                 "1"
-              ]
+              ],
+              "isStandard": true
             },
             {
               "name": "max",
               "args": [
                 "5"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1719,7 +1790,8 @@
               "name": "lookup",
               "args": [
                 "post_id.title"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1743,7 +1815,8 @@
               "name": "lookup",
               "args": [
                 "author_id.display_name"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1767,7 +1840,8 @@
               "name": "rollup",
               "args": [
                 "Comment.parent_id, count"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1793,7 +1867,8 @@
               "name": "computed",
               "args": [
                 "\"COALESCE(author_name, guest_name, 'Anonymous')\""
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1851,7 +1926,8 @@
               "name": "pk"
             },
             {
-              "name": "generated"
+              "name": "generated",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1870,7 +1946,8 @@
           "default_value": "now()",
           "attributes": [
             {
-              "name": "immutable"
+              "name": "immutable",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1906,7 +1983,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1927,7 +2005,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1948,7 +2027,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1967,7 +2047,8 @@
           "description": "Size in bytes",
           "attributes": [
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -2036,7 +2117,8 @@
               "args": [
                 "User"
               ],
-              "cascade": "!!"
+              "cascade": "!!",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -2057,7 +2139,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -2078,7 +2161,8 @@
               "name": "computed",
               "args": [
                 "\"file_size / 1048576.0\""
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -2102,7 +2186,8 @@
               "name": "computed",
               "args": [
                 "\"mime_type LIKE 'image/%'\""
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -2205,7 +2290,8 @@
               "name": "pk"
             },
             {
-              "name": "generated"
+              "name": "generated",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -2224,7 +2310,8 @@
           "default_value": "now()",
           "attributes": [
             {
-              "name": "immutable"
+              "name": "immutable",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -2387,6 +2474,7 @@
       }
     }
   ],
+  "attributeRegistry": [],
   "errors": [],
   "warnings": []
 }

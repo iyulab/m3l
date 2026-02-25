@@ -228,6 +228,24 @@ describe('parser', () => {
     expect(field.framework_attrs![0].raw).toBe('[DataType(DataType.Password)]');
     expect(field.framework_attrs![1].content).toBe('JsonIgnore');
     expect(field.framework_attrs![1].raw).toBe('[JsonIgnore]');
+
+    // Parsed structure
+    expect(field.framework_attrs![0].parsed?.name).toBe('DataType');
+    expect(field.framework_attrs![0].parsed?.arguments).toEqual(['DataType.Password']);
+    expect(field.framework_attrs![1].parsed?.name).toBe('JsonIgnore');
+    expect(field.framework_attrs![1].parsed?.arguments).toEqual([]);
+  });
+
+  it('should parse custom attribute with multiple args and types', () => {
+    const result = parse([
+      '## Config',
+      '- port: integer `[Range(1, 65535)]` `[Description("Port number")]`',
+    ].join('\n'));
+    const field = result.models[0].fields[0];
+    expect(field.framework_attrs![0].parsed?.name).toBe('Range');
+    expect(field.framework_attrs![0].parsed?.arguments).toEqual([1, 65535]);
+    expect(field.framework_attrs![1].parsed?.name).toBe('Description');
+    expect(field.framework_attrs![1].parsed?.arguments).toEqual(['Port number']);
   });
 
   it('should parse field with default value and attributes', () => {
@@ -265,5 +283,75 @@ describe('parser', () => {
     ].join('\n'));
     expect(result.models[0].sections.indexes).toHaveLength(1);
     expect(result.models[0].sections.relations).toHaveLength(1);
+  });
+
+  it('should parse ::attribute type indicator as attribute registry entry', () => {
+    const result = parse([
+      '## @pii ::attribute',
+      '> Personal information marker',
+      '- target: [field]',
+      '- type: boolean',
+      '- default: false',
+      '',
+      '## @audit_level ::attribute',
+      '> Audit compliance level',
+      '- target: [field, model]',
+      '- type: integer',
+      '- range: [1, 5]',
+      '- required: false',
+      '- default: 1',
+    ].join('\n'));
+
+    expect(result.attributeRegistry).toHaveLength(2);
+
+    const pii = result.attributeRegistry[0];
+    expect(pii.name).toBe('pii');
+    expect(pii.description).toBe('Personal information marker');
+    expect(pii.target).toEqual(['field']);
+    expect(pii.type).toBe('boolean');
+    expect(pii.defaultValue).toBe(false);
+    expect(pii.required).toBe(false);
+
+    const audit = result.attributeRegistry[1];
+    expect(audit.name).toBe('audit_level');
+    expect(audit.description).toBe('Audit compliance level');
+    expect(audit.target).toEqual(['field', 'model']);
+    expect(audit.type).toBe('integer');
+    expect(audit.range).toEqual([1, 5]);
+    expect(audit.defaultValue).toBe(1);
+
+    // Regular models should not be affected
+    expect(result.models).toHaveLength(0);
+    expect(result.enums).toHaveLength(0);
+  });
+
+  it('should tag standard attributes with isStandard', () => {
+    const result = parse([
+      '## User',
+      '- id: identifier @primary @generated',
+      '- name: string(100) @searchable',
+      '- email: string @unique @my_custom_attr',
+    ].join('\n'));
+    const fields = result.models[0].fields;
+
+    // @primary is standard
+    const primary = fields[0].attributes.find(a => a.name === 'primary');
+    expect(primary?.isStandard).toBe(true);
+
+    // @generated is standard
+    const generated = fields[0].attributes.find(a => a.name === 'generated');
+    expect(generated?.isStandard).toBe(true);
+
+    // @searchable is standard
+    const searchable = fields[1].attributes.find(a => a.name === 'searchable');
+    expect(searchable?.isStandard).toBe(true);
+
+    // @unique is standard
+    const unique = fields[2].attributes.find(a => a.name === 'unique');
+    expect(unique?.isStandard).toBe(true);
+
+    // @my_custom_attr is NOT standard — isStandard should be undefined
+    const custom = fields[2].attributes.find(a => a.name === 'my_custom_attr');
+    expect(custom?.isStandard).toBeUndefined();
   });
 });

@@ -7,6 +7,7 @@ public enum TokenType
     Enum,
     Interface,
     View,
+    AttributeDef,
     Section,
     Field,
     NestedItem,

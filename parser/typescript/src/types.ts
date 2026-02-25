@@ -13,6 +13,7 @@ export type TokenType =
   | 'enum'
   | 'interface'
   | 'view'
+  | 'attribute_def'
   | 'section'
   | 'field'
   | 'nested_item'
@@ -37,6 +38,10 @@ export interface FieldAttribute {
   name: string;
   args?: (string | number | boolean)[];
   cascade?: string;
+  /** Whether this is a standard M3L attribute (from the official catalog) */
+  isStandard?: boolean;
+  /** Whether this attribute is registered in an Attribute Registry (::attribute definition) */
+  isRegistered?: boolean;
 }
 
 /** Structured representation of a backtick-wrapped framework attribute like `[MaxLength(100)]` */
@@ -45,6 +50,8 @@ export interface CustomAttribute {
   content: string;
   /** Original text including brackets, e.g., "[MaxLength(100)]" */
   raw: string;
+  /** Parsed structure — name and arguments extracted from the content */
+  parsed?: { name: string; arguments: (string | number | boolean)[] };
 }
 
 export interface EnumValue {
@@ -145,6 +152,24 @@ export interface ParsedFile {
   enums: EnumNode[];
   interfaces: ModelNode[];
   views: ModelNode[];
+  attributeRegistry: AttributeRegistryEntry[];
+}
+
+export interface AttributeRegistryEntry {
+  /** Attribute name (without @) */
+  name: string;
+  /** Description */
+  description?: string;
+  /** Valid targets: 'field', 'model' */
+  target: ('field' | 'model')[];
+  /** Value type: 'boolean', 'integer', 'string', etc. */
+  type: string;
+  /** Valid range for numeric types */
+  range?: [number, number];
+  /** Whether the attribute is required */
+  required: boolean;
+  /** Default value */
+  defaultValue?: string | number | boolean;
 }
 
 export interface M3LAST {
@@ -158,6 +183,8 @@ export interface M3LAST {
   enums: EnumNode[];
   interfaces: ModelNode[];
   views: ModelNode[];
+  /** Attribute registry entries parsed from ::attribute definitions */
+  attributeRegistry: AttributeRegistryEntry[];
   errors: Diagnostic[];
   warnings: Diagnostic[];
 }

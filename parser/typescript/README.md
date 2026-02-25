@@ -238,7 +238,7 @@ This TypeScript parser and the [C# parser](../csharp/) produce equivalent AST st
 
 | | TypeScript | C# |
 |---|---|---|
-| Package | `@iyulab/m3l` | `Iyulab.M3L` |
+| Package | `@iyulab/m3l` | `M3LParser` |
 | Runtime | Node.js 20+ | .NET 8.0+ |
 | AST Version | 1.0 | 1.0 |
 

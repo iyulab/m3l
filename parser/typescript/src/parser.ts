@@ -13,6 +13,25 @@ import type {
 } from './types.js';
 import { lex, parseTypeAndAttrs } from './lexer.js';
 
+/**
+ * Standard M3L attribute catalog.
+ * These are the officially defined attributes in the M3L specification.
+ */
+export const STANDARD_ATTRIBUTES = new Set([
+  // Field constraints
+  'primary', 'unique', 'required', 'index', 'generated', 'immutable',
+  // References / relations
+  'reference', 'fk', 'relation', 'on_update', 'on_delete',
+  // Search / display
+  'searchable', 'description', 'visibility',
+  // Validation
+  'min', 'max', 'validate', 'not_null',
+  // Derived fields
+  'computed', 'computed_raw', 'lookup', 'rollup', 'from', 'persisted',
+  // Model-level
+  'public', 'private', 'materialized', 'meta', 'behavior', 'override', 'default_attribute',
+]);
+
 interface ParserState {
   file: string;
   namespace?: string;
@@ -24,6 +43,8 @@ interface ParserState {
   enums: EnumNode[];
   interfaces: ModelNode[];
   views: ModelNode[];
+  attributeRegistry: import('./types.js').AttributeRegistryEntry[];
+  currentAttrDef: { name: string; description?: string; fields: Map<string, unknown> } | null;
   sourceDirectivesDone: boolean;
 }
 
@@ -50,6 +71,8 @@ export function parseTokens(tokens: Token[], file: string): ParsedFile {
     enums: [],
     interfaces: [],
     views: [],
+    attributeRegistry: [],
+    currentAttrDef: null,
     sourceDirectivesDone: false,
   };
 
@@ -67,6 +90,7 @@ export function parseTokens(tokens: Token[], file: string): ParsedFile {
     enums: state.enums,
     interfaces: state.interfaces,
     views: state.views,
+    attributeRegistry: state.attributeRegistry,
   };
 }
 
@@ -84,6 +108,9 @@ function processToken(token: Token, state: ParserState): void {
       break;
     case 'view':
       handleViewStart(token, state);
+      break;
+    case 'attribute_def':
+      handleAttributeDefStart(token, state);
       break;
     case 'section':
       handleSection(token, state);
@@ -226,6 +253,19 @@ function handleSection(token: Token, state: ParserState): void {
 }
 
 function handleField(token: Token, state: ParserState): void {
+  // Handle attribute definition fields (- target: [field, model])
+  if (state.currentAttrDef) {
+    const data = token.data!;
+    const name = data.name as string;
+    const raw = token.raw.trim().replace(/^-\s*/, '');
+    const colonIdx = raw.indexOf(':');
+    if (colonIdx >= 0) {
+      const value = raw.substring(colonIdx + 1).trim();
+      state.currentAttrDef.fields.set(name, value);
+    }
+    return;
+  }
+
   if (!state.currentElement) return;
 
   const data = token.data!;
@@ -533,6 +573,12 @@ function handleNestedItem(token: Token, state: ParserState): void {
 }
 
 function handleBlockquote(token: Token, state: ParserState): void {
+  // Handle attribute definition description
+  if (state.currentAttrDef) {
+    const text = token.data!.text as string;
+    state.currentAttrDef.description = text;
+    return;
+  }
   if (!state.currentElement) return;
   const text = token.data!.text as string;
   if (state.currentElement.description) {
@@ -556,6 +602,9 @@ function handleText(token: Token, state: ParserState): void {
 }
 
 function finalizeElement(state: ParserState): void {
+  // Finalize pending attribute definition
+  finalizeAttrDef(state);
+
   if (!state.currentElement) return;
 
   if (isEnumNode(state.currentElement)) {
@@ -579,6 +628,69 @@ function finalizeElement(state: ParserState): void {
   state.currentSection = null;
   state.currentKind = 'stored';
   state.lastField = null;
+}
+
+function handleAttributeDefStart(token: Token, state: ParserState): void {
+  finalizeElement(state);
+  const data = token.data || {};
+  const name = (data.name as string || '').replace(/^@/, '');
+
+  state.currentAttrDef = {
+    name,
+    description: data.description as string | undefined,
+    fields: new Map(),
+  };
+  state.currentElement = null;
+}
+
+function finalizeAttrDef(state: ParserState): void {
+  if (!state.currentAttrDef) return;
+  const def = state.currentAttrDef;
+  const fields = def.fields;
+
+  const targetRaw = fields.get('target') as string | undefined;
+  const target: ('field' | 'model')[] = [];
+  if (targetRaw) {
+    const cleaned = targetRaw.replace(/^\[|\]$/g, '').split(',').map(s => s.trim());
+    for (const t of cleaned) {
+      if (t === 'field' || t === 'model') target.push(t);
+    }
+  }
+
+  const rangeRaw = fields.get('range') as string | undefined;
+  let range: [number, number] | undefined;
+  if (rangeRaw) {
+    const nums = rangeRaw.replace(/^\[|\]$/g, '').split(',').map(s => Number(s.trim()));
+    if (nums.length === 2 && !isNaN(nums[0]) && !isNaN(nums[1])) {
+      range = [nums[0], nums[1]];
+    }
+  }
+
+  const requiredRaw = fields.get('required');
+  const required = requiredRaw === 'true' || requiredRaw === true;
+
+  const defaultRaw = fields.get('default');
+  let defaultValue: string | number | boolean | undefined;
+  if (defaultRaw !== undefined) {
+    if (defaultRaw === 'true') defaultValue = true;
+    else if (defaultRaw === 'false') defaultValue = false;
+    else if (typeof defaultRaw === 'string' && !isNaN(Number(defaultRaw))) defaultValue = Number(defaultRaw);
+    else if (typeof defaultRaw === 'string') defaultValue = defaultRaw;
+    else if (typeof defaultRaw === 'number' || typeof defaultRaw === 'boolean') defaultValue = defaultRaw;
+  }
+
+  const entry: import('./types.js').AttributeRegistryEntry = {
+    name: def.name,
+    target: target.length > 0 ? target : ['field'],
+    type: (fields.get('type') as string) || 'boolean',
+    required,
+  };
+  if (def.description) entry.description = def.description;
+  if (range) entry.range = range;
+  if (defaultValue !== undefined) entry.defaultValue = defaultValue;
+
+  state.attributeRegistry.push(entry);
+  state.currentAttrDef = null;
 }
 
 // --- Helpers ---
@@ -687,6 +799,7 @@ function parseAttributes(
     const attr: FieldAttribute = { name: a.name };
     if (a.args) attr.args = [a.args];
     if (a.cascade) attr.cascade = a.cascade;
+    if (STANDARD_ATTRIBUTES.has(a.name)) attr.isStandard = true;
     return attr;
   });
 }
@@ -895,8 +1008,55 @@ function parseCustomAttributes(rawAttrs: string[] | undefined): CustomAttribute[
   return rawAttrs.map(raw => {
     // raw is "[MaxLength(100)]" — strip brackets to get content
     const content = raw.replace(/^\[|\]$/g, '');
-    return { content, raw };
+    const attr: CustomAttribute = { content, raw };
+
+    // Try to parse "Name(arg1, arg2)" or "Name" pattern
+    const match = content.match(/^([A-Za-z_][\w.]*)(?:\((.+)\))?$/);
+    if (match) {
+      const name = match[1];
+      const argsStr = match[2];
+      const args: (string | number | boolean)[] = [];
+      if (argsStr) {
+        for (const part of splitBalanced(argsStr)) {
+          const trimmed = part.trim();
+          args.push(parseArgValue(trimmed));
+        }
+      }
+      attr.parsed = { name, arguments: args };
+    }
+
+    return attr;
   });
+}
+
+/** Split a string by commas, respecting balanced parentheses */
+function splitBalanced(s: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] === '(') depth++;
+    else if (s[i] === ')') depth--;
+    else if (s[i] === ',' && depth === 0) {
+      parts.push(s.substring(start, i));
+      start = i + 1;
+    }
+  }
+  parts.push(s.substring(start));
+  return parts;
+}
+
+/** Parse a single argument value: numbers, booleans, or strings */
+function parseArgValue(s: string): string | number | boolean {
+  if (s === 'true') return true;
+  if (s === 'false') return false;
+  const n = Number(s);
+  if (!isNaN(n) && s.length > 0) return n;
+  // Strip surrounding quotes if present
+  if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+    return s.slice(1, -1);
+  }
+  return s;
 }
 
 function isEnumNode(el: ModelNode | EnumNode): el is EnumNode {

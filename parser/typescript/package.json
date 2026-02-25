@@ -1,6 +1,6 @@
 {
   "name": "@iyulab/m3l",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "M3L parser and CLI tool — parse .m3l.md files into JSON AST",
   "type": "module",
   "main": "dist/index.js",

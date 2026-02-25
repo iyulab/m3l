@@ -1,5 +1,5 @@
 export { lex } from './lexer.js';
-export { parseTokens, parseString as parseFileString } from './parser.js';
+export { parseTokens, parseString as parseFileString, STANDARD_ATTRIBUTES } from './parser.js';
 export { resolve, AST_VERSION, PARSER_VERSION } from './resolver.js';
 export { validate } from './validator.js';
 export { readM3LFiles, readM3LString, readProjectConfig } from './reader.js';
@@ -20,7 +20,7 @@ export async function parse(inputPath: string): Promise<M3LAST> {
   const files = await readM3LFiles(resolved);
 
   if (files.length === 0) {
-    throw new Error(`No .m3l.md files found at: ${inputPath}`);
+    throw new Error(`No .m3l.md or .m3l files found at: ${inputPath}`);
   }
 
   const parsedFiles = files.map(f => parseFileContent(f.content, f.path));

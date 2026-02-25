@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.1.1",
+  "parserVersion": "0.1.3",
   "astVersion": "1.0",
   "project": {
     "name": "sample.ecommerce"
@@ -19,7 +19,8 @@
       "description": "Primary customer entity for the e-commerce platform.",
       "attributes": [
         {
-          "name": "public"
+          "name": "public",
+          "isStandard": true
         }
       ],
       "fields": [
@@ -65,7 +66,8 @@
               "name": "pk"
             },
             {
-              "name": "generated"
+              "name": "generated",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -84,7 +86,8 @@
           "description": "Primary contact email",
           "attributes": [
             {
-              "name": "unique"
+              "name": "unique",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -105,10 +108,12 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             },
             {
-              "name": "searchable"
+              "name": "searchable",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -173,7 +178,8 @@
               "name": "min",
               "args": [
                 "0"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -267,7 +273,8 @@
               "name": "pk"
             },
             {
-              "name": "generated"
+              "name": "generated",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -288,7 +295,8 @@
               "name": "reference",
               "args": [
                 "Customer"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -328,7 +336,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -349,7 +358,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -387,7 +397,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -409,7 +420,8 @@
           "description": "ISO 3166-1 alpha-2",
           "attributes": [
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -516,7 +528,8 @@
               "name": "pk"
             },
             {
-              "name": "generated"
+              "name": "generated",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -537,10 +550,12 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             },
             {
-              "name": "searchable"
+              "name": "searchable",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -561,7 +576,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "unique"
+              "name": "unique",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -583,7 +599,8 @@
               "args": [
                 "Category"
               ],
-              "cascade": "?"
+              "cascade": "?",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -634,7 +651,8 @@
               "name": "lookup",
               "args": [
                 "parent_id.name"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "lookup": {
@@ -658,7 +676,8 @@
               "name": "rollup",
               "args": [
                 "Product.category_id, count"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "rollup": {
@@ -698,7 +717,8 @@
       "description": "Product catalog item.",
       "attributes": [
         {
-          "name": "public"
+          "name": "public",
+          "isStandard": true
         }
       ],
       "fields": [
@@ -778,7 +798,8 @@
               "name": "pk"
             },
             {
-              "name": "generated"
+              "name": "generated",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -800,13 +821,16 @@
           "description": "Stock Keeping Unit",
           "attributes": [
             {
-              "name": "unique"
+              "name": "unique",
+              "isStandard": true
             },
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             },
             {
-              "name": "immutable"
+              "name": "immutable",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -827,10 +851,12 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             },
             {
-              "name": "searchable"
+              "name": "searchable",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -865,7 +891,8 @@
               "name": "reference",
               "args": [
                 "Category"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -887,13 +914,15 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             },
             {
               "name": "min",
               "args": [
                 "0"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -918,7 +947,8 @@
               "name": "min",
               "args": [
                 "0"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -983,7 +1013,8 @@
               "name": "lookup",
               "args": [
                 "category_id.name"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "lookup": {
@@ -1011,7 +1042,8 @@
               "name": "computed",
               "args": [
                 "\u0022(price - cost) / price * 100\u0022"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "computed": {
@@ -1035,7 +1067,8 @@
               "name": "computed",
               "args": [
                 "\u0022FORMAT(price, \u0027$#,##0.00\u0027)\u0022"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "computed": {
@@ -1148,7 +1181,8 @@
               "name": "pk"
             },
             {
-              "name": "generated"
+              "name": "generated",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1170,10 +1204,12 @@
               "args": [
                 "Product"
               ],
-              "cascade": "!"
+              "cascade": "!",
+              "isStandard": true
             },
             {
-              "name": "unique"
+              "name": "unique",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1195,7 +1231,8 @@
               "name": "min",
               "args": [
                 "0"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1217,7 +1254,8 @@
               "name": "min",
               "args": [
                 "0"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1268,7 +1306,8 @@
               "name": "computed",
               "args": [
                 "\u0022quantity - reserved\u0022"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "computed": {
@@ -1292,7 +1331,8 @@
               "name": "computed",
               "args": [
                 "\u0022available \u003C= reorder_point\u0022"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "computed": {
@@ -1406,7 +1446,8 @@
               "name": "pk"
             },
             {
-              "name": "generated"
+              "name": "generated",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1427,10 +1468,12 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "unique"
+              "name": "unique",
+              "isStandard": true
             },
             {
-              "name": "generated"
+              "name": "generated",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1452,7 +1495,8 @@
               "args": [
                 "Customer"
               ],
-              "cascade": "!!"
+              "cascade": "!!",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1489,7 +1533,8 @@
               "args": [
                 "Address"
               ],
-              "cascade": "?"
+              "cascade": "?",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1511,7 +1556,8 @@
               "args": [
                 "Address"
               ],
-              "cascade": "?"
+              "cascade": "?",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1602,7 +1648,8 @@
               "name": "lookup",
               "args": [
                 "customer_id.name"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "lookup": {
@@ -1626,7 +1673,8 @@
               "name": "lookup",
               "args": [
                 "customer_id.email"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "lookup": {
@@ -1650,7 +1698,8 @@
               "name": "lookup",
               "args": [
                 "shipping_address_id.city"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "lookup": {
@@ -1674,7 +1723,8 @@
               "name": "rollup",
               "args": [
                 "OrderItem.order_id, count"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "rollup": {
@@ -1704,7 +1754,8 @@
               "name": "rollup",
               "args": [
                 "OrderItem.order_id, sum(line_total)"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "rollup": {
@@ -1731,7 +1782,8 @@
               "name": "rollup",
               "args": [
                 "OrderItem.order_id, sum(quantity)"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "rollup": {
@@ -1762,7 +1814,8 @@
               "name": "computed",
               "args": [
                 "\u0022subtotal * 0.1\u0022"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "computed": {
@@ -1790,7 +1843,8 @@
               "name": "computed",
               "args": [
                 "\u0022subtotal \u002B tax_amount\u0022"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "computed": {
@@ -1875,7 +1929,8 @@
               "name": "pk"
             },
             {
-              "name": "generated"
+              "name": "generated",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1896,7 +1951,8 @@
               "name": "reference",
               "args": [
                 "Order"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1918,7 +1974,8 @@
               "args": [
                 "Product"
               ],
-              "cascade": "!"
+              "cascade": "!",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1936,19 +1993,22 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             },
             {
               "name": "min",
               "args": [
                 "1"
-              ]
+              ],
+              "isStandard": true
             },
             {
               "name": "max",
               "args": [
                 "9999"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1970,7 +2030,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1996,13 +2057,15 @@
               "name": "min",
               "args": [
                 "0"
-              ]
+              ],
+              "isStandard": true
             },
             {
               "name": "max",
               "args": [
                 "100"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -2023,7 +2086,8 @@
               "name": "lookup",
               "args": [
                 "product_id.name"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "lookup": {
@@ -2047,7 +2111,8 @@
               "name": "lookup",
               "args": [
                 "product_id.sku"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "lookup": {
@@ -2075,7 +2140,8 @@
               "name": "computed",
               "args": [
                 "\u0022unit_price * quantity * discount_pct / 100\u0022"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "computed": {
@@ -2103,7 +2169,8 @@
               "name": "computed",
               "args": [
                 "\u0022unit_price * quantity - discount_amount\u0022"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "computed": {
@@ -2187,7 +2254,8 @@
               "name": "pk"
             },
             {
-              "name": "generated"
+              "name": "generated",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -2208,7 +2276,8 @@
               "name": "reference",
               "args": [
                 "Product"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -2229,7 +2298,8 @@
               "name": "reference",
               "args": [
                 "Customer"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -2247,19 +2317,22 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             },
             {
               "name": "min",
               "args": [
                 "1"
-              ]
+              ],
+              "isStandard": true
             },
             {
               "name": "max",
               "args": [
                 "5"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -2622,7 +2695,8 @@
               "name": "from",
               "args": [
                 "Customer.id"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -2643,7 +2717,8 @@
               "name": "from",
               "args": [
                 "Customer.name"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -2664,7 +2739,8 @@
               "name": "computed",
               "args": [
                 "\u0022COUNT(Order.id)\u0022"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "computed": {
@@ -2692,7 +2768,8 @@
               "name": "computed",
               "args": [
                 "\u0022SUM(Order.grand_total)\u0022"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "computed": {
@@ -2720,7 +2797,8 @@
               "name": "computed",
               "args": [
                 "\u0022AVG(Order.grand_total)\u0022"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "computed": {
@@ -2744,7 +2822,8 @@
               "name": "computed",
               "args": [
                 "\u0022MAX(Order.ordered_at)\u0022"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "computed": {
@@ -2790,6 +2869,7 @@
       }
     }
   ],
+  "attributeRegistry": [],
   "errors": [],
   "warnings": []
 }

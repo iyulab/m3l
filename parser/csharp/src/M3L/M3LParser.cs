@@ -15,7 +15,7 @@ public class M3LParser
         var files = await FileReader.ReadM3LFiles(inputPath);
 
         if (files.Count == 0)
-            throw new InvalidOperationException($"No .m3l.md files found at: {inputPath}");
+            throw new InvalidOperationException($"No .m3l.md or .m3l files found at: {inputPath}");
 
         var parsedFiles = files.Select(f => Parser.ParseString(f.Content, f.Path)).ToList();
         return Resolver.Resolve(parsedFiles, project);

@@ -6,13 +6,14 @@ import type {
   FieldNode,
   Diagnostic,
   ProjectInfo,
+  AttributeRegistryEntry,
 } from './types.js';
 
 /** AST schema version — bump major on breaking structure changes */
 export const AST_VERSION = '1.0';
 
 /** Parser package version — kept in sync with package.json */
-export const PARSER_VERSION = '0.1.2';
+export const PARSER_VERSION = '0.1.3';
 
 /**
  * Resolve and merge multiple parsed file ASTs into a single M3LAST.
@@ -30,6 +31,7 @@ export function resolve(
   const allEnums: EnumNode[] = [];
   const allInterfaces: ModelNode[] = [];
   const allViews: ModelNode[] = [];
+  const allAttrRegistry: AttributeRegistryEntry[] = [];
   const sources: string[] = [];
 
   for (const file of files) {
@@ -38,6 +40,7 @@ export function resolve(
     allEnums.push(...file.enums);
     allInterfaces.push(...file.interfaces);
     allViews.push(...file.views);
+    if (file.attributeRegistry) allAttrRegistry.push(...file.attributeRegistry);
   }
 
   // Build name maps
@@ -79,6 +82,27 @@ export function resolve(
     checkDuplicateFields(model, errors);
   }
 
+  // Tag isRegistered on attributes matching the registry
+  if (allAttrRegistry.length > 0) {
+    const registeredNames = new Set(allAttrRegistry.map(r => r.name));
+    const tagAttrs = (attrs: { name: string; isRegistered?: boolean; isStandard?: boolean }[]) => {
+      for (const a of attrs) {
+        if (registeredNames.has(a.name)) {
+          a.isRegistered = true;
+        }
+      }
+    };
+    const tagModel = (m: ModelNode) => {
+      tagAttrs(m.attributes);
+      for (const f of m.fields) {
+        tagAttrs(f.attributes);
+      }
+    };
+    for (const m of allModels) tagModel(m);
+    for (const v of allViews) tagModel(v);
+    for (const i of allInterfaces) tagModel(i);
+  }
+
   // Detect namespace from first file if available
   const projectInfo: ProjectInfo = project || {};
   if (!projectInfo.name) {
@@ -95,6 +119,7 @@ export function resolve(
     enums: allEnums,
     interfaces: allInterfaces,
     views: allViews,
+    attributeRegistry: allAttrRegistry,
     errors,
     warnings,
   };

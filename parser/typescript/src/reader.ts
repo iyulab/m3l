@@ -9,7 +9,7 @@ export interface M3LFile {
 
 /**
  * Read M3L files from a path (file or directory).
- * If path is a directory, scans for **\/*.m3l.md files.
+ * If path is a directory, scans for **\/*.m3l.md and **\/*.m3l files.
  * If an m3l.config.yaml exists in the directory, uses its sources patterns.
  */
 export async function readM3LFiles(inputPath: string): Promise<M3LFile[]> {

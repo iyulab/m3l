@@ -7,6 +7,26 @@ namespace M3L;
 /// </summary>
 public static class Parser
 {
+    /// <summary>
+    /// Standard M3L attribute catalog.
+    /// These are the officially defined attributes in the M3L specification.
+    /// </summary>
+    public static readonly HashSet<string> StandardAttributes = new(StringComparer.Ordinal)
+    {
+        // Field constraints
+        "primary", "unique", "required", "index", "generated", "immutable",
+        // References / relations
+        "reference", "fk", "relation", "on_update", "on_delete",
+        // Search / display
+        "searchable", "description", "visibility",
+        // Validation
+        "min", "max", "validate", "not_null",
+        // Derived fields
+        "computed", "computed_raw", "lookup", "rollup", "from", "persisted",
+        // Model-level
+        "public", "private", "materialized", "meta", "behavior", "override", "default_attribute",
+    };
+
     private sealed class ParserState
     {
         public string File { get; set; } = "";
@@ -19,6 +39,8 @@ public static class Parser
         public List<EnumNode> Enums { get; } = new();
         public List<ModelNode> Interfaces { get; } = new();
         public List<ModelNode> Views { get; } = new();
+        public List<AttributeRegistryEntry> AttributeRegistry { get; } = new();
+        public (string Name, string? Description, Dictionary<string, string> Fields)? CurrentAttrDef { get; set; }
         public bool SourceDirectivesDone { get; set; }
     }
 
@@ -45,6 +67,7 @@ public static class Parser
             Enums = state.Enums,
             Interfaces = state.Interfaces,
             Views = state.Views,
+            AttributeRegistry = state.AttributeRegistry,
         };
     }
 
@@ -57,6 +80,7 @@ public static class Parser
             case TokenType.Interface: HandleModelStart(token, state); break;
             case TokenType.Enum: HandleEnumStart(token, state); break;
             case TokenType.View: HandleViewStart(token, state); break;
+            case TokenType.AttributeDef: HandleAttributeDefStart(token, state); break;
             case TokenType.Section: HandleSection(token, state); break;
             case TokenType.Field: HandleField(token, state); break;
             case TokenType.NestedItem: HandleNestedItem(token, state); break;
@@ -88,11 +112,7 @@ public static class Parser
         // D-C01: Read model-level attributes from data
         if (data.GetValueOrDefault("attributes") is List<Dictionary<string, object?>> modelAttrs)
         {
-            model.Attributes = modelAttrs.Select(a => new FieldAttribute
-            {
-                Name = (string)a["name"]!,
-                Args = a.GetValueOrDefault("args") is List<string> argList ? argList.Cast<object>().ToList() : null,
-            }).ToList();
+            model.Attributes = ParseAttributes(modelAttrs);
         }
 
         state.CurrentElement = model;
@@ -166,6 +186,17 @@ public static class Parser
 
     private static void HandleField(Token token, ParserState state)
     {
+        // Handle attribute definition fields
+        if (state.CurrentAttrDef is { } attrDef)
+        {
+            var fieldName = token.Data.GetValueOrDefault("name") as string ?? "";
+            var raw = token.Raw.Trim().TrimStart('-').Trim();
+            var colonIdx = raw.IndexOf(':');
+            if (colonIdx >= 0)
+                attrDef.Fields[fieldName] = raw[(colonIdx + 1)..].Trim();
+            return;
+        }
+
         if (state.CurrentElement == null) return;
         var data = token.Data;
 
@@ -446,13 +477,21 @@ public static class Parser
 
     private static void HandleBlockquote(Token token, ParserState state)
     {
+        // Handle attribute definition description
+        if (state.CurrentAttrDef is { } attrDef)
+        {
+            var text = (string)token.Data["text"]!;
+            state.CurrentAttrDef = (attrDef.Name, text, attrDef.Fields);
+            return;
+        }
+
         if (state.CurrentElement == null) return;
-        var text = (string)token.Data["text"]!;
+        var text2 = (string)token.Data["text"]!;
 
         if (state.CurrentElement is ModelNode model)
-            model.Description = model.Description != null ? model.Description + "\n" + text : text;
+            model.Description = model.Description != null ? model.Description + "\n" + text2 : text2;
         else if (state.CurrentElement is EnumNode enumNode)
-            enumNode.Description = enumNode.Description != null ? enumNode.Description + "\n" + text : text;
+            enumNode.Description = enumNode.Description != null ? enumNode.Description + "\n" + text2 : text2;
     }
 
     private static void HandleText(Token token, ParserState state)
@@ -467,6 +506,9 @@ public static class Parser
 
     private static void FinalizeElement(ParserState state)
     {
+        // Finalize pending attribute definition
+        FinalizeAttrDef(state);
+
         if (state.CurrentElement is EnumNode enumNode)
             state.Enums.Add(enumNode);
         else if (state.CurrentElement is ModelNode model)
@@ -482,6 +524,65 @@ public static class Parser
         state.CurrentSection = null;
         state.CurrentKind = FieldKind.Stored;
         state.LastField = null;
+    }
+
+    private static void HandleAttributeDefStart(Token token, ParserState state)
+    {
+        FinalizeElement(state);
+        var data = token.Data;
+        var name = ((string)(data.GetValueOrDefault("name") ?? "")).TrimStart('@');
+        var desc = data.GetValueOrDefault("description") as string;
+        state.CurrentAttrDef = (name, desc, new Dictionary<string, string>());
+        state.CurrentElement = null;
+    }
+
+    private static void FinalizeAttrDef(ParserState state)
+    {
+        if (state.CurrentAttrDef is not { } def) return;
+        var fields = def.Fields;
+
+        var target = new List<string>();
+        if (fields.TryGetValue("target", out var targetRaw))
+        {
+            foreach (var t in targetRaw.Trim('[', ']').Split(',').Select(s => s.Trim()))
+            {
+                if (t is "field" or "model") target.Add(t);
+            }
+        }
+        if (target.Count == 0) target.Add("field");
+
+        List<int>? range = null;
+        if (fields.TryGetValue("range", out var rangeRaw))
+        {
+            var nums = rangeRaw.Trim('[', ']').Split(',')
+                .Select(s => { int.TryParse(s.Trim(), out var n); return n; }).ToList();
+            if (nums.Count == 2) range = nums;
+        }
+
+        var required = fields.TryGetValue("required", out var reqStr) && reqStr == "true";
+
+        object? defaultValue = null;
+        if (fields.TryGetValue("default", out var defVal))
+        {
+            if (defVal == "true") defaultValue = true;
+            else if (defVal == "false") defaultValue = false;
+            else if (int.TryParse(defVal, out var dn)) defaultValue = dn;
+            else defaultValue = defVal;
+        }
+
+        var entry = new AttributeRegistryEntry
+        {
+            Name = def.Name,
+            Target = target,
+            Type = fields.GetValueOrDefault("type") ?? "boolean",
+            Required = required,
+        };
+        if (def.Description != null) entry.Description = def.Description;
+        if (range != null) entry.Range = range;
+        if (defaultValue != null) entry.DefaultValue = defaultValue;
+
+        state.AttributeRegistry.Add(entry);
+        state.CurrentAttrDef = null;
     }
 
     // --- Helpers ---
@@ -504,10 +605,12 @@ public static class Parser
         var fwRaw = data.GetValueOrDefault("framework_attrs") as List<string>;
         List<CustomAttribute>? fwAttrs = null;
         if (fwRaw is { Count: > 0 })
-            fwAttrs = fwRaw.Select(raw => new CustomAttribute
+            fwAttrs = fwRaw.Select(raw =>
             {
-                Content = raw.TrimStart('[').TrimEnd(']'),
-                Raw = raw,
+                var content = raw.TrimStart('[').TrimEnd(']');
+                var ca = new CustomAttribute { Content = content, Raw = raw };
+                ca.Parsed = ParseCustomAttributeContent(content);
+                return ca;
             }).ToList();
 
         var field = new FieldNode
@@ -550,12 +653,76 @@ public static class Parser
 
     private static List<FieldAttribute> ParseAttributes(List<Dictionary<string, object?>> rawAttrs)
     {
-        return rawAttrs.Select(a => new FieldAttribute
+        return rawAttrs.Select(a =>
         {
-            Name = (string)a["name"]!,
-            Args = a.GetValueOrDefault("args") is string s ? new List<object> { s } : null,
-            Cascade = a.GetValueOrDefault("cascade") as string,
+            var name = (string)a["name"]!;
+            var rawArgs = a.GetValueOrDefault("args");
+            List<object>? args = rawArgs switch
+            {
+                string s => new List<object> { s },
+                List<string> list => list.Cast<object>().ToList(),
+                _ => null,
+            };
+            return new FieldAttribute
+            {
+                Name = name,
+                Args = args,
+                Cascade = a.GetValueOrDefault("cascade") as string,
+                IsStandard = StandardAttributes.Contains(name) ? true : null,
+            };
         }).ToList();
+    }
+
+    private static ParsedCustomAttribute? ParseCustomAttributeContent(string content)
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(content, @"^([A-Za-z_][\w.]*)(?:\((.+)\))?$");
+        if (!match.Success) return null;
+
+        var name = match.Groups[1].Value;
+        var args = new List<object>();
+
+        if (match.Groups[2].Success)
+        {
+            foreach (var part in SplitBalanced(match.Groups[2].Value))
+            {
+                var trimmed = part.Trim();
+                args.Add(ParseArgValue(trimmed));
+            }
+        }
+
+        return new ParsedCustomAttribute { Name = name, Arguments = args };
+    }
+
+    private static List<string> SplitBalanced(string s)
+    {
+        var parts = new List<string>();
+        int depth = 0, start = 0;
+        for (int i = 0; i < s.Length; i++)
+        {
+            if (s[i] == '(') depth++;
+            else if (s[i] == ')') depth--;
+            else if (s[i] == ',' && depth == 0)
+            {
+                parts.Add(s[start..i]);
+                start = i + 1;
+            }
+        }
+        parts.Add(s[start..]);
+        return parts;
+    }
+
+    private static object ParseArgValue(string s)
+    {
+        if (s == "true") return true;
+        if (s == "false") return false;
+        if (int.TryParse(s, out var n)) return n;
+        if (double.TryParse(s, System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture, out var d)) return d;
+        // Strip surrounding quotes
+        if (s.Length >= 2 &&
+            ((s[0] == '"' && s[^1] == '"') || (s[0] == '\'' && s[^1] == '\'')))
+            return s[1..^1];
+        return s;
     }
 
     private static List<object>? ParseTypeParams(object? raw)

@@ -86,19 +86,19 @@ jobs:
         run: |
           NUPKG=$(ls ./nupkg/*.nupkg | head -1)
           FILENAME=$(basename "$NUPKG")
-          # Extract version: Iyulab.M3L.0.1.0.nupkg -> 0.1.0
-          PKG_VERSION=$(echo "$FILENAME" | sed 's/^Iyulab\.M3L\.\(.*\)\.nupkg$/\1/')
+          # Extract version: M3LParser.0.1.0.nupkg -> 0.1.0
+          PKG_VERSION=$(echo "$FILENAME" | sed 's/^M3LParser\.\(.*\)\.nupkg$/\1/')
           echo "version=$PKG_VERSION" >> "$GITHUB_OUTPUT"
 
           # Check if already on NuGet
           STATUS=$(dotnet nuget list source 2>/dev/null || true)
-          EXISTING=$(curl -s "https://api.nuget.org/v3-flatcontainer/iyulab.m3l/index.json" | grep -o "\"$PKG_VERSION\"" || true)
+          EXISTING=$(curl -s "https://api.nuget.org/v3-flatcontainer/m3lparser/index.json" | grep -o "\"$PKG_VERSION\"" || true)
           if [ -n "$EXISTING" ]; then
             echo "published=true" >> "$GITHUB_OUTPUT"
-            echo "skip: Iyulab.M3L@$PKG_VERSION already published"
+            echo "skip: M3LParser@$PKG_VERSION already published"
           else
             echo "published=false" >> "$GITHUB_OUTPUT"
-            echo "publish: Iyulab.M3L@$PKG_VERSION"
+            echo "publish: M3LParser@$PKG_VERSION"
           fi
 
       - name: Publish to NuGet

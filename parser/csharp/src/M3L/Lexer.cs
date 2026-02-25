@@ -16,7 +16,7 @@ public static partial class Lexer
     private static readonly Regex ReListItem = new(@"^(\s*)- (.+)$");
     private static readonly Regex ReBlank = new(@"^\s*$");
 
-    private static readonly Regex ReTypeIndicator = new(@"^([\w][\w.]*(?:\([^)]*\))?)\s*::(\w+)(.*)$");
+    private static readonly Regex ReTypeIndicator = new(@"^(@?[\w][\w.]*(?:\([^)]*\))?)\s*::(\w+)(.*)$");
     private static readonly Regex ReModelDef = new(@"^([\w][\w.]*(?:\([^)]*\))?)\s*(?::\s*(.+?))?(\s+@.+)?$");
     private static readonly Regex ReFieldName = new(@"^([\w]+)(?:\(([^)]*)\))?\s*(?::\s*(.+))?$");
     private static readonly Regex ReTypePart = new(@"^([\w]+)(?:<([^>]+)>)?(?:\(([^)]*)\))?(\?)?(\[\])?(\?)?");
@@ -166,6 +166,7 @@ public static partial class Lexer
                 "enum" => TokenType.Enum,
                 "interface" => TokenType.Interface,
                 "view" => TokenType.View,
+                "attribute" => TokenType.AttributeDef,
                 _ => TokenType.Model,
             };
 

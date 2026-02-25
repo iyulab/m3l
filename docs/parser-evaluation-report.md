@@ -1,7 +1,7 @@
 # M3L Parser Evaluation Report
 
 **평가일**: 2026-02-25
-**대상**: TypeScript parser (`@iyulab/m3l` 0.1.0), C# parser (`Iyulab.M3L` 0.1.0)
+**대상**: TypeScript parser (`@iyulab/m3l` 0.1.0), C# parser (`M3LParser` 0.1.0)
 **테스트 기반**: `samples/01-ecommerce.m3l.md`, `samples/02-blog-cms.m3l.md`, `samples/03-types-showcase.m3l.md`
 
 ---

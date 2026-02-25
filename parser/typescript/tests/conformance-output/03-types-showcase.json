@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.1.1",
+  "parserVersion": "0.1.2",
   "astVersion": "1.0",
   "project": {
     "name": "sample.types"
@@ -28,7 +28,8 @@
               "name": "pk"
             },
             {
-              "name": "generated"
+              "name": "generated",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -382,7 +383,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -635,7 +637,8 @@
               "kind": "stored",
               "attributes": [
                 {
-                  "name": "not_null"
+                  "name": "not_null",
+                  "isStandard": true
                 }
               ],
               "loc": {
@@ -656,7 +659,8 @@
               "kind": "stored",
               "attributes": [
                 {
-                  "name": "not_null"
+                  "name": "not_null",
+                  "isStandard": true
                 }
               ],
               "loc": {
@@ -990,13 +994,15 @@
               "name": "min",
               "args": [
                 "0"
-              ]
+              ],
+              "isStandard": true
             },
             {
               "name": "max",
               "args": [
                 "150"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1022,13 +1028,15 @@
               "name": "min",
               "args": [
                 "0"
-              ]
+              ],
+              "isStandard": true
             },
             {
               "name": "max",
               "args": [
                 "5"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1052,10 +1060,12 @@
               "name": "validate",
               "args": [
                 "pattern(\"^[a-zA-Z0-9_]+$\")"
-              ]
+              ],
+              "isStandard": true
             },
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1073,10 +1083,12 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             },
             {
-              "name": "unique"
+              "name": "unique",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1101,13 +1113,15 @@
               "name": "min",
               "args": [
                 "0"
-              ]
+              ],
+              "isStandard": true
             },
             {
               "name": "max",
               "args": [
                 "100"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1128,7 +1142,8 @@
               "name": "min",
               "args": [
                 "1"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1149,7 +1164,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1212,7 +1228,8 @@
               "name": "pk"
             },
             {
-              "name": "generated"
+              "name": "generated",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1381,7 +1398,8 @@
               "name": "primary",
               "args": [
                 "1"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1402,7 +1420,8 @@
               "name": "primary",
               "args": [
                 "2"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1632,7 +1651,8 @@
               "name": "pk"
             },
             {
-              "name": "generated"
+              "name": "generated",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1815,7 +1835,8 @@
           "description": "Overridden with larger size",
           "attributes": [
             {
-              "name": "override"
+              "name": "override",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -2202,7 +2223,8 @@
               "name": "computed",
               "args": [
                 "\"first_name + ' ' + last_name\""
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -2230,7 +2252,8 @@
               "name": "computed",
               "args": [
                 "\"price * tax_rate\""
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -2258,10 +2281,12 @@
               "name": "computed",
               "args": [
                 "\"price + tax_amount\""
-              ]
+              ],
+              "isStandard": true
             },
             {
-              "name": "persisted"
+              "name": "persisted",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -2285,7 +2310,8 @@
               "name": "computed_raw",
               "args": [
                 "\"DATEDIFF(year, birth_date, GETDATE())\", platform: \"sqlserver\""
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -2310,7 +2336,8 @@
               "name": "computed_raw",
               "args": [
                 "\"EXTRACT(YEAR FROM AGE(birth_date))\", platform: \"postgresql\""
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -2357,7 +2384,8 @@
               "name": "pk"
             },
             {
-              "name": "generated"
+              "name": "generated",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -2378,7 +2406,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "unique"
+              "name": "unique",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -2599,6 +2628,7 @@
   "enums": [],
   "interfaces": [],
   "views": [],
+  "attributeRegistry": [],
   "errors": [],
   "warnings": []
 }

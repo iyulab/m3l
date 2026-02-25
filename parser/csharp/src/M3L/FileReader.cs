@@ -3,13 +3,13 @@ using M3L.Models;
 namespace M3L;
 
 /// <summary>
-/// Reads .m3l.md files from the file system.
+/// Reads .m3l.md and .m3l files from the file system.
 /// </summary>
 public static class FileReader
 {
     /// <summary>
     /// Read M3L files from a path (file or directory).
-    /// If path is a directory, scans for **/*.m3l.md files.
+    /// If path is a directory, scans for **/*.m3l.md and **/*.m3l files.
     /// </summary>
     public static async Task<List<M3LFile>> ReadM3LFiles(string inputPath)
     {

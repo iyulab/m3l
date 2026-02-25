@@ -91,4 +91,57 @@ describe('resolver', () => {
     expect(merged.project.name).toBe('myapp');
     expect(merged.project.version).toBe('1.0');
   });
+
+  it('should tag isRegistered on attributes matching the registry', () => {
+    const src = parseSource([
+      '## @pii ::attribute',
+      '> Personal info marker',
+      '- target: [field]',
+      '- type: boolean',
+      '',
+      '## User',
+      '- name: string(100) @searchable',
+      '- ssn: string(11) @pii @unique',
+    ].join('\n'), 'test.m3l.md');
+    const merged = resolve([src]);
+
+    expect(merged.attributeRegistry).toHaveLength(1);
+    expect(merged.attributeRegistry[0].name).toBe('pii');
+
+    const user = merged.models.find(m => m.name === 'User')!;
+    // @pii should be isRegistered=true
+    const piiAttr = user.fields[1].attributes.find(a => a.name === 'pii');
+    expect(piiAttr?.isRegistered).toBe(true);
+
+    // @unique is standard but not in registry — isRegistered should be undefined
+    const uniqueAttr = user.fields[1].attributes.find(a => a.name === 'unique');
+    expect(uniqueAttr?.isRegistered).toBeUndefined();
+
+    // @searchable is standard, not in registry — isRegistered should be undefined
+    const searchAttr = user.fields[0].attributes.find(a => a.name === 'searchable');
+    expect(searchAttr?.isRegistered).toBeUndefined();
+  });
+
+  it('should tag isRegistered across multiple files with registry', () => {
+    const registry = parseSource([
+      '## @audit_level ::attribute',
+      '> Audit compliance level',
+      '- target: [field, model]',
+      '- type: integer',
+    ].join('\n'), 'registry.m3l.md');
+    const model = parseSource([
+      '## Order @audit_level(3)',
+      '- amount: decimal(10,2) @audit_level(5)',
+    ].join('\n'), 'model.m3l.md');
+    const merged = resolve([registry, model]);
+
+    // Model-level attribute should be tagged
+    const order = merged.models.find(m => m.name === 'Order')!;
+    const modelAttr = order.attributes.find(a => a.name === 'audit_level');
+    expect(modelAttr?.isRegistered).toBe(true);
+
+    // Field-level attribute should be tagged
+    const fieldAttr = order.fields[0].attributes.find(a => a.name === 'audit_level');
+    expect(fieldAttr?.isRegistered).toBe(true);
+  });
 });

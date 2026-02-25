@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.1.1",
+  "parserVersion": "0.1.2",
   "astVersion": "1.0",
   "project": {
     "name": "sample.multi"
@@ -61,7 +61,8 @@
               "name": "pk"
             },
             {
-              "name": "generated"
+              "name": "generated",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -135,7 +136,8 @@
               "name": "pk"
             },
             {
-              "name": "generated"
+              "name": "generated",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -156,10 +158,12 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "unique"
+              "name": "unique",
+              "isStandard": true
             },
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -180,7 +184,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -233,7 +238,8 @@
               "name": "rollup",
               "args": [
                 "StockItem.warehouse_id, count"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -263,7 +269,8 @@
               "name": "rollup",
               "args": [
                 "StockItem.warehouse_id, sum(total_value)"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -344,7 +351,8 @@
               "name": "pk"
             },
             {
-              "name": "generated"
+              "name": "generated",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -411,10 +419,12 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "unique"
+              "name": "unique",
+              "isStandard": true
             },
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -435,10 +445,12 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             },
             {
-              "name": "searchable"
+              "name": "searchable",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -503,7 +515,8 @@
               "name": "min",
               "args": [
                 "0"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -592,7 +605,8 @@
               "name": "pk"
             },
             {
-              "name": "generated"
+              "name": "generated",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -613,13 +627,16 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "unique"
+              "name": "unique",
+              "isStandard": true
             },
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             },
             {
-              "name": "immutable"
+              "name": "immutable",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -640,10 +657,12 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             },
             {
-              "name": "searchable"
+              "name": "searchable",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -712,7 +731,8 @@
               "name": "min",
               "args": [
                 "0"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -748,7 +768,8 @@
               "name": "rollup",
               "args": [
                 "StockItem.item_id, sum(quantity)"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -829,7 +850,8 @@
               "name": "pk"
             },
             {
-              "name": "generated"
+              "name": "generated",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -850,7 +872,8 @@
               "name": "reference",
               "args": [
                 "Warehouse"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -872,7 +895,8 @@
               "args": [
                 "Item"
               ],
-              "cascade": "!"
+              "cascade": "!",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -894,7 +918,8 @@
               "args": [
                 "Supplier"
               ],
-              "cascade": "?"
+              "cascade": "?",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -916,7 +941,8 @@
               "name": "min",
               "args": [
                 "0"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -938,13 +964,15 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             },
             {
               "name": "min",
               "args": [
                 "0"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -996,7 +1024,8 @@
               "name": "lookup",
               "args": [
                 "warehouse_id.name"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1020,7 +1049,8 @@
               "name": "lookup",
               "args": [
                 "item_id.name"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1044,7 +1074,8 @@
               "name": "lookup",
               "args": [
                 "item_id.sku"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1068,7 +1099,8 @@
               "name": "lookup",
               "args": [
                 "supplier_id.name"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1096,7 +1128,8 @@
               "name": "computed",
               "args": [
                 "\"quantity * unit_cost\""
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1120,7 +1153,8 @@
               "name": "computed",
               "args": [
                 "\"expiry_date IS NOT NULL AND expiry_date < CURRENT_DATE\""
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1144,7 +1178,8 @@
               "name": "computed",
               "args": [
                 "\"quantity <= min_stock\""
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1274,7 +1309,8 @@
               "name": "pk"
             },
             {
-              "name": "generated"
+              "name": "generated",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1295,7 +1331,8 @@
               "name": "reference",
               "args": [
                 "StockItem"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1313,7 +1350,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1350,7 +1388,8 @@
           "description": "Positive for in, negative for out",
           "attributes": [
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1402,7 +1441,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "not_null"
+              "name": "not_null",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1423,7 +1463,8 @@
               "name": "lookup",
               "args": [
                 "stock_item_id.item_name"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1671,7 +1712,8 @@
               "name": "from",
               "args": [
                 "Item.sku"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1692,7 +1734,8 @@
               "name": "from",
               "args": [
                 "Item.name"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1713,7 +1756,8 @@
               "name": "from",
               "args": [
                 "StockItem.warehouse_id"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1734,7 +1778,8 @@
               "name": "from",
               "args": [
                 "StockItem.quantity"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1755,7 +1800,8 @@
               "name": "from",
               "args": [
                 "Item.min_stock"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1776,7 +1822,8 @@
               "name": "computed",
               "args": [
                 "\"Item.min_stock - StockItem.quantity\""
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1834,7 +1881,8 @@
               "name": "from",
               "args": [
                 "Warehouse.code"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1855,7 +1903,8 @@
               "name": "from",
               "args": [
                 "Warehouse.name"
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1876,7 +1925,8 @@
               "name": "computed",
               "args": [
                 "\"COUNT(DISTINCT StockItem.item_id)\""
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1900,7 +1950,8 @@
               "name": "computed",
               "args": [
                 "\"SUM(StockItem.quantity)\""
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1928,7 +1979,8 @@
               "name": "computed",
               "args": [
                 "\"SUM(StockItem.total_value)\""
-              ]
+              ],
+              "isStandard": true
             }
           ],
           "loc": {
@@ -1973,6 +2025,7 @@
       }
     }
   ],
+  "attributeRegistry": [],
   "errors": [],
   "warnings": []
 }

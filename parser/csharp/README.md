@@ -1,4 +1,4 @@
-# Iyulab.M3L
+# M3LParser
 
 M3L (Meta Model Markup Language) parser for .NET — parse `.m3l.md` files into a structured AST.
 
@@ -7,7 +7,7 @@ M3L is a Markdown-based data modeling language. You write data models in readabl
 ## Install
 
 ```bash
-dotnet add package Iyulab.M3L
+dotnet add package M3LParser
 ```
 
 **Supported runtimes:** .NET 8.0, .NET 9.0, .NET 10.0
@@ -240,7 +240,7 @@ This C# parser is a direct port of the [TypeScript parser](../typescript/) and p
 
 | | TypeScript | C# |
 |---|---|---|
-| Package | `@iyulab/m3l` | `Iyulab.M3L` |
+| Package | `@iyulab/m3l` | `M3LParser` |
 | Runtime | Node.js 20+ | .NET 8.0+ |
 | AST Version | 1.0 | 1.0 |
 

@@ -323,9 +323,20 @@ public static partial class Lexer
                 data["type_generic_params"] = typeMatch.Groups[2].Value.Split(',').Select(s => s.Trim()).ToList();
             if (typeMatch.Groups[3].Success && typeMatch.Groups[3].Value.Length > 0)
                 data["type_params"] = typeMatch.Groups[3].Value.Split(',').Select(s => s.Trim()).ToList();
-            data["nullable"] = (typeMatch.Groups[4].Success && typeMatch.Groups[4].Value == "?")
-                             || (typeMatch.Groups[6].Success && typeMatch.Groups[6].Value == "?");
-            data["array"] = typeMatch.Groups[5].Success && typeMatch.Groups[5].Value == "[]";
+            var isArray = typeMatch.Groups[5].Success && typeMatch.Groups[5].Value == "[]";
+            data["array"] = isArray;
+            if (isArray)
+            {
+                // Group 4: ? before [] = element nullable; Group 6: ? after [] = container nullable
+                data["nullable"] = typeMatch.Groups[6].Success && typeMatch.Groups[6].Value == "?";
+                data["arrayItemNullable"] = typeMatch.Groups[4].Success && typeMatch.Groups[4].Value == "?";
+            }
+            else
+            {
+                data["nullable"] = (typeMatch.Groups[4].Success && typeMatch.Groups[4].Value == "?")
+                                 || (typeMatch.Groups[6].Success && typeMatch.Groups[6].Value == "?");
+                data["arrayItemNullable"] = false;
+            }
             pos = typeMatch.Length;
             SkipWs();
         }

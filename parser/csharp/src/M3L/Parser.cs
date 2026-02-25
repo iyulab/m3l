@@ -528,6 +528,7 @@ public static class Parser
             Params = ParseTypeParams(data.GetValueOrDefault("type_params")),
             Nullable = data.GetValueOrDefault("nullable") is true,
             Array = data.GetValueOrDefault("array") is true,
+            ArrayItemNullable = data.GetValueOrDefault("arrayItemNullable") is true,
             Kind = kind,
             DefaultValue = data.GetValueOrDefault("default_value") as string,
             Description = data.GetValueOrDefault("description") as string,

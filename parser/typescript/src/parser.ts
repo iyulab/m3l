@@ -616,6 +616,7 @@ function buildFieldNode(
     generic_params: data.type_generic_params as string[] | undefined,
     nullable: (data.nullable as boolean) || false,
     array: (data.array as boolean) || false,
+    arrayItemNullable: (data.arrayItemNullable as boolean) || false,
     kind,
     default_value: data.default_value as string | undefined,
     description: data.description as string | undefined,

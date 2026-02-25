@@ -1153,28 +1153,24 @@ public class SampleTests
         public void TypeModifiers_NullableArray()
         {
             // - nullable_array: string[]?
-            // The parser parses [] first, then ? -- but the regex may not handle []? together.
-            // DEFECT NOTE: The ReTypePart regex handles ? and [] but in the order ?[], not []?.
-            // "string[]?" would parse as: type=string, array=true, and the ? is NOT captured
-            // because the regex expects ? before [].
+            // string[]? = nullable array of non-null strings
             var model = _ast.Models.First(m => m.Name == "TypeModifiers");
             var field = model.Fields.First(f => f.Name == "nullable_array");
             Assert.True(field.Array, "nullable_array should be an array");
-            // This may fail due to parser not handling []? order:
-            Assert.True(field.Nullable,
-                "DEFECT: nullable_array (string[]?) should be nullable, but parser may not handle []? order");
+            Assert.True(field.Nullable, "nullable_array: the array itself is nullable");
+            Assert.False(field.ArrayItemNullable, "nullable_array: array elements are not nullable");
         }
 
         [Fact]
         public void TypeModifiers_ArrayOfNullable()
         {
             // - array_of_nullable: string?[]
-            // ReTypePart regex: ^([\w]+)(?:\(([^)]*)\))?(\?)?(\[\])?
-            // This should parse string?[] as type=string, nullable=true, array=true
+            // string?[] = array of nullable strings: array is NOT nullable, but elements are
             var model = _ast.Models.First(m => m.Name == "TypeModifiers");
             var field = model.Fields.First(f => f.Name == "array_of_nullable");
-            Assert.True(field.Nullable, "array_of_nullable should be nullable");
             Assert.True(field.Array, "array_of_nullable should be an array");
+            Assert.False(field.Nullable, "array_of_nullable: the array itself is not nullable");
+            Assert.True(field.ArrayItemNullable, "array_of_nullable: array elements are nullable");
         }
 
         // --- MapTypes ---

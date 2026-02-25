@@ -216,6 +216,7 @@ public static class Resolver
         Params = f.Params != null ? new List<object>(f.Params) : null,
         Nullable = f.Nullable,
         Array = f.Array,
+        ArrayItemNullable = f.ArrayItemNullable,
         Kind = f.Kind,
         DefaultValue = f.DefaultValue,
         Description = f.Description,

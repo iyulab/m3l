@@ -33,6 +33,7 @@ public class FieldNode
     public List<object>? Params { get; set; }
     public bool Nullable { get; set; }
     public bool Array { get; set; }
+    public bool ArrayItemNullable { get; set; }
     public FieldKind Kind { get; set; } = FieldKind.Stored;
     public string? DefaultValue { get; set; }
     public string? Description { get; set; }

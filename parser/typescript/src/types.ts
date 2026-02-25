@@ -61,6 +61,7 @@ export interface FieldNode {
   generic_params?: string[];
   nullable: boolean;
   array: boolean;
+  arrayItemNullable: boolean;
   kind: FieldKind;
   default_value?: string;
   description?: string;

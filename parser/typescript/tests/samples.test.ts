@@ -1082,25 +1082,17 @@ describe('Sample 03: Types Showcase (03-types-showcase.m3l.md)', () => {
       expect(f.nullable).toBe(true);
     });
 
-    /**
-     * [DEFECT] array_of_nullable: string?[] - semantic distinction may be lost.
-     *
-     * string?[] means "array of nullable strings" but the parser represents
-     * nullable=true, array=true (same as string[]? would ideally be).
-     * There is no way to distinguish "nullable array" from "array of nullable" in the AST.
-     */
-    it('[DEFECT] array_of_nullable: string?[] ambiguity - nullable and array both true', () => {
+    it('array_of_nullable: string?[] has arrayItemNullable=true, nullable=false', () => {
       const m = findModel(ast, 'TypeModifiers');
       const f = findField(m, 'array_of_nullable');
-      // string?[] parses as nullable=true (from ?) then array=true (from [])
-      expect(f.nullable).toBe(true);
+      // string?[] = array of nullable strings: the array is NOT nullable, but elements are
       expect(f.array).toBe(true);
+      expect(f.nullable).toBe(false);
+      expect(f.arrayItemNullable).toBe(true);
 
       console.log(
-        '[DEFECT] TypeModifiers.array_of_nullable: "string?[]" and "string[]?" produce the same ' +
-        'AST representation (nullable=true, array=true). The AST has no way to distinguish ' +
-        '"array of nullable elements" from "nullable array". Consider adding an arrayNullable ' +
-        'or elementNullable flag.'
+        '[RESOLVED] TypeModifiers.array_of_nullable: "string?[]" → nullable=false, arrayItemNullable=true; ' +
+        '"string[]?" → nullable=true, arrayItemNullable=false. Distinction is now captured via arrayItemNullable field.'
       );
     });
   });
@@ -1716,43 +1708,15 @@ describe('Cross-Cutting: All Samples', () => {
 // ============================================================
 describe('Defect Summary Report', () => {
   it('prints summary of all defects found', () => {
-    const defects = [
-      // D001-D003, D005-D007, D009 are FIXED
-      // D004 (no AST distinction between nullable array vs array of nullable) remains as a design note
-      // D008, D010 are FIXED by generic section handling
-      {
-        id: 'D004',
-        severity: 'low',
-        sample: '03-types-showcase.m3l.md',
-        location: 'TypeModifiers.array_of_nullable vs nullable_array',
-        summary: 'No AST distinction between nullable array and array of nullable elements',
-        detail: 'string?[] and string[]? both produce {nullable:true, array:true}. This is a design limitation, not a bug.',
-      },
-    ];
+    // All defects (D001-D010) have been fixed, including D004 via arrayItemNullable field
+    const defects: { id: string; severity: string; summary: string }[] = [];
 
     console.log('\n========================================');
     console.log('M3L PARSER DEFECT SUMMARY REPORT');
     console.log('========================================\n');
-
-    if (defects.length === 0) {
-      console.log('All defects have been fixed!');
-    } else {
-      for (const d of defects) {
-        console.log(`[${d.id}] (${d.severity.toUpperCase()}) ${d.summary}`);
-        console.log(`  Sample: ${d.sample}`);
-        console.log(`  Location: ${d.location}`);
-        console.log(`  Detail: ${d.detail}`);
-        console.log('');
-      }
-    }
-
-    console.log('Remaining defects: ' + defects.length);
-    console.log(`  HIGH: ${defects.filter(d => d.severity === 'high').length}`);
-    console.log(`  MEDIUM: ${defects.filter(d => d.severity === 'medium').length}`);
-    console.log(`  LOW: ${defects.filter(d => d.severity === 'low').length}`);
+    console.log('All defects have been fixed!');
     console.log('========================================\n');
 
-    // Only 1 design-note-level defect remains (D004)
-    expect(defects.length).toBe(1);
+    expect(defects.length).toBe(0);
   });
 });

@@ -331,10 +331,16 @@ export function parseTypeAndAttrs(rest: string, data: Record<string, unknown>): 
     if (typeMatch[3]) {
       data.type_params = typeMatch[3].split(',').map(s => s.trim());
     }
-    // Group 4: nullable before [], Group 6: nullable after []
-    data.nullable = typeMatch[4] === '?' || typeMatch[6] === '?';
     // Group 5: array
     data.array = typeMatch[5] === '[]';
+    // Group 4: ? before [] = element nullable; Group 6: ? after [] = container nullable
+    if (data.array) {
+      data.nullable = typeMatch[6] === '?';
+      data.arrayItemNullable = typeMatch[4] === '?';
+    } else {
+      data.nullable = typeMatch[4] === '?' || typeMatch[6] === '?';
+      data.arrayItemNullable = false;
+    }
     pos = typeMatch[0].length;
     skipWS();
   }

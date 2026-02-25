@@ -1,6 +1,10 @@
 # M3LParser
 
-M3L (Meta Model Markup Language) parser for .NET — parse `.m3l.md` files into a structured AST.
+[![NuGet](https://img.shields.io/nuget/v/M3LParser)](https://www.nuget.org/packages/M3LParser)
+[![C# CI](https://github.com/iyulab/m3l/actions/workflows/parser-csharp.yml/badge.svg)](https://github.com/iyulab/m3l/actions/workflows/parser-csharp.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](../../LICENSE)
+
+M3L (Meta Model Markup Language) parser for .NET — parse `.m3l.md` / `.m3l` files into a structured AST.
 
 M3L is a Markdown-based data modeling language. You write data models in readable Markdown, and this parser converts them into a machine-processable AST with full validation.
 
@@ -95,6 +99,7 @@ foreach (var error in result.Errors)
 | `## Name ::enum` | Enum definition |
 | `## Name ::interface` | Interface definition |
 | `## Name ::view` | Derived view |
+| `## @name ::attribute` | Attribute registry entry |
 | `- field: type` | Field definition |
 | `- field: type?` | Nullable field |
 | `- field: type[]` | Array field |
@@ -122,6 +127,7 @@ public class M3LAst
     public List<EnumNode> Enums { get; set; }
     public List<ModelNode> Interfaces { get; set; }
     public List<ModelNode> Views { get; set; }
+    public List<AttributeRegistryEntry> AttributeRegistry { get; set; }
     public List<Diagnostic> Errors { get; set; }
     public List<Diagnostic> Warnings { get; set; }
 }
@@ -134,10 +140,10 @@ public class FieldNode
 {
     public string Name { get; set; }
     public string? Type { get; set; }
-    public List<string>? GenericParams { get; set; }  // map<K,V> → ["K", "V"]
+    public List<string>? GenericParams { get; set; }  // map<K,V> -> ["K", "V"]
     public bool Nullable { get; set; }
     public bool Array { get; set; }
-    public bool ArrayItemNullable { get; set; }       // string?[] → true
+    public bool ArrayItemNullable { get; set; }       // string?[] -> true
     public FieldKind Kind { get; set; }               // Stored, Computed, Lookup, Rollup
     public List<FieldAttribute> Attributes { get; set; }
     public List<CustomAttribute>? FrameworkAttrs { get; set; }
@@ -148,17 +154,60 @@ public class FieldNode
     // ...
 }
 
-public class ModelNode
+public class FieldAttribute
 {
     public string Name { get; set; }
-    public string NodeType { get; set; }              // "model", "interface", "view"
-    public List<string> Inherits { get; set; }
-    public List<FieldAttribute> Attributes { get; set; }  // model-level attrs
-    public List<FieldNode> Fields { get; set; }
-    public SectionData Sections { get; set; }
-    // ...
+    public List<object>? Args { get; set; }
+    public string? Cascade { get; set; }
+    public bool? IsStandard { get; set; }             // true for M3L standard attributes
+    public bool? IsRegistered { get; set; }           // true for attributes in the registry
+}
+
+public class CustomAttribute
+{
+    public string Content { get; set; }               // e.g. "MaxLength(100)"
+    public string Raw { get; set; }                   // e.g. "[MaxLength(100)]"
+    public ParsedCustomAttribute? Parsed { get; set; } // structured parse result
+}
+
+public class AttributeRegistryEntry
+{
+    public string Name { get; set; }
+    public string? Description { get; set; }
+    public List<string> Target { get; set; }          // "field", "model"
+    public string Type { get; set; }                  // "boolean", "integer", "string"
+    public List<int>? Range { get; set; }
+    public bool Required { get; set; }
+    public object? DefaultValue { get; set; }
 }
 ```
+
+## Attribute Registry
+
+Define custom attributes with validation metadata using `::attribute`:
+
+```markdown
+## @pii ::attribute
+> Personal identifiable information marker
+- target: [field]
+- type: boolean
+- default: false
+
+## @audit_level ::attribute
+> Audit compliance level
+- target: [field, model]
+- type: integer
+- range: [1, 5]
+- default: 1
+```
+
+Attributes are classified into 3 tiers:
+
+| Tier | `IsStandard` | `IsRegistered` | Example |
+|------|-------------|----------------|---------|
+| Standard | `true` | — | `@primary`, `@unique`, `@reference` |
+| Registered | — | `true` | `@pii`, `@audit_level` (defined via `::attribute`) |
+| Unregistered | — | — | `@some_unknown_attr` |
 
 ## Validation
 
@@ -185,7 +234,7 @@ The validator checks for semantic errors and style warnings:
 
 ## Multi-file Projects
 
-Place `.m3l.md` files in a directory and parse the directory path. The resolver automatically merges all files, resolves inheritance, and detects cross-file references.
+Place `.m3l.md` or `.m3l` files in a directory and parse the directory path. The resolver automatically merges all files, resolves inheritance, and detects cross-file references.
 
 ```csharp
 var parser = new M3LParser();

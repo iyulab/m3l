@@ -1,6 +1,10 @@
 # @iyulab/m3l
 
-M3L (Meta Model Markup Language) parser and CLI — parse `.m3l.md` files into a structured JSON AST.
+[![npm](https://img.shields.io/npm/v/@iyulab/m3l)](https://www.npmjs.com/package/@iyulab/m3l)
+[![TypeScript CI](https://github.com/iyulab/m3l/actions/workflows/parser-publish.yml/badge.svg)](https://github.com/iyulab/m3l/actions/workflows/parser-publish.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](../../LICENSE)
+
+M3L (Meta Model Markup Language) parser and CLI — parse `.m3l.md` / `.m3l` files into a structured JSON AST.
 
 M3L is a Markdown-based data modeling language. You write data models in readable Markdown, and this parser converts them into a machine-processable AST with full validation.
 
@@ -107,6 +111,7 @@ npx m3l validate ./models --strict --format json
 | `## Name ::enum` | Enum definition |
 | `## Name ::interface` | Interface definition |
 | `## Name ::view` | Derived view |
+| `## @name ::attribute` | Attribute registry entry |
 | `- field: type` | Field definition |
 | `- field: type?` | Nullable field |
 | `- field: type[]` | Array field |
@@ -133,6 +138,7 @@ interface M3LAST {
   enums: EnumNode[];
   interfaces: ModelNode[];
   views: ModelNode[];
+  attributeRegistry: AttributeRegistryEntry[];
   errors: Diagnostic[];
   warnings: Diagnostic[];
 }
@@ -146,10 +152,10 @@ interface FieldNode {
   label?: string;
   type?: string;
   params?: (string | number)[];
-  generic_params?: string[];     // map<K,V> → ["K", "V"]
+  generic_params?: string[];     // map<K,V> -> ["K", "V"]
   nullable: boolean;
   array: boolean;
-  arrayItemNullable: boolean;    // string?[] → true
+  arrayItemNullable: boolean;    // string?[] -> true
   kind: 'stored' | 'computed' | 'lookup' | 'rollup';
   default_value?: string;
   description?: string;
@@ -163,16 +169,60 @@ interface FieldNode {
   loc: SourceLocation;
 }
 
-interface ModelNode {
+interface FieldAttribute {
   name: string;
-  type: 'model' | 'enum' | 'interface' | 'view';
-  inherits: string[];
-  attributes: FieldAttribute[];  // model-level attributes (@public, etc.)
-  fields: FieldNode[];
-  sections: { indexes; relations; behaviors; metadata; [key: string]: unknown };
-  // ...
+  args?: (string | number | boolean)[];
+  cascade?: string;
+  isStandard?: boolean;          // true for M3L standard attributes
+  isRegistered?: boolean;        // true for attributes in the registry
+}
+
+interface CustomAttribute {
+  content: string;               // e.g. "MaxLength(100)"
+  raw: string;                   // e.g. "[MaxLength(100)]"
+  parsed?: {                     // structured parse result
+    name: string;
+    arguments: (string | number | boolean)[];
+  };
+}
+
+interface AttributeRegistryEntry {
+  name: string;
+  description?: string;
+  target: ('field' | 'model')[];
+  type: string;
+  range?: [number, number];
+  required: boolean;
+  defaultValue?: string | number | boolean;
 }
 ```
+
+## Attribute Registry
+
+Define custom attributes with validation metadata using `::attribute`:
+
+```markdown
+## @pii ::attribute
+> Personal identifiable information marker
+- target: [field]
+- type: boolean
+- default: false
+
+## @audit_level ::attribute
+> Audit compliance level
+- target: [field, model]
+- type: integer
+- range: [1, 5]
+- default: 1
+```
+
+Attributes are classified into 3 tiers:
+
+| Tier | `isStandard` | `isRegistered` | Example |
+|------|-------------|----------------|---------|
+| Standard | `true` | — | `@primary`, `@unique`, `@reference` |
+| Registered | — | `true` | `@pii`, `@audit_level` (defined via `::attribute`) |
+| Unregistered | — | — | `@some_unknown_attr` |
 
 ## Validation
 
@@ -184,7 +234,9 @@ The validator checks for semantic errors and style warnings:
 | M3L-E001 | Rollup FK field missing `@reference` |
 | M3L-E002 | Lookup FK field missing `@reference` |
 | M3L-E004 | View references non-existent model |
+| M3L-E005 | Duplicate model/enum name |
 | M3L-E006 | Duplicate field name within model |
+| M3L-E007 | Unresolved parent in inheritance |
 
 **Warnings (--strict):**
 | Code | Description |
@@ -220,6 +272,10 @@ Parse an M3L content string into an AST.
 ### `validateFiles(inputPath: string, options?): Promise<{ ast, errors, warnings }>`
 
 Parse and validate M3L files. Options: `{ strict?: boolean }`.
+
+### `STANDARD_ATTRIBUTES: Set<string>`
+
+The set of 27 M3L standard attribute names (e.g. `primary`, `unique`, `reference`, `computed`, ...).
 
 ### Lower-level API
 

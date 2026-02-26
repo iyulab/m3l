@@ -397,4 +397,29 @@ public class ParserTests
         var user = result.Models[0];
         Assert.Equal("User account information", user.Description);
     }
+
+    [Fact]
+    public void Parse_RelationSection_SubItems()
+    {
+        var input = string.Join("\n", new[]
+        {
+            "## Content",
+            "- id: identifier @primary",
+            "- author_id: identifier",
+            "",
+            "### Relations",
+            "- >author",
+            "  - target: Person",
+            "  - from: author_id",
+            "  - on_delete: restrict"
+        });
+        var result = Parser.ParseString(input, "test.m3l");
+        var content = result.Models[0];
+        Assert.Single(content.Sections.Relations);
+        var rel = (Dictionary<string, object?>)content.Sections.Relations[0];
+        Assert.Equal(">author", rel["raw"]);
+        Assert.Equal("Person", rel["target"]);
+        Assert.Equal("author_id", rel["from"]);
+        Assert.Equal("restrict", rel["on_delete"]);
+    }
 }

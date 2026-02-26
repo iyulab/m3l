@@ -432,4 +432,25 @@ describe('parser', () => {
     const user = result.models[0];
     expect(user.description).toBe('User account information');
   });
+
+  it('should parse Relations section with sub-items', () => {
+    const result = parse([
+      '## Content',
+      '- id: identifier @primary',
+      '- author_id: identifier',
+      '',
+      '### Relations',
+      '- >author',
+      '  - target: Person',
+      '  - from: author_id',
+      '  - on_delete: restrict',
+    ].join('\n'));
+    const content = result.models[0];
+    expect(content.sections.relations).toHaveLength(1);
+    const rel = content.sections.relations[0] as Record<string, unknown>;
+    expect(rel.raw).toBe('>author');
+    expect(rel.target).toBe('Person');
+    expect(rel.from).toBe('author_id');
+    expect(rel.on_delete).toBe('restrict');
+  });
 });

@@ -346,6 +346,7 @@ public static class Parser
             {
                 ["raw"] = token.Raw.Trim().TrimStart('-').Trim(), ["loc"] = loc
             });
+            state.LastField = new FieldNode { Name = token.Raw.Trim().TrimStart('-').Trim() };
             return;
         }
 
@@ -405,6 +406,15 @@ public static class Parser
         if (state.CurrentSection == "Indexes" && state.LastField != null)
         {
             var last = model.Sections.Indexes.LastOrDefault();
+            if (last is Dictionary<string, object?> dict && key != null)
+                dict[key] = ParseNestedValue(value ?? "");
+            return;
+        }
+
+        // Relations section nested
+        if (state.CurrentSection == "Relations" && state.LastField != null)
+        {
+            var last = model.Sections.Relations.LastOrDefault();
             if (last is Dictionary<string, object?> dict && key != null)
                 dict[key] = ParseNestedValue(value ?? "");
             return;

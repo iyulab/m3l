@@ -429,6 +429,7 @@ function handleSectionItem(
       raw: token.raw.trim().replace(/^- /, ''),
       loc,
     });
+    state.lastField = { name: token.raw.trim().replace(/^- /, '') } as FieldNode;
     return;
   }
 
@@ -493,6 +494,17 @@ function handleNestedItem(token: Token, state: ParserState): void {
     if (lastIndex && typeof lastIndex === 'object') {
       if (key) {
         (lastIndex as Record<string, unknown>)[key] = parseNestedValue(value || '');
+      }
+    }
+    return;
+  }
+
+  // Nested items under relation in Relations section
+  if (state.currentSection === 'Relations' && state.lastField) {
+    const lastRelation = model.sections.relations[model.sections.relations.length - 1];
+    if (lastRelation && typeof lastRelation === 'object') {
+      if (key) {
+        (lastRelation as Record<string, unknown>)[key] = parseNestedValue(value || '');
       }
     }
     return;

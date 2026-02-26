@@ -262,12 +262,14 @@ public static class Parser
         var attrName = (string)attr["name"]!;
         var loc = new SourceLocation(state.File, token.Line, 1);
 
-        if (attrName == "index")
+        if (attrName == "index" || attrName == "unique")
         {
             model.Sections.Indexes.Add(new Dictionary<string, object?>
             {
                 ["type"] = "directive", ["raw"] = data.GetValueOrDefault("raw_content"),
-                ["args"] = attr.GetValueOrDefault("args"), ["loc"] = loc
+                ["args"] = attr.GetValueOrDefault("args"),
+                ["unique"] = attrName == "unique",
+                ["loc"] = loc
             });
         }
         else if (attrName == "relation")

@@ -325,6 +325,36 @@ describe('parser', () => {
     expect(result.enums).toHaveLength(0);
   });
 
+  it('should parse @unique directive into indexes with unique flag', () => {
+    const result = parse([
+      '## User',
+      '- name: string(100)',
+      '- email: string(320)',
+      '- @unique(email, name: "uq_email")',
+    ].join('\n'));
+    expect(result.models[0].sections.indexes).toHaveLength(1);
+    const idx = result.models[0].sections.indexes[0] as {
+      type: string; args?: string; unique?: boolean;
+    };
+    expect(idx.type).toBe('directive');
+    expect(idx.unique).toBe(true);
+    expect(idx.args).toContain('email');
+  });
+
+  it('should parse @index directive without unique flag', () => {
+    const result = parse([
+      '## User',
+      '- name: string(100)',
+      '- @index(name)',
+    ].join('\n'));
+    expect(result.models[0].sections.indexes).toHaveLength(1);
+    const idx = result.models[0].sections.indexes[0] as {
+      type: string; unique?: boolean;
+    };
+    expect(idx.type).toBe('directive');
+    expect(idx.unique).toBe(false);
+  });
+
   it('should tag standard attributes with isStandard', () => {
     const result = parse([
       '## User',

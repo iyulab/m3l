@@ -452,22 +452,28 @@
             "type": "directive",
             "raw": "@index(customer_id)",
             "args": "customer_id",
+            "unique": false,
             "loc": {
               "file": "01-ecommerce.m3l.md",
               "line": 87,
+              "col": 1
+            }
+          },
+          {
+            "type": "directive",
+            "raw": "@unique(customer_id, label)",
+            "args": "customer_id, label",
+            "unique": true,
+            "loc": {
+              "file": "01-ecommerce.m3l.md",
+              "line": 88,
               "col": 1
             }
           }
         ],
         "relations": [],
         "behaviors": [],
-        "metadata": {},
-        "unique": [
-          {
-            "raw": "@unique(customer_id, label)",
-            "args": "customer_id, label"
-          }
-        ]
+        "metadata": {}
       },
       "materialized": false,
       "loc": {
@@ -2184,16 +2190,22 @@
         }
       ],
       "sections": {
-        "indexes": [],
+        "indexes": [
+          {
+            "type": "directive",
+            "raw": "@unique(order_id, product_id)",
+            "args": "order_id, product_id",
+            "unique": true,
+            "loc": {
+              "file": "01-ecommerce.m3l.md",
+              "line": 219,
+              "col": 1
+            }
+          }
+        ],
         "relations": [],
         "behaviors": [],
-        "metadata": {},
-        "unique": [
-          {
-            "raw": "@unique(order_id, product_id)",
-            "args": "order_id, product_id"
-          }
-        ]
+        "metadata": {}
       },
       "materialized": false,
       "loc": {
@@ -2389,16 +2401,22 @@
         }
       ],
       "sections": {
-        "indexes": [],
+        "indexes": [
+          {
+            "type": "directive",
+            "raw": "@unique(product_id, customer_id)",
+            "args": "product_id, customer_id",
+            "unique": true,
+            "loc": {
+              "file": "01-ecommerce.m3l.md",
+              "line": 233,
+              "col": 1
+            }
+          }
+        ],
         "relations": [],
         "behaviors": [],
-        "metadata": {},
-        "unique": [
-          {
-            "raw": "@unique(product_id, customer_id)",
-            "args": "product_id, customer_id"
-          }
-        ]
+        "metadata": {}
       },
       "materialized": false,
       "loc": {

@@ -325,11 +325,12 @@ function handleDirective(
   if (!attrs || attrs.length === 0) return;
 
   const attr = attrs[0];
-  if (attr.name === 'index') {
+  if (attr.name === 'index' || attr.name === 'unique') {
     model.sections.indexes.push({
       type: 'directive',
       raw: data.raw_content,
       args: attr.args,
+      unique: attr.name === 'unique',
       loc: { file: state.file, line: token.line, col: 1 },
     });
   } else if (attr.name === 'relation') {

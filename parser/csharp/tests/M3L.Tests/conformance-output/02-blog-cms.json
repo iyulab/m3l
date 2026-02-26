@@ -1894,6 +1894,7 @@
             "type": "directive",
             "raw": "@index(post_id, created_at)",
             "args": "post_id, created_at",
+            "unique": false,
             "loc": {
               "file": "02-blog-cms.m3l.md",
               "line": 177,

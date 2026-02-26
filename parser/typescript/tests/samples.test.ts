@@ -241,13 +241,12 @@ describe('Sample 01: E-Commerce (01-ecommerce.m3l.md)', () => {
       expect(indexDirective).toBeDefined();
     });
 
-    it('has @unique directive in unique section', () => {
+    it('has @unique directive in indexes section with unique flag', () => {
       const address = findModel(ast, 'Address');
-      // @unique(customer_id, label) is stored as a generic directive section
-      const uniqueSection = address.sections['unique'] as any[];
-      expect(uniqueSection).toBeDefined();
-      expect(uniqueSection.length).toBeGreaterThanOrEqual(1);
-      expect(uniqueSection[0].args).toContain('customer_id');
+      // @unique(customer_id, label) is now correctly stored in sections.indexes
+      const uniqueIndexes = (address.sections.indexes as any[]).filter(i => i.unique === true);
+      expect(uniqueIndexes.length).toBeGreaterThanOrEqual(1);
+      expect(uniqueIndexes[0].args).toContain('customer_id');
     });
 
     it('country field has description "ISO 3166-1 alpha-2"', () => {
@@ -474,9 +473,9 @@ describe('Sample 01: E-Commerce (01-ecommerce.m3l.md)', () => {
 
     it('has @unique directive for (order_id, product_id)', () => {
       const item = findModel(ast, 'OrderItem');
-      const uniqueSection = item.sections['unique'] as any[];
-      expect(uniqueSection).toBeDefined();
-      expect(uniqueSection[0].args).toContain('order_id');
+      const uniqueIndexes = (item.sections.indexes as any[]).filter(i => i.unique === true);
+      expect(uniqueIndexes.length).toBeGreaterThanOrEqual(1);
+      expect(uniqueIndexes[0].args).toContain('order_id');
     });
   });
 
@@ -484,8 +483,8 @@ describe('Sample 01: E-Commerce (01-ecommerce.m3l.md)', () => {
   describe('Model: Review', () => {
     it('has @unique directive for (product_id, customer_id)', () => {
       const review = findModel(ast, 'Review');
-      const uniqueSection = review.sections['unique'] as any[];
-      expect(uniqueSection).toBeDefined();
+      const uniqueIndexes = (review.sections.indexes as any[]).filter(i => i.unique === true);
+      expect(uniqueIndexes.length).toBeGreaterThanOrEqual(1);
     });
 
     it('rating has @min(1) and @max(5)', () => {

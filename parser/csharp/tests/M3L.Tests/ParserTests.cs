@@ -305,4 +305,32 @@ public class ParserTests
         Assert.Equal("sum", field.Rollup.Aggregate);
         Assert.Equal("total_amount", field.Rollup.Field);
     }
+
+    [Fact]
+    public void ParseString_UniqueDirective_StoredInIndexesWithUniqueFlag()
+    {
+        var content = "## User\n- name: string(100)\n- email: string(320)\n- @unique(email, name: \"uq_email\")";
+        var result = Parser.ParseString(content, "test.m3l.md");
+
+        Assert.Single(result.Models[0].Sections.Indexes);
+        var idx = result.Models[0].Sections.Indexes[0] as Dictionary<string, object?>;
+        Assert.NotNull(idx);
+        Assert.Equal("directive", idx["type"]);
+        Assert.Equal(true, idx["unique"]);
+        var args = idx["args"] as string;
+        Assert.Contains("email", args!);
+    }
+
+    [Fact]
+    public void ParseString_IndexDirective_StoredInIndexesWithoutUniqueFlag()
+    {
+        var content = "## User\n- name: string(100)\n- @index(name)";
+        var result = Parser.ParseString(content, "test.m3l.md");
+
+        Assert.Single(result.Models[0].Sections.Indexes);
+        var idx = result.Models[0].Sections.Indexes[0] as Dictionary<string, object?>;
+        Assert.NotNull(idx);
+        Assert.Equal("directive", idx["type"]);
+        Assert.Equal(false, idx["unique"]);
+    }
 }

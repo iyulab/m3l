@@ -519,9 +519,15 @@ public class SampleTests
         public void Review_UniqueDirective()
         {
             var review = _ast.Models.First(m => m.Name == "Review");
-            var hasUnique = review.Sections.Extra.ContainsKey("unique");
+            // @unique directives are now correctly stored in Indexes with unique flag
+            var hasUnique = review.Sections.Indexes.Any(idx =>
+            {
+                if (idx is Dictionary<string, object?> dict)
+                    return dict.GetValueOrDefault("unique") is true;
+                return false;
+            });
             Assert.True(hasUnique,
-                "Review should have @unique directive");
+                "Review should have @unique directive in indexes");
         }
 
         // --- Views ---

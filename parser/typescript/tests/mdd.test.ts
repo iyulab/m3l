@@ -306,18 +306,16 @@ describe('C. Parser tests for mes.m3l', () => {
     );
   });
 
-  it('directive lines like @unique(...) are parsed into sections', () => {
+  it('directive lines like @unique(...) are parsed into indexes with unique flag', () => {
     // MaterialSpec has @unique(material_id, thickness, width, length)
     const matSpec = parsed.models.find(m => m.name === 'MaterialSpec')!;
-    const uniqueSection = matSpec.sections['unique'];
-    expect(uniqueSection).toBeDefined();
-    expect(Array.isArray(uniqueSection)).toBe(true);
-    expect((uniqueSection as unknown[]).length).toBeGreaterThanOrEqual(1);
+    const matSpecUniques = (matSpec.sections.indexes as any[]).filter(i => i.unique === true);
+    expect(matSpecUniques.length).toBeGreaterThanOrEqual(1);
 
     // OEERecord also has @unique(machine_id, record_date, shift)
     const oee = parsed.models.find(m => m.name === 'OEERecord')!;
-    const oeeUnique = oee.sections['unique'];
-    expect(oeeUnique).toBeDefined();
+    const oeeUniques = (oee.sections.indexes as any[]).filter(i => i.unique === true);
+    expect(oeeUniques.length).toBeGreaterThanOrEqual(1);
   });
 });
 

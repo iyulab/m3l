@@ -354,4 +354,47 @@ public class ParserTests
         var basicStatus = result.Enums.First(e => e.Name == "BasicStatus");
         Assert.Empty(basicStatus.Inherits);
     }
+
+    [Fact]
+    public void ParseString_BlockquoteFieldDescription_AppliesToField()
+    {
+        var input = string.Join("\n", new[]
+        {
+            "## User",
+            "- username: string(50) @unique",
+            "  > Unique identifier used for login",
+            "- email: string(320)"
+        });
+        var result = Parser.ParseString(input, "test.m3l.md");
+        var user = result.Models[0];
+        Assert.Equal("Unique identifier used for login", user.Fields[0].Description);
+        Assert.Null(user.Fields[1].Description);
+    }
+
+    [Fact]
+    public void ParseString_InlineComment_SetsFieldDescription()
+    {
+        var input = string.Join("\n", new[]
+        {
+            "## User",
+            "- email: string(320) @unique  # Primary contact email"
+        });
+        var result = Parser.ParseString(input, "test.m3l.md");
+        var user = result.Models[0];
+        Assert.Equal("Primary contact email", user.Fields[0].Description);
+    }
+
+    [Fact]
+    public void ParseString_ModelLevelBlockquote_PreservedBeforeFields()
+    {
+        var input = string.Join("\n", new[]
+        {
+            "## User",
+            "> User account information",
+            "- name: string(100)"
+        });
+        var result = Parser.ParseString(input, "test.m3l.md");
+        var user = result.Models[0];
+        Assert.Equal("User account information", user.Description);
+    }
 }

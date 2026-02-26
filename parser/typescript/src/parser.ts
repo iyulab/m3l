@@ -583,6 +583,17 @@ function handleBlockquote(token: Token, state: ParserState): void {
   }
   if (!state.currentElement) return;
   const text = token.data!.text as string;
+
+  // Field-level blockquote: apply to lastField if available (not for enums)
+  if (state.lastField && !isEnumNode(state.currentElement)) {
+    if (state.lastField.description) {
+      state.lastField.description += '\n' + text;
+    } else {
+      state.lastField.description = text;
+    }
+    return;
+  }
+
   if (state.currentElement.description) {
     state.currentElement.description += '\n' + text;
   } else {
@@ -759,6 +770,11 @@ function buildFieldNode(
     if (parts.platform) {
       field.computed.platform = parts.platform;
     }
+  }
+
+  // Inline comment as field description
+  if (!field.description && data.comment) {
+    field.description = data.comment as string;
   }
 
   return field;

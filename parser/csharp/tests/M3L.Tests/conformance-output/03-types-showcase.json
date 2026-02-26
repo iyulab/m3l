@@ -1976,6 +1976,7 @@
           "array": false,
           "arrayItemNullable": false,
           "kind": "stored",
+          "description": "This is an inline comment",
           "attributes": [],
           "loc": {
             "file": "03-types-showcase.m3l.md",

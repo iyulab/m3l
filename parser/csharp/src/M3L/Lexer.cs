@@ -12,7 +12,7 @@ public static partial class Lexer
     private static readonly Regex ReH2 = new(@"^## (.+)$");
     private static readonly Regex ReH3 = new(@"^### (.+)$");
     private static readonly Regex ReHr = new(@"^-{3,}$");
-    private static readonly Regex ReBlockquote = new(@"^> (.+)$");
+    private static readonly Regex ReBlockquote = new(@"^\s*> (.+)$");
     private static readonly Regex ReListItem = new(@"^(\s*)- (.+)$");
     private static readonly Regex ReBlank = new(@"^\s*$");
 

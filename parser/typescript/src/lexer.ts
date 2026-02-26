@@ -6,7 +6,7 @@ const RE_H1 = /^# (.+)$/;
 const RE_H2 = /^## (.+)$/;
 const RE_H3 = /^### (.+)$/;
 const RE_HR = /^-{3,}$/;
-const RE_BLOCKQUOTE = /^> (.+)$/;
+const RE_BLOCKQUOTE = /^\s*> (.+)$/;
 const RE_LIST_ITEM = /^(\s*)- (.+)$/;
 const RE_BLANK = /^\s*$/;
 

@@ -1658,6 +1658,7 @@
           "array": false,
           "arrayItemNullable": false,
           "kind": "stored",
+          "description": "Threaded comments",
           "attributes": [
             {
               "name": "reference",

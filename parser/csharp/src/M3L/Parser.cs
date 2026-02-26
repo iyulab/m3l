@@ -491,6 +491,14 @@ public static class Parser
         if (state.CurrentElement == null) return;
         var text2 = (string)token.Data["text"]!;
 
+        // Field-level blockquote: apply to lastField if available (not for enums)
+        if (state.LastField != null && state.CurrentElement is ModelNode)
+        {
+            state.LastField.Description = state.LastField.Description != null
+                ? state.LastField.Description + "\n" + text2 : text2;
+            return;
+        }
+
         if (state.CurrentElement is ModelNode model)
             model.Description = model.Description != null ? model.Description + "\n" + text2 : text2;
         else if (state.CurrentElement is EnumNode enumNode)
@@ -650,6 +658,10 @@ public static class Parser
             if (crParts.Platform != null)
                 field.Computed.Platform = crParts.Platform;
         }
+
+        // Inline comment as field description
+        if (field.Description == null && data.ContainsKey("comment"))
+            field.Description = data["comment"] as string;
 
         return field;
     }

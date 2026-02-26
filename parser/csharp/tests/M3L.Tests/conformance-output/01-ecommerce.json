@@ -948,6 +948,7 @@
           "array": false,
           "arrayItemNullable": false,
           "kind": "stored",
+          "description": "Internal cost, not shown to customers",
           "attributes": [
             {
               "name": "min",

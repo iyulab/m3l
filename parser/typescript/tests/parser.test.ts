@@ -12,9 +12,9 @@ describe('parser', () => {
     const result = parse([
       '# Test',
       '## User : BaseModel',
+      '> User account',
       '- name: string(100) @not_null',
       '- email: string(320)? @unique',
-      '> User account',
     ].join('\n'));
     expect(result.models).toHaveLength(1);
     const user = result.models[0];
@@ -400,5 +400,36 @@ describe('parser', () => {
     expect(userStatus.inherits).toEqual(['BasicStatus']);
     const basicStatus = result.enums.find(e => e.name === 'BasicStatus')!;
     expect(basicStatus.inherits).toEqual([]);
+  });
+
+  it('should parse blockquote field description', () => {
+    const result = parse([
+      '## User',
+      '- username: string(50) @unique',
+      '  > Unique identifier used for login',
+      '- email: string(320)',
+    ].join('\n'));
+    const user = result.models[0];
+    expect(user.fields[0].description).toBe('Unique identifier used for login');
+    expect(user.fields[1].description).toBeUndefined();
+  });
+
+  it('should parse inline comment as field description', () => {
+    const result = parse([
+      '## User',
+      '- email: string(320) @unique  # Primary contact email',
+    ].join('\n'));
+    const user = result.models[0];
+    expect(user.fields[0].description).toBe('Primary contact email');
+  });
+
+  it('should preserve model-level blockquote description', () => {
+    const result = parse([
+      '## User',
+      '> User account information',
+      '- name: string(100)',
+    ].join('\n'));
+    const user = result.models[0];
+    expect(user.description).toBe('User account information');
   });
 });

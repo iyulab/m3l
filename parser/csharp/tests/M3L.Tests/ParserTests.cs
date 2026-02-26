@@ -333,4 +333,25 @@ public class ParserTests
         Assert.Equal("directive", idx["type"]);
         Assert.Equal(false, idx["unique"]);
     }
+
+    [Fact]
+    public void Parse_EnumInheritance_ExtractsBase()
+    {
+        var input = string.Join("\n", new[]
+        {
+            "## BasicStatus ::enum",
+            "- active: \"Active\"",
+            "- inactive: \"Inactive\"",
+            "",
+            "## UserStatus ::enum : BasicStatus",
+            "- suspended: \"Suspended\"",
+            "- banned: \"Banned\""
+        });
+        var result = Parser.ParseString(input, "test.m3l");
+        Assert.Equal(2, result.Enums.Count);
+        var userStatus = result.Enums.First(e => e.Name == "UserStatus");
+        Assert.Equal(new[] { "BasicStatus" }, userStatus.Inherits);
+        var basicStatus = result.Enums.First(e => e.Name == "BasicStatus");
+        Assert.Empty(basicStatus.Inherits);
+    }
 }

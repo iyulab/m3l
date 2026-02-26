@@ -164,6 +164,14 @@ function tokenizeH2(content: string, raw: string, line: number): Token {
     const { name, label } = parseNameLabel(namepart);
     const data: Record<string, unknown> = { name, label };
 
+    // Parse inheritance: ::enum : Base1, Base2
+    const inheritMatch = rest.match(/^:\s*(.+?)(?:\s+@|\s*"|\s*$)/);
+    if (inheritMatch) {
+      data.inherits = inheritMatch[1].split(',').map(s => s.trim()).filter(Boolean);
+    } else {
+      data.inherits = [];
+    }
+
     if (typeIndicator === 'view') {
       data.materialized = rest.includes('@materialized');
     }

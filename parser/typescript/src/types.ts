@@ -126,6 +126,7 @@ export interface EnumNode {
   type: 'enum';
   source: string;
   line: number;
+  inherits: string[];
   description?: string;
   values: EnumValue[];
   loc: SourceLocation;

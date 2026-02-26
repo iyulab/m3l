@@ -1521,6 +1521,7 @@
       "name": "Currency",
       "source": "D:\\data\\m3l\\samples\\multi\\base.m3l.md",
       "line": 26,
+      "inherits": [],
       "values": [
         {
           "name": "usd",
@@ -1553,6 +1554,7 @@
       "name": "UnitOfMeasure",
       "source": "D:\\data\\m3l\\samples\\multi\\base.m3l.md",
       "line": 34,
+      "inherits": [],
       "values": [
         {
           "name": "ea",

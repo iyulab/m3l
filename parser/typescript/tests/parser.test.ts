@@ -384,4 +384,21 @@ describe('parser', () => {
     const custom = fields[2].attributes.find(a => a.name === 'my_custom_attr');
     expect(custom?.isStandard).toBeUndefined();
   });
+
+  it('should parse enum inheritance', () => {
+    const result = parse([
+      '## BasicStatus ::enum',
+      '- active: "Active"',
+      '- inactive: "Inactive"',
+      '',
+      '## UserStatus ::enum : BasicStatus',
+      '- suspended: "Suspended"',
+      '- banned: "Banned"',
+    ].join('\n'));
+    expect(result.enums).toHaveLength(2);
+    const userStatus = result.enums.find(e => e.name === 'UserStatus')!;
+    expect(userStatus.inherits).toEqual(['BasicStatus']);
+    const basicStatus = result.enums.find(e => e.name === 'BasicStatus')!;
+    expect(basicStatus.inherits).toEqual([]);
+  });
 });

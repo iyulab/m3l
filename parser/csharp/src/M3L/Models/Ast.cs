@@ -137,6 +137,7 @@ public class EnumNode
     public string? Label { get; set; }
     public string Source { get; set; } = "";
     public int Line { get; set; }
+    public List<string> Inherits { get; set; } = new();
     public string? Description { get; set; }
     public List<EnumValue> Values { get; set; } = new();
     public SourceLocation Loc { get; set; } = new("", 0, 0);

@@ -181,6 +181,7 @@ function handleEnumStart(token: Token, state: ParserState): void {
     type: 'enum',
     source: state.file,
     line: token.line,
+    inherits: (data.inherits as string[]) || [],
     description: data.description as string | undefined,
     values: [],
     loc: { file: state.file, line: token.line, col: 1 },

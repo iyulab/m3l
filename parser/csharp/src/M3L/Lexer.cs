@@ -154,6 +154,13 @@ public static partial class Lexer
             var (name, label) = ParseNameLabel(namepart);
             var data = new Dictionary<string, object?> { ["name"] = name, ["label"] = label };
 
+            // Parse inheritance: ::enum : Base1, Base2
+            var inheritMatch = Regex.Match(rest, @"^:\s*(.+?)(?:\s+@|\s*""|\s*$)");
+            if (inheritMatch.Success)
+                data["inherits"] = inheritMatch.Groups[1].Value.Split(',').Select(s => s.Trim()).Where(s => s.Length > 0).ToList();
+            else
+                data["inherits"] = new List<string>();
+
             if (typeIndicator == "view")
                 data["materialized"] = rest.Contains("@materialized");
 

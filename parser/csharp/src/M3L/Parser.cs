@@ -132,6 +132,7 @@ public static class Parser
             Label = data.GetValueOrDefault("label") as string,
             Source = state.File,
             Line = token.Line,
+            Inherits = GetStringList(data, "inherits"),
             Description = data.GetValueOrDefault("description") as string,
             Loc = new SourceLocation(state.File, token.Line, 1),
         };

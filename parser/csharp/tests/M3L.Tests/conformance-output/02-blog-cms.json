@@ -2228,6 +2228,7 @@
       "name": "PostStatus",
       "source": "02-blog-cms.m3l.md",
       "line": 22,
+      "inherits": [],
       "values": [
         {
           "name": "draft",
@@ -2256,6 +2257,7 @@
       "name": "ContentFormat",
       "source": "02-blog-cms.m3l.md",
       "line": 29,
+      "inherits": [],
       "values": [
         {
           "name": "markdown",

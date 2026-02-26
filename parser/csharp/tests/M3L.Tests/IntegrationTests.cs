@@ -193,7 +193,7 @@ public class IntegrationTests
     public void M3LParser_GetVersions_ReturnsVersions()
     {
         Assert.Equal("1.0", M3LParser.GetAstVersion());
-        Assert.Equal("0.1.3", M3LParser.GetParserVersion());
+        Assert.Equal("0.1.4", M3LParser.GetParserVersion());
     }
 
     [Fact]

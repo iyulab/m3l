@@ -12,7 +12,7 @@ public static class Resolver
     public const string AstVersion = "1.0";
 
     /// <summary>Parser package version — kept in sync with .csproj.</summary>
-    public const string ParserVersion = "0.1.3";
+    public const string ParserVersion = "0.1.4";
 
     public static M3LAst Resolve(List<ParsedFile> files, ProjectInfo? project = null)
     {

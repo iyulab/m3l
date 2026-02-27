@@ -2,8 +2,9 @@ name: Publish Crates
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [main]
+    paths:
+      - 'VERSION'
 
 env:
   CARGO_TERM_COLOR: always

@@ -2,8 +2,9 @@ name: Publish NuGet
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [main]
+    paths:
+      - 'VERSION'
 
 env:
   CARGO_TERM_COLOR: always
@@ -83,9 +84,9 @@ jobs:
       - name: List runtimes
         run: find bindings/csharp/runtimes -type f
 
-      - name: Extract version from tag
+      - name: Read version from VERSION file
         id: version
-        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(cat VERSION)" >> "$GITHUB_OUTPUT"
 
       - name: Pack NuGet
         run: |

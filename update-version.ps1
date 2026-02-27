@@ -8,6 +8,9 @@
     - bindings/csharp/M3L.Native.csproj       (<Version>x.y.z</Version>)
     - bindings/typescript/package.json         ("version": "x.y.z")
     - bindings/typescript/package.json         ("@iyulab/m3l-napi": "x.y.z")
+    - crates/m3l-napi/package.json            (version + optionalDependencies)
+    - crates/m3l-napi/npm/*/package.json      (5 platform stub versions)
+    - pkg/wasm/package.json                   ("version": "x.y.z")
 
 .PARAMETER DryRun
     Show what would change without modifying files.
@@ -122,6 +125,59 @@ Update-File `
     -Pattern '"@iyulab/m3l-napi":\s*"[\d.]+"' `
     -Replacement "`"@iyulab/m3l-napi`": `"$version`"" `
     -Label 'napi dependency version'
+
+Write-Host ""
+
+# --- NAPI main package ---
+Write-Host "[NAPI main package]" -ForegroundColor White
+
+Update-File `
+    -Path (Join-Path $root 'crates/m3l-napi/package.json') `
+    -Pattern '"version":\s*"[\d.]+"' `
+    -Replacement "`"version`": `"$version`"" `
+    -Label 'napi version'
+
+# Update each optionalDependency version in NAPI main package.json
+$napiOptDeps = @(
+    '@iyulab/m3l-napi-win32-x64-msvc',
+    '@iyulab/m3l-napi-linux-x64-gnu',
+    '@iyulab/m3l-napi-linux-x64-musl',
+    '@iyulab/m3l-napi-darwin-x64',
+    '@iyulab/m3l-napi-darwin-arm64'
+)
+foreach ($dep in $napiOptDeps) {
+    $escapedDep = [regex]::Escape($dep)
+    Update-File `
+        -Path (Join-Path $root 'crates/m3l-napi/package.json') `
+        -Pattern "`"$escapedDep`":\s*`"[\d.]+`"" `
+        -Replacement "`"$dep`": `"$version`"" `
+        -Label "$dep version"
+}
+
+Write-Host ""
+
+# --- NAPI platform stubs ---
+Write-Host "[NAPI platform stubs]" -ForegroundColor White
+
+$platformDirs = @('win32-x64-msvc', 'linux-x64-gnu', 'linux-x64-musl', 'darwin-x64', 'darwin-arm64')
+foreach ($dir in $platformDirs) {
+    Update-File `
+        -Path (Join-Path $root "crates/m3l-napi/npm/$dir/package.json") `
+        -Pattern '"version":\s*"[\d.]+"' `
+        -Replacement "`"version`": `"$version`"" `
+        -Label "$dir version"
+}
+
+Write-Host ""
+
+# --- WASM package ---
+Write-Host "[WASM package]" -ForegroundColor White
+
+Update-File `
+    -Path (Join-Path $root 'pkg/wasm/package.json') `
+    -Pattern '"version":\s*"[\d.]+"' `
+    -Replacement "`"version`": `"$version`"" `
+    -Label 'wasm version'
 
 Write-Host ""
 

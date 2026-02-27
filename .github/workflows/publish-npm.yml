@@ -1,0 +1,153 @@
+name: Publish npm (NAPI + TS wrapper)
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build (${{ matrix.target }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-pc-windows-msvc
+            runner: windows-latest
+            node_file: m3l-napi.win32-x64-msvc.node
+            platform_dir: win32-x64-msvc
+          - target: x86_64-unknown-linux-gnu
+            runner: ubuntu-latest
+            node_file: m3l-napi.linux-x64-gnu.node
+            platform_dir: linux-x64-gnu
+          - target: x86_64-unknown-linux-musl
+            runner: ubuntu-latest
+            node_file: m3l-napi.linux-x64-musl.node
+            platform_dir: linux-x64-musl
+          - target: x86_64-apple-darwin
+            runner: macos-13
+            node_file: m3l-napi.darwin-x64.node
+            platform_dir: darwin-x64
+          - target: aarch64-apple-darwin
+            runner: macos-14
+            node_file: m3l-napi.darwin-arm64.node
+            platform_dir: darwin-arm64
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+
+      - name: Install musl-tools
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build native module
+        run: cargo build -p m3l-napi --release --target ${{ matrix.target }}
+
+      - name: Copy .node artifact (Unix)
+        if: runner.os != 'Windows'
+        run: cp target/${{ matrix.target }}/release/libm3l_napi.so ${{ matrix.node_file }} 2>/dev/null || cp target/${{ matrix.target }}/release/libm3l_napi.dylib ${{ matrix.node_file }} 2>/dev/null || true
+
+      - name: Copy .node artifact (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: cp target/${{ matrix.target }}/release/m3l_napi.dll ${{ matrix.node_file }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: napi-${{ matrix.platform_dir }}
+          path: ${{ matrix.node_file }}
+          if-no-files-found: error
+
+  publish:
+    name: Publish to npm
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: List artifacts
+        run: find artifacts -type f | head -20
+
+      # Publish platform packages
+      - name: Prepare & publish win32-x64-msvc
+        run: |
+          cp artifacts/napi-win32-x64-msvc/m3l-napi.win32-x64-msvc.node crates/m3l-napi/npm/win32-x64-msvc/
+          cd crates/m3l-napi/npm/win32-x64-msvc
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Prepare & publish linux-x64-gnu
+        run: |
+          cp artifacts/napi-linux-x64-gnu/m3l-napi.linux-x64-gnu.node crates/m3l-napi/npm/linux-x64-gnu/
+          cd crates/m3l-napi/npm/linux-x64-gnu
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Prepare & publish linux-x64-musl
+        run: |
+          cp artifacts/napi-linux-x64-musl/m3l-napi.linux-x64-musl.node crates/m3l-napi/npm/linux-x64-musl/
+          cd crates/m3l-napi/npm/linux-x64-musl
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Prepare & publish darwin-x64
+        run: |
+          cp artifacts/napi-darwin-x64/m3l-napi.darwin-x64.node crates/m3l-napi/npm/darwin-x64/
+          cd crates/m3l-napi/npm/darwin-x64
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Prepare & publish darwin-arm64
+        run: |
+          cp artifacts/napi-darwin-arm64/m3l-napi.darwin-arm64.node crates/m3l-napi/npm/darwin-arm64/
+          cd crates/m3l-napi/npm/darwin-arm64
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # Publish main NAPI package
+      - name: Publish @iyulab/m3l-napi
+        run: |
+          cd crates/m3l-napi
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # Publish TS wrapper package
+      - name: Publish @iyulab/m3l
+        run: |
+          cd bindings/typescript
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -9,6 +9,12 @@
     <Description>M3L parser native bindings — P/Invoke wrapper for the Rust m3l-cabi library</Description>
     <Authors>iyulab</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/iyulab/m3l</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="runtimes\**\*" Pack="true" PackagePath="runtimes" />
+  </ItemGroup>
 
 </Project>

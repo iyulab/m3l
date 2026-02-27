@@ -1,0 +1,53 @@
+name: Publish WASM
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  publish:
+    name: Build & Publish to npm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install wasm-pack
+        run: cargo install wasm-pack
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: Build WASM package
+        run: wasm-pack build crates/m3l-wasm --target bundler --scope iyulab
+
+      - name: Copy package metadata
+        run: |
+          # wasm-pack generates pkg/ in crate dir; overlay our maintained package.json fields
+          cd crates/m3l-wasm/pkg
+          # Ensure scoped name
+          node -e "
+            const pkg = require('./package.json');
+            pkg.name = '@iyulab/m3l-wasm';
+            pkg.license = 'MIT';
+            pkg.repository = { type: 'git', url: 'https://github.com/iyulab/m3l' };
+            require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+
+      - name: Publish @iyulab/m3l-wasm
+        run: |
+          cd crates/m3l-wasm/pkg
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

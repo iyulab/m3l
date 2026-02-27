@@ -1,0 +1,100 @@
+name: Publish NuGet
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-native:
+    name: Build native (${{ matrix.target }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-pc-windows-msvc
+            runner: windows-latest
+            rid: win-x64
+            lib_name: m3l_cabi.dll
+          - target: x86_64-unknown-linux-gnu
+            runner: ubuntu-latest
+            rid: linux-x64
+            lib_name: libm3l_cabi.so
+          - target: x86_64-apple-darwin
+            runner: macos-13
+            rid: osx-x64
+            lib_name: libm3l_cabi.dylib
+          - target: aarch64-apple-darwin
+            runner: macos-14
+            rid: osx-arm64
+            lib_name: libm3l_cabi.dylib
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+
+      - name: Build m3l-cabi
+        run: cargo build -p m3l-cabi --release --target ${{ matrix.target }}
+
+      - name: Upload native library
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-${{ matrix.rid }}
+          path: target/${{ matrix.target }}/release/${{ matrix.lib_name }}
+          if-no-files-found: error
+
+  pack-publish:
+    name: Pack & Publish
+    needs: build-native
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Download all native artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Arrange runtimes directory
+        run: |
+          cd bindings/csharp
+          mkdir -p runtimes/win-x64/native
+          mkdir -p runtimes/linux-x64/native
+          mkdir -p runtimes/osx-x64/native
+          mkdir -p runtimes/osx-arm64/native
+          cp ../../artifacts/native-win-x64/m3l_cabi.dll       runtimes/win-x64/native/
+          cp ../../artifacts/native-linux-x64/libm3l_cabi.so   runtimes/linux-x64/native/
+          cp ../../artifacts/native-osx-x64/libm3l_cabi.dylib  runtimes/osx-x64/native/
+          cp ../../artifacts/native-osx-arm64/libm3l_cabi.dylib runtimes/osx-arm64/native/
+
+      - name: List runtimes
+        run: find bindings/csharp/runtimes -type f
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Pack NuGet
+        run: |
+          cd bindings/csharp
+          dotnet pack -c Release -p:Version=${{ steps.version.outputs.version }} -o ./nupkg
+
+      - name: Publish to NuGet
+        run: |
+          dotnet nuget push bindings/csharp/nupkg/*.nupkg \
+            --api-key ${{ secrets.NUGET_API_KEY }} \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate

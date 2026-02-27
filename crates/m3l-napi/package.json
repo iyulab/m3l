@@ -17,5 +17,16 @@
   "files": [
     "index.js",
     "index.d.ts"
-  ]
+  ],
+  "optionalDependencies": {
+    "@iyulab/m3l-napi-win32-x64-msvc": "0.4.0",
+    "@iyulab/m3l-napi-linux-x64-gnu": "0.4.0",
+    "@iyulab/m3l-napi-linux-x64-musl": "0.4.0",
+    "@iyulab/m3l-napi-darwin-x64": "0.4.0",
+    "@iyulab/m3l-napi-darwin-arm64": "0.4.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/iyulab/m3l"
+  }
 }

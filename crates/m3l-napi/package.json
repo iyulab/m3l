@@ -1,6 +1,6 @@
 {
   "name": "@iyulab/m3l-napi",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "M3L parser Node.js native addon via napi-rs",
   "license": "MIT",
   "main": "index.js",
@@ -19,11 +19,11 @@
     "index.d.ts"
   ],
   "optionalDependencies": {
-    "@iyulab/m3l-napi-win32-x64-msvc": "0.4.0",
-    "@iyulab/m3l-napi-linux-x64-gnu": "0.4.0",
-    "@iyulab/m3l-napi-linux-x64-musl": "0.4.0",
-    "@iyulab/m3l-napi-darwin-x64": "0.4.0",
-    "@iyulab/m3l-napi-darwin-arm64": "0.4.0"
+    "@iyulab/m3l-napi-win32-x64-msvc": "0.4.1",
+    "@iyulab/m3l-napi-linux-x64-gnu": "0.4.1",
+    "@iyulab/m3l-napi-linux-x64-musl": "0.4.1",
+    "@iyulab/m3l-napi-darwin-x64": "0.4.1",
+    "@iyulab/m3l-napi-darwin-arm64": "0.4.1"
   },
   "repository": {
     "type": "git",

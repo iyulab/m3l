@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PackageId>M3L.Native</PackageId>
-    <Version>0.4.0</Version>
+    <Version>0.4.1</Version>
     <Description>M3L parser native bindings — P/Invoke wrapper for the Rust m3l-cabi library</Description>
     <Authors>iyulab</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

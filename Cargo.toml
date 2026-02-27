@@ -3,7 +3,7 @@ resolver = "2"
 members = ["crates/m3l-core", "crates/m3l-cli", "crates/m3l-cabi", "crates/m3l-wasm", "crates/m3l-napi", "crates/m3l-lint"]
 
 [workspace.package]
-version = "0.4.0"
+version = "0.4.1"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/iyulab/m3l"

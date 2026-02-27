@@ -30,7 +30,7 @@ fn cli_version() {
     let output = m3l_bin().arg("--version").output().expect("failed to run");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("0.4.0"));
+    assert!(stdout.contains(env!("CARGO_PKG_VERSION")));
 }
 
 #[test]

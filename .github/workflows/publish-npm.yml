@@ -28,6 +28,7 @@ jobs:
             runner: ubuntu-latest
             node_file: m3l-napi.linux-x64-musl.node
             platform_dir: linux-x64-musl
+            use_zigbuild: true
           - target: x86_64-apple-darwin
             runner: macos-13
             node_file: m3l-napi.darwin-x64.node
@@ -47,20 +48,31 @@ jobs:
         with:
           key: ${{ matrix.target }}
 
-      - name: Install musl-tools
-        if: matrix.target == 'x86_64-unknown-linux-musl'
-        run: sudo apt-get update && sudo apt-get install -y musl-tools
-
       - uses: actions/setup-node@v4
         with:
           node-version: 20
 
+      - name: Install cargo-zigbuild
+        if: matrix.use_zigbuild
+        run: |
+          pip3 install ziglang
+          cargo install cargo-zigbuild
+
+      - name: Build native module (zigbuild)
+        if: matrix.use_zigbuild
+        run: cargo zigbuild -p m3l-napi --release --target ${{ matrix.target }}
+
       - name: Build native module
+        if: ${{ !matrix.use_zigbuild }}
         run: cargo build -p m3l-napi --release --target ${{ matrix.target }}
 
       - name: Copy .node artifact (Unix)
         if: runner.os != 'Windows'
-        run: cp target/${{ matrix.target }}/release/libm3l_napi.so ${{ matrix.node_file }} 2>/dev/null || cp target/${{ matrix.target }}/release/libm3l_napi.dylib ${{ matrix.node_file }} 2>/dev/null || true
+        run: |
+          src="target/${{ matrix.target }}/release"
+          cp "$src/libm3l_napi.so" "${{ matrix.node_file }}" 2>/dev/null \
+            || cp "$src/libm3l_napi.dylib" "${{ matrix.node_file }}" 2>/dev/null \
+            || true
 
       - name: Copy .node artifact (Windows)
         if: runner.os == 'Windows'

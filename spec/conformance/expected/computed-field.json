@@ -1,0 +1,116 @@
+{
+  "parserVersion": "0.4.0",
+  "astVersion": "1.0",
+  "project": {},
+  "sources": [
+    "spec/conformance/inputs/computed-field.m3l.md"
+  ],
+  "models": [
+    {
+      "name": "Product",
+      "type": "model",
+      "source": "spec/conformance/inputs/computed-field.m3l.md",
+      "line": 1,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/computed-field.m3l.md",
+            "line": 2,
+            "col": 1
+          }
+        },
+        {
+          "name": "price",
+          "type": "decimal",
+          "params": [
+            10.0,
+            2.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/computed-field.m3l.md",
+            "line": 3,
+            "col": 1
+          }
+        },
+        {
+          "name": "quantity",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/computed-field.m3l.md",
+            "line": 4,
+            "col": 1
+          }
+        },
+        {
+          "name": "total_value",
+          "type": "decimal",
+          "params": [
+            12.0,
+            2.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "computed",
+          "attributes": [
+            {
+              "name": "computed",
+              "args": [
+                "price * quantity"
+              ],
+              "isStandard": true
+            }
+          ],
+          "computed": {
+            "expression": "price * quantity"
+          },
+          "loc": {
+            "file": "spec/conformance/inputs/computed-field.m3l.md",
+            "line": 7,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/computed-field.m3l.md",
+        "line": 1,
+        "col": 1
+      }
+    }
+  ],
+  "enums": [],
+  "interfaces": [],
+  "views": [],
+  "attributeRegistry": [],
+  "errors": [],
+  "warnings": []
+}

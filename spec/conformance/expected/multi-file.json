@@ -1,0 +1,2074 @@
+{
+  "parserVersion": "0.4.0",
+  "astVersion": "1.0",
+  "project": {
+    "name": "sample.multi"
+  },
+  "sources": [
+    "spec\\conformance\\inputs\\multi\\base.m3l.md",
+    "spec\\conformance\\inputs\\multi\\inventory.m3l.md"
+  ],
+  "models": [
+    {
+      "name": "BaseEntity",
+      "type": "model",
+      "source": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+      "line": 20,
+      "inherits": [
+        "Timestampable"
+      ],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "now()",
+          "default_value_type": "expression",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "line": 9,
+            "col": 1
+          }
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "now()",
+          "default_value_type": "expression",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "line": 10,
+            "col": 1
+          }
+        },
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            },
+            {
+              "name": "generated",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "line": 22,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+        "line": 20,
+        "col": 1
+      }
+    },
+    {
+      "name": "Warehouse",
+      "type": "model",
+      "source": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+      "line": 10,
+      "inherits": [
+        "BaseEntity"
+      ],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "now()",
+          "default_value_type": "expression",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "line": 9,
+            "col": 1
+          }
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "now()",
+          "default_value_type": "expression",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "line": 10,
+            "col": 1
+          }
+        },
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            },
+            {
+              "name": "generated",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "line": 22,
+            "col": 1
+          }
+        },
+        {
+          "name": "code",
+          "type": "string",
+          "params": [
+            20.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "unique",
+              "isStandard": true
+            },
+            {
+              "name": "not_null",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 12,
+            "col": 1
+          }
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "params": [
+            100.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "not_null",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 13,
+            "col": 1
+          }
+        },
+        {
+          "name": "address",
+          "type": "string",
+          "params": [
+            300.0
+          ],
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 14,
+            "col": 1
+          }
+        },
+        {
+          "name": "is_active",
+          "type": "boolean",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "true",
+          "default_value_type": "literal",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 15,
+            "col": 1
+          }
+        },
+        {
+          "name": "total_items",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "rollup",
+          "attributes": [
+            {
+              "name": "rollup",
+              "args": [
+                "StockItem.warehouse_id",
+                "count"
+              ],
+              "isStandard": true
+            }
+          ],
+          "rollup": {
+            "target": "StockItem",
+            "fk": "warehouse_id",
+            "aggregate": "count"
+          },
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 18,
+            "col": 1
+          }
+        },
+        {
+          "name": "total_value",
+          "type": "decimal",
+          "params": [
+            14.0,
+            2.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "rollup",
+          "attributes": [
+            {
+              "name": "rollup",
+              "args": [
+                "StockItem.warehouse_id",
+                "sum(total_value)"
+              ],
+              "isStandard": true
+            }
+          ],
+          "rollup": {
+            "target": "StockItem",
+            "fk": "warehouse_id",
+            "aggregate": "sum",
+            "field": "total_value"
+          },
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 19,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+        "line": 10,
+        "col": 1
+      }
+    },
+    {
+      "name": "Supplier",
+      "type": "model",
+      "source": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+      "line": 23,
+      "inherits": [
+        "BaseEntity",
+        "SoftDeletable"
+      ],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "now()",
+          "default_value_type": "expression",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "line": 9,
+            "col": 1
+          }
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "now()",
+          "default_value_type": "expression",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "line": 10,
+            "col": 1
+          }
+        },
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            },
+            {
+              "name": "generated",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "line": 22,
+            "col": 1
+          }
+        },
+        {
+          "name": "is_deleted",
+          "type": "boolean",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "false",
+          "default_value_type": "literal",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "line": 14,
+            "col": 1
+          }
+        },
+        {
+          "name": "deleted_at",
+          "type": "timestamp",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "line": 15,
+            "col": 1
+          }
+        },
+        {
+          "name": "deleted_by",
+          "type": "string",
+          "params": [
+            100.0
+          ],
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "line": 16,
+            "col": 1
+          }
+        },
+        {
+          "name": "code",
+          "type": "string",
+          "params": [
+            20.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "unique",
+              "isStandard": true
+            },
+            {
+              "name": "not_null",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 25,
+            "col": 1
+          }
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "params": [
+            200.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "not_null",
+              "isStandard": true
+            },
+            {
+              "name": "searchable",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 26,
+            "col": 1
+          }
+        },
+        {
+          "name": "contact_email",
+          "type": "email",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 27,
+            "col": 1
+          }
+        },
+        {
+          "name": "contact_phone",
+          "type": "phone",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 28,
+            "col": 1
+          }
+        },
+        {
+          "name": "currency",
+          "type": "Currency",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "usd",
+          "default_value_type": "literal",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 29,
+            "col": 1
+          }
+        },
+        {
+          "name": "lead_time_days",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "7",
+          "default_value_type": "literal",
+          "attributes": [
+            {
+              "name": "min",
+              "args": [
+                0.0
+              ],
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 30,
+            "col": 1
+          }
+        },
+        {
+          "name": "is_active",
+          "type": "boolean",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "true",
+          "default_value_type": "literal",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 31,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+        "line": 23,
+        "col": 1
+      }
+    },
+    {
+      "name": "Item",
+      "type": "model",
+      "source": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+      "line": 35,
+      "inherits": [
+        "BaseEntity"
+      ],
+      "description": "Inventory item master data.",
+      "attributes": [],
+      "fields": [
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "now()",
+          "default_value_type": "expression",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "line": 9,
+            "col": 1
+          }
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "now()",
+          "default_value_type": "expression",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "line": 10,
+            "col": 1
+          }
+        },
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            },
+            {
+              "name": "generated",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "line": 22,
+            "col": 1
+          }
+        },
+        {
+          "name": "sku",
+          "type": "string",
+          "params": [
+            50.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "unique",
+              "isStandard": true
+            },
+            {
+              "name": "not_null",
+              "isStandard": true
+            },
+            {
+              "name": "immutable",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 39,
+            "col": 1
+          }
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "params": [
+            200.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "not_null",
+              "isStandard": true
+            },
+            {
+              "name": "searchable",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 40,
+            "col": 1
+          }
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 41,
+            "col": 1
+          }
+        },
+        {
+          "name": "unit",
+          "type": "UnitOfMeasure",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "ea",
+          "default_value_type": "literal",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 42,
+            "col": 1
+          }
+        },
+        {
+          "name": "category",
+          "type": "string",
+          "params": [
+            50.0
+          ],
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 43,
+            "col": 1
+          }
+        },
+        {
+          "name": "min_stock",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "0",
+          "default_value_type": "literal",
+          "description": "Minimum stock level for reorder alert",
+          "attributes": [
+            {
+              "name": "min",
+              "args": [
+                0.0
+              ],
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 44,
+            "col": 1
+          }
+        },
+        {
+          "name": "is_active",
+          "type": "boolean",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "true",
+          "default_value_type": "literal",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 45,
+            "col": 1
+          }
+        },
+        {
+          "name": "total_on_hand",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "rollup",
+          "attributes": [
+            {
+              "name": "rollup",
+              "args": [
+                "StockItem.item_id",
+                "sum(quantity)"
+              ],
+              "isStandard": true
+            }
+          ],
+          "rollup": {
+            "target": "StockItem",
+            "fk": "item_id",
+            "aggregate": "sum",
+            "field": "quantity"
+          },
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 48,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+        "line": 35,
+        "col": 1
+      }
+    },
+    {
+      "name": "StockItem",
+      "type": "model",
+      "source": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+      "line": 52,
+      "inherits": [
+        "BaseEntity"
+      ],
+      "description": "Physical stock in a specific warehouse.",
+      "attributes": [],
+      "fields": [
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "now()",
+          "default_value_type": "expression",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "line": 9,
+            "col": 1
+          }
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "now()",
+          "default_value_type": "expression",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "line": 10,
+            "col": 1
+          }
+        },
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            },
+            {
+              "name": "generated",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "line": 22,
+            "col": 1
+          }
+        },
+        {
+          "name": "warehouse_id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "reference",
+              "args": [
+                "Warehouse"
+              ],
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 56,
+            "col": 1
+          }
+        },
+        {
+          "name": "item_id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "reference",
+              "args": [
+                "Item"
+              ],
+              "cascade": "!",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 57,
+            "col": 1
+          }
+        },
+        {
+          "name": "supplier_id",
+          "type": "identifier",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "reference",
+              "args": [
+                "Supplier"
+              ],
+              "cascade": "?",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 58,
+            "col": 1
+          }
+        },
+        {
+          "name": "quantity",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "0",
+          "default_value_type": "literal",
+          "attributes": [
+            {
+              "name": "min",
+              "args": [
+                0.0
+              ],
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 59,
+            "col": 1
+          }
+        },
+        {
+          "name": "unit_cost",
+          "type": "decimal",
+          "params": [
+            10.0,
+            2.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "not_null",
+              "isStandard": true
+            },
+            {
+              "name": "min",
+              "args": [
+                0.0
+              ],
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 60,
+            "col": 1
+          }
+        },
+        {
+          "name": "batch_number",
+          "type": "string",
+          "params": [
+            50.0
+          ],
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 61,
+            "col": 1
+          }
+        },
+        {
+          "name": "expiry_date",
+          "type": "date",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 62,
+            "col": 1
+          }
+        },
+        {
+          "name": "warehouse_name",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "lookup",
+          "attributes": [
+            {
+              "name": "lookup",
+              "args": [
+                "warehouse_id.name"
+              ],
+              "isStandard": true
+            }
+          ],
+          "lookup": {
+            "path": "warehouse_id.name"
+          },
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 65,
+            "col": 1
+          }
+        },
+        {
+          "name": "item_name",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "lookup",
+          "attributes": [
+            {
+              "name": "lookup",
+              "args": [
+                "item_id.name"
+              ],
+              "isStandard": true
+            }
+          ],
+          "lookup": {
+            "path": "item_id.name"
+          },
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 66,
+            "col": 1
+          }
+        },
+        {
+          "name": "item_sku",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "lookup",
+          "attributes": [
+            {
+              "name": "lookup",
+              "args": [
+                "item_id.sku"
+              ],
+              "isStandard": true
+            }
+          ],
+          "lookup": {
+            "path": "item_id.sku"
+          },
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 67,
+            "col": 1
+          }
+        },
+        {
+          "name": "supplier_name",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "lookup",
+          "attributes": [
+            {
+              "name": "lookup",
+              "args": [
+                "supplier_id.name"
+              ],
+              "isStandard": true
+            }
+          ],
+          "lookup": {
+            "path": "supplier_id.name"
+          },
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 68,
+            "col": 1
+          }
+        },
+        {
+          "name": "total_value",
+          "type": "decimal",
+          "params": [
+            14.0,
+            2.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "computed",
+          "attributes": [
+            {
+              "name": "computed",
+              "args": [
+                "quantity * unit_cost"
+              ],
+              "isStandard": true
+            }
+          ],
+          "computed": {
+            "expression": "quantity * unit_cost"
+          },
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 71,
+            "col": 1
+          }
+        },
+        {
+          "name": "is_expired",
+          "type": "boolean",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "computed",
+          "attributes": [
+            {
+              "name": "computed",
+              "args": [
+                "expiry_date IS NOT NULL AND expiry_date < CURRENT_DATE"
+              ],
+              "isStandard": true
+            }
+          ],
+          "computed": {
+            "expression": "expiry_date IS NOT NULL AND expiry_date < CURRENT_DATE"
+          },
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 72,
+            "col": 1
+          }
+        },
+        {
+          "name": "needs_reorder",
+          "type": "boolean",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "computed",
+          "attributes": [
+            {
+              "name": "computed",
+              "args": [
+                "quantity <= min_stock"
+              ],
+              "isStandard": true
+            }
+          ],
+          "computed": {
+            "expression": "quantity <= min_stock"
+          },
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 73,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [
+          {
+            "args": [
+              "warehouse_id",
+              "item_id",
+              "batch_number"
+            ],
+            "loc": {
+              "col": 1,
+              "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+              "line": 75
+            },
+            "raw": "- @unique(warehouse_id, item_id, batch_number)",
+            "type": "directive",
+            "unique": true
+          },
+          {
+            "args": "item_id",
+            "loc": {
+              "col": 1,
+              "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+              "line": 76
+            },
+            "raw": "- @index(item_id)",
+            "type": "directive",
+            "unique": false
+          },
+          {
+            "args": [
+              "warehouse_id",
+              "item_id"
+            ],
+            "loc": {
+              "col": 1,
+              "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+              "line": 77
+            },
+            "raw": "- @index(warehouse_id, item_id)",
+            "type": "directive",
+            "unique": false
+          }
+        ],
+        "relations": [
+          {
+            "loc": {
+              "col": 1,
+              "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+              "line": 80
+            },
+            "raw": "warehouse: >Warehouse via warehouse_id"
+          },
+          {
+            "loc": {
+              "col": 1,
+              "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+              "line": 81
+            },
+            "raw": "item: >Item via item_id"
+          },
+          {
+            "loc": {
+              "col": 1,
+              "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+              "line": 82
+            },
+            "raw": "supplier: >Supplier via supplier_id (optional)"
+          }
+        ],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+        "line": 52,
+        "col": 1
+      }
+    },
+    {
+      "name": "StockMovement",
+      "type": "model",
+      "source": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+      "line": 86,
+      "inherits": [
+        "BaseEntity"
+      ],
+      "description": "Record of stock in/out movements.",
+      "attributes": [],
+      "fields": [
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "now()",
+          "default_value_type": "expression",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "line": 9,
+            "col": 1
+          }
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "now()",
+          "default_value_type": "expression",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "line": 10,
+            "col": 1
+          }
+        },
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            },
+            {
+              "name": "generated",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "line": 22,
+            "col": 1
+          }
+        },
+        {
+          "name": "stock_item_id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "reference",
+              "args": [
+                "StockItem"
+              ],
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 90,
+            "col": 1
+          }
+        },
+        {
+          "name": "movement_type",
+          "type": "enum",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "not_null",
+              "isStandard": true
+            }
+          ],
+          "enum_values": [
+            {
+              "name": "in",
+              "description": "Stock In"
+            },
+            {
+              "name": "out",
+              "description": "Stock Out"
+            },
+            {
+              "name": "transfer",
+              "description": "Transfer"
+            },
+            {
+              "name": "adjustment",
+              "description": "Adjustment"
+            }
+          ],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 91,
+            "col": 1
+          }
+        },
+        {
+          "name": "quantity",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "description": "Positive for in, negative for out",
+          "attributes": [
+            {
+              "name": "not_null",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 96,
+            "col": 1
+          }
+        },
+        {
+          "name": "reference_number",
+          "type": "string",
+          "params": [
+            50.0
+          ],
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 97,
+            "col": 1
+          }
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 98,
+            "col": 1
+          }
+        },
+        {
+          "name": "moved_by",
+          "type": "string",
+          "params": [
+            100.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "not_null",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 99,
+            "col": 1
+          }
+        },
+        {
+          "name": "item_name",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "lookup",
+          "attributes": [
+            {
+              "name": "lookup",
+              "args": [
+                "stock_item_id.item_name"
+              ],
+              "isStandard": true
+            }
+          ],
+          "lookup": {
+            "path": "stock_item_id.item_name"
+          },
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 102,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [
+          {
+            "args": [
+              "stock_item_id",
+              "created_at"
+            ],
+            "loc": {
+              "col": 1,
+              "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+              "line": 104
+            },
+            "raw": "- @index(stock_item_id, created_at)",
+            "type": "directive",
+            "unique": false
+          }
+        ],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+        "line": 86,
+        "col": 1
+      }
+    }
+  ],
+  "enums": [
+    {
+      "name": "Currency",
+      "type": "enum",
+      "source": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+      "line": 26,
+      "inherits": [],
+      "values": [
+        {
+          "name": "usd",
+          "description": "US Dollar"
+        },
+        {
+          "name": "eur",
+          "description": "Euro"
+        },
+        {
+          "name": "gbp",
+          "description": "British Pound"
+        },
+        {
+          "name": "jpy",
+          "description": "Japanese Yen"
+        },
+        {
+          "name": "krw",
+          "description": "Korean Won"
+        }
+      ],
+      "loc": {
+        "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+        "line": 26,
+        "col": 1
+      }
+    },
+    {
+      "name": "UnitOfMeasure",
+      "type": "enum",
+      "source": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+      "line": 34,
+      "inherits": [],
+      "values": [
+        {
+          "name": "ea",
+          "description": "Each"
+        },
+        {
+          "name": "kg",
+          "description": "Kilogram"
+        },
+        {
+          "name": "m",
+          "description": "Meter"
+        },
+        {
+          "name": "l",
+          "description": "Liter"
+        },
+        {
+          "name": "box",
+          "description": "Box"
+        }
+      ],
+      "loc": {
+        "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+        "line": 34,
+        "col": 1
+      }
+    }
+  ],
+  "interfaces": [
+    {
+      "name": "Timestampable",
+      "type": "interface",
+      "source": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+      "line": 7,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "now()",
+          "default_value_type": "expression",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "line": 9,
+            "col": 1
+          }
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "now()",
+          "default_value_type": "expression",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "line": 10,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+        "line": 7,
+        "col": 1
+      }
+    },
+    {
+      "name": "SoftDeletable",
+      "type": "interface",
+      "source": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+      "line": 12,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "is_deleted",
+          "type": "boolean",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "false",
+          "default_value_type": "literal",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "line": 14,
+            "col": 1
+          }
+        },
+        {
+          "name": "deleted_at",
+          "type": "timestamp",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "line": 15,
+            "col": 1
+          }
+        },
+        {
+          "name": "deleted_by",
+          "type": "string",
+          "params": [
+            100.0
+          ],
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "line": 16,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+        "line": 12,
+        "col": 1
+      }
+    }
+  ],
+  "views": [
+    {
+      "name": "LowStockAlert",
+      "type": "view",
+      "source": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+      "line": 108,
+      "inherits": [],
+      "description": "Items below minimum stock level.",
+      "attributes": [],
+      "fields": [
+        {
+          "name": "item_sku",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "from",
+              "args": [
+                "Item.sku"
+              ],
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 118,
+            "col": 1
+          }
+        },
+        {
+          "name": "item_name",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "from",
+              "args": [
+                "Item.name"
+              ],
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 119,
+            "col": 1
+          }
+        },
+        {
+          "name": "warehouse_id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "from",
+              "args": [
+                "StockItem.warehouse_id"
+              ],
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 120,
+            "col": 1
+          }
+        },
+        {
+          "name": "current_qty",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "from",
+              "args": [
+                "StockItem.quantity"
+              ],
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 121,
+            "col": 1
+          }
+        },
+        {
+          "name": "min_stock",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "from",
+              "args": [
+                "Item.min_stock"
+              ],
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 122,
+            "col": 1
+          }
+        },
+        {
+          "name": "deficit",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "computed",
+          "attributes": [
+            {
+              "name": "computed",
+              "args": [
+                "Item.min_stock - StockItem.quantity"
+              ],
+              "isStandard": true
+            }
+          ],
+          "computed": {
+            "expression": "Item.min_stock - StockItem.quantity"
+          },
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 123,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "materialized": false,
+      "source_def": {
+        "from": "StockItem",
+        "joins": [
+          {
+            "model": "Item",
+            "on": ""
+          }
+        ],
+        "where": "StockItem.quantity <= Item.min_stock AND Item.is_active = true",
+        "order_by": "StockItem.quantity asc"
+      },
+      "loc": {
+        "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+        "line": 108,
+        "col": 1
+      }
+    },
+    {
+      "name": "WarehouseSummary",
+      "type": "view",
+      "source": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+      "line": 127,
+      "inherits": [],
+      "description": "Aggregated stock value per warehouse.",
+      "attributes": [],
+      "fields": [
+        {
+          "name": "warehouse_code",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "from",
+              "args": [
+                "Warehouse.code"
+              ],
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 136,
+            "col": 1
+          }
+        },
+        {
+          "name": "warehouse_name",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "from",
+              "args": [
+                "Warehouse.name"
+              ],
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 137,
+            "col": 1
+          }
+        },
+        {
+          "name": "item_count",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "computed",
+          "attributes": [
+            {
+              "name": "computed",
+              "args": [
+                "COUNT(DISTINCT StockItem.item_id)"
+              ],
+              "isStandard": true
+            }
+          ],
+          "computed": {
+            "expression": "COUNT(DISTINCT StockItem.item_id)"
+          },
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 138,
+            "col": 1
+          }
+        },
+        {
+          "name": "total_quantity",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "computed",
+          "attributes": [
+            {
+              "name": "computed",
+              "args": [
+                "SUM(StockItem.quantity)"
+              ],
+              "isStandard": true
+            }
+          ],
+          "computed": {
+            "expression": "SUM(StockItem.quantity)"
+          },
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 139,
+            "col": 1
+          }
+        },
+        {
+          "name": "total_value",
+          "type": "decimal",
+          "params": [
+            14.0,
+            2.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "computed",
+          "attributes": [
+            {
+              "name": "computed",
+              "args": [
+                "SUM(StockItem.total_value)"
+              ],
+              "isStandard": true
+            }
+          ],
+          "computed": {
+            "expression": "SUM(StockItem.total_value)"
+          },
+          "loc": {
+            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "line": 140,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "materialized": true,
+      "source_def": {
+        "from": "StockItem",
+        "joins": [
+          {
+            "model": "Warehouse",
+            "on": ""
+          }
+        ],
+        "group_by": []
+      },
+      "refresh": {
+        "strategy": "incremental",
+        "interval": "30 minutes"
+      },
+      "loc": {
+        "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+        "line": 127,
+        "col": 1
+      }
+    }
+  ],
+  "attributeRegistry": [],
+  "errors": [],
+  "warnings": []
+}

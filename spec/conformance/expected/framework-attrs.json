@@ -1,0 +1,109 @@
+{
+  "parserVersion": "0.4.0",
+  "astVersion": "1.0",
+  "project": {},
+  "sources": [
+    "spec/conformance/inputs/framework-attrs.m3l.md"
+  ],
+  "models": [
+    {
+      "name": "Account",
+      "type": "model",
+      "source": "spec/conformance/inputs/framework-attrs.m3l.md",
+      "line": 1,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/framework-attrs.m3l.md",
+            "line": 2,
+            "col": 1
+          }
+        },
+        {
+          "name": "password",
+          "type": "string",
+          "params": [
+            100.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "framework_attrs": [
+            {
+              "content": "DataType(DataType.Password)",
+              "raw": "[DataType(DataType.Password)]",
+              "parsed": {
+                "name": "DataType",
+                "arguments": [
+                  "DataType.Password"
+                ]
+              }
+            },
+            {
+              "content": "JsonIgnore",
+              "raw": "[JsonIgnore]",
+              "parsed": {
+                "name": "JsonIgnore",
+                "arguments": []
+              }
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/framework-attrs.m3l.md",
+            "line": 3,
+            "col": 1
+          }
+        },
+        {
+          "name": "display_name",
+          "type": "string",
+          "params": [
+            50.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/framework-attrs.m3l.md",
+            "line": 4,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/framework-attrs.m3l.md",
+        "line": 1,
+        "col": 1
+      }
+    }
+  ],
+  "enums": [],
+  "interfaces": [],
+  "views": [],
+  "attributeRegistry": [],
+  "errors": [],
+  "warnings": []
+}

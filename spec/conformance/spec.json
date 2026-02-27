@@ -1,0 +1,90 @@
+{
+  "version": "1.0.0",
+  "description": "M3L parser conformance test suite — shared across all implementations",
+  "tests": [
+    {
+      "name": "basic-model",
+      "input": "inputs/basic-model.m3l.md",
+      "expected": "expected/basic-model.json",
+      "category": "unit"
+    },
+    {
+      "name": "enum-standalone",
+      "input": "inputs/enum-standalone.m3l.md",
+      "expected": "expected/enum-standalone.json",
+      "category": "unit"
+    },
+    {
+      "name": "inheritance",
+      "input": "inputs/inheritance.m3l.md",
+      "expected": "expected/inheritance.json",
+      "category": "unit"
+    },
+    {
+      "name": "interface",
+      "input": "inputs/interface.m3l.md",
+      "expected": "expected/interface.json",
+      "category": "unit"
+    },
+    {
+      "name": "view",
+      "input": "inputs/view.m3l.md",
+      "expected": "expected/view.json",
+      "category": "unit"
+    },
+    {
+      "name": "view-sql-block",
+      "input": "inputs/view-sql-block.m3l.md",
+      "expected": "expected/view-sql-block.json",
+      "category": "unit"
+    },
+    {
+      "name": "computed-field",
+      "input": "inputs/computed-field.m3l.md",
+      "expected": "expected/computed-field.json",
+      "category": "unit"
+    },
+    {
+      "name": "lookup-rollup",
+      "input": "inputs/lookup-rollup.m3l.md",
+      "expected": "expected/lookup-rollup.json",
+      "category": "unit"
+    },
+    {
+      "name": "backtick-expression",
+      "input": "inputs/backtick-expression.m3l.md",
+      "expected": "expected/backtick-expression.json",
+      "category": "unit"
+    },
+    {
+      "name": "framework-attrs",
+      "input": "inputs/framework-attrs.m3l.md",
+      "expected": "expected/framework-attrs.json",
+      "category": "unit"
+    },
+    {
+      "name": "01-ecommerce",
+      "input": "inputs/01-ecommerce.m3l.md",
+      "expected": "expected/01-ecommerce.json",
+      "category": "sample"
+    },
+    {
+      "name": "02-blog-cms",
+      "input": "inputs/02-blog-cms.m3l.md",
+      "expected": "expected/02-blog-cms.json",
+      "category": "sample"
+    },
+    {
+      "name": "03-types-showcase",
+      "input": "inputs/03-types-showcase.m3l.md",
+      "expected": "expected/03-types-showcase.json",
+      "category": "sample"
+    },
+    {
+      "name": "multi-file",
+      "input_dir": "inputs/multi",
+      "expected": "expected/multi-file.json",
+      "category": "multi"
+    }
+  ]
+}

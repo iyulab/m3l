@@ -1,0 +1,21 @@
+[package]
+name = "m3l-napi"
+description = "M3L parser Node.js native addon via napi-rs"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+m3l-core = { path = "../m3l-core" }
+napi = { version = "2", features = ["default"] }
+napi-derive = "2"
+
+[build-dependencies]
+napi-build = "2"

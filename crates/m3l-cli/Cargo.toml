@@ -1,0 +1,23 @@
+[package]
+name = "m3l-cli"
+description = "M3L CLI tool — parse and validate .m3l.md schema files"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[[bin]]
+name = "m3l"
+path = "src/main.rs"
+
+[dependencies]
+m3l-core = { path = "../m3l-core" }
+m3l-lint = { path = "../m3l-lint" }
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
+glob = "0.3"

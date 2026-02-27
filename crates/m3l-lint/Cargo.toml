@@ -1,0 +1,15 @@
+[package]
+name = "m3l-lint"
+description = "M3L schema linter — configurable rules for schema quality"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+m3l-core = { path = "../m3l-core" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

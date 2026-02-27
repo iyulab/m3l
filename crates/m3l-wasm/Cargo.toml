@@ -1,0 +1,17 @@
+[package]
+name = "m3l-wasm"
+description = "M3L parser WebAssembly bindings via wasm-bindgen"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+m3l-core = { path = "../m3l-core" }
+wasm-bindgen = "0.2"

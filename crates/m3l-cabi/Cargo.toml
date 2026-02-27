@@ -1,0 +1,16 @@
+[package]
+name = "m3l-cabi"
+description = "M3L parser C ABI bindings (cdylib) for cross-language FFI"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+m3l-core = { path = "../m3l-core" }

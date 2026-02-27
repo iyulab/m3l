@@ -1,0 +1,176 @@
+{
+  "parserVersion": "0.4.0",
+  "astVersion": "1.0",
+  "project": {},
+  "sources": [
+    "spec/conformance/inputs/view-sql-block.m3l.md"
+  ],
+  "models": [
+    {
+      "name": "User",
+      "type": "model",
+      "source": "spec/conformance/inputs/view-sql-block.m3l.md",
+      "line": 1,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/view-sql-block.m3l.md",
+            "line": 2,
+            "col": 1
+          }
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "params": [
+            100.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/view-sql-block.m3l.md",
+            "line": 3,
+            "col": 1
+          }
+        },
+        {
+          "name": "department",
+          "type": "string",
+          "params": [
+            50.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/view-sql-block.m3l.md",
+            "line": 4,
+            "col": 1
+          }
+        },
+        {
+          "name": "is_active",
+          "type": "boolean",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "true",
+          "default_value_type": "literal",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/view-sql-block.m3l.md",
+            "line": 5,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/view-sql-block.m3l.md",
+        "line": 1,
+        "col": 1
+      }
+    }
+  ],
+  "enums": [],
+  "interfaces": [],
+  "views": [
+    {
+      "name": "UserReport",
+      "type": "view",
+      "source": "spec/conformance/inputs/view-sql-block.m3l.md",
+      "line": 7,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "user_name",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "from",
+              "args": [
+                "User.name"
+              ],
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/view-sql-block.m3l.md",
+            "line": 15,
+            "col": 1
+          }
+        },
+        {
+          "name": "dept",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "from",
+              "args": [
+                "User.department"
+              ],
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/view-sql-block.m3l.md",
+            "line": 16,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "materialized": false,
+      "source_def": {
+        "raw_sql": "FROM User u\nWHERE u.department = 'Engineering'\nORDER BY u.name ASC",
+        "language_hint": "sql"
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/view-sql-block.m3l.md",
+        "line": 7,
+        "col": 1
+      }
+    }
+  ],
+  "attributeRegistry": [],
+  "errors": [],
+  "warnings": []
+}

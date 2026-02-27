@@ -1,0 +1,29 @@
+{
+  "name": "@iyulab/m3l",
+  "version": "0.4.0",
+  "description": "M3L parser — Markdown-based schema definition language (.m3l.md → JSON AST)",
+  "license": "MIT",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts"
+  ],
+  "dependencies": {
+    "@iyulab/m3l-napi": "0.4.0"
+  },
+  "engines": {
+    "node": ">= 18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/iyulab/m3l"
+  },
+  "keywords": [
+    "m3l",
+    "markdown",
+    "schema",
+    "parser",
+    "ast"
+  ]
+}

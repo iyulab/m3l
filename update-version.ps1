@@ -1,13 +1,13 @@
 <#
 .SYNOPSIS
-    Syncs the version from VERSION file to all parser bindings.
+    Syncs the version from VERSION file to all project manifests.
 
 .DESCRIPTION
     Reads D:\data\m3l\VERSION (or repo root VERSION) and updates:
-    - parser/typescript/package.json          ("version": "x.y.z")
-    - parser/typescript/src/resolver.ts       (PARSER_VERSION = 'x.y.z')
-    - parser/csharp/src/M3L/M3L.csproj        (<Version>x.y.z</Version>)
-    - parser/csharp/src/M3L/Resolver.cs       (ParserVersion = "x.y.z")
+    - Cargo.toml (workspace)                  ([workspace.package] version = "x.y.z")
+    - bindings/csharp/M3L.Native.csproj       (<Version>x.y.z</Version>)
+    - bindings/typescript/package.json         ("version": "x.y.z")
+    - bindings/typescript/package.json         ("@iyulab/m3l-napi": "x.y.z")
 
 .PARAMETER DryRun
     Show what would change without modifying files.
@@ -15,6 +15,7 @@
 .EXAMPLE
     .\update-version.ps1
     .\update-version.ps1 -DryRun
+    .\update-version.ps1 check
 #>
 param(
     [switch]$DryRun,
@@ -39,7 +40,7 @@ if (-not (Test-Path $versionFile)) {
 $version = (Get-Content $versionFile -Raw).Trim()
 
 if ($version -notmatch '^\d+\.\d+\.\d+$') {
-    Write-Error "Invalid version format: '$version'. Expected semver (e.g. 0.1.0)"
+    Write-Error "Invalid version format: '$version'. Expected semver (e.g. 0.4.0)"
     exit 1
 }
 
@@ -85,48 +86,42 @@ function Update-File {
     }
 }
 
-# --- TypeScript ---
-Write-Host "[TypeScript]" -ForegroundColor White
+# --- Rust workspace ---
+Write-Host "[Rust workspace]" -ForegroundColor White
 
 Update-File `
-    -Path (Join-Path $root 'parser/typescript/package.json') `
+    -Path (Join-Path $root 'Cargo.toml') `
+    -Pattern 'version\s*=\s*"[\d.]+"' `
+    -Replacement "version = `"$version`"" `
+    -Label 'workspace version'
+
+Write-Host ""
+
+# --- C# bindings ---
+Write-Host "[C# bindings]" -ForegroundColor White
+
+Update-File `
+    -Path (Join-Path $root 'bindings/csharp/M3L.Native.csproj') `
+    -Pattern '<Version>[\d.]+</Version>' `
+    -Replacement "<Version>$version</Version>" `
+    -Label 'csproj Version'
+
+Write-Host ""
+
+# --- TypeScript bindings ---
+Write-Host "[TypeScript bindings]" -ForegroundColor White
+
+Update-File `
+    -Path (Join-Path $root 'bindings/typescript/package.json') `
     -Pattern '"version":\s*"[\d.]+"' `
     -Replacement "`"version`": `"$version`"" `
     -Label 'package.json version'
 
 Update-File `
-    -Path (Join-Path $root 'parser/typescript/src/resolver.ts') `
-    -Pattern "PARSER_VERSION\s*=\s*'[\d.]+'" `
-    -Replacement "PARSER_VERSION = '$version'" `
-    -Label 'PARSER_VERSION'
-
-Write-Host ""
-
-# --- C# ---
-Write-Host "[C#]" -ForegroundColor White
-
-Update-File `
-    -Path (Join-Path $root 'parser/csharp/src/M3L/M3L.csproj') `
-    -Pattern '<Version>[\d.]+</Version>' `
-    -Replacement "<Version>$version</Version>" `
-    -Label 'csproj Version'
-
-Update-File `
-    -Path (Join-Path $root 'parser/csharp/src/M3L/Resolver.cs') `
-    -Pattern 'ParserVersion\s*=\s*"[\d.]+"' `
-    -Replacement "ParserVersion = `"$version`"" `
-    -Label 'ParserVersion'
-
-Write-Host ""
-
-# --- Tests (version assertions) ---
-Write-Host "[Tests]" -ForegroundColor White
-
-Update-File `
-    -Path (Join-Path $root 'parser/csharp/tests/M3L.Tests/IntegrationTests.cs') `
-    -Pattern 'Assert\.Equal\("[\d.]+",\s*M3LParser\.GetParserVersion\(\)\)' `
-    -Replacement "Assert.Equal(`"$version`", M3LParser.GetParserVersion())" `
-    -Label 'C# test version assertion'
+    -Path (Join-Path $root 'bindings/typescript/package.json') `
+    -Pattern '"@iyulab/m3l-napi":\s*"[\d.]+"' `
+    -Replacement "`"@iyulab/m3l-napi`": `"$version`"" `
+    -Label 'napi dependency version'
 
 Write-Host ""
 

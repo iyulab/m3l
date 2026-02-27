@@ -1,0 +1,412 @@
+{
+  "parserVersion": "0.4.0",
+  "astVersion": "1.0",
+  "project": {},
+  "sources": [
+    "spec/conformance/inputs/backtick-expression.m3l.md"
+  ],
+  "models": [
+    {
+      "name": "BacktickExpr",
+      "type": "model",
+      "source": "spec/conformance/inputs/backtick-expression.m3l.md",
+      "line": 1,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/backtick-expression.m3l.md",
+            "line": 2,
+            "col": 1
+          }
+        },
+        {
+          "name": "profit",
+          "type": "decimal",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "computed",
+          "attributes": [
+            {
+              "name": "computed",
+              "args": [
+                "`(price - cost) / price * 100`"
+              ],
+              "isStandard": true
+            }
+          ],
+          "computed": {
+            "expression": "(price - cost) / price * 100"
+          },
+          "loc": {
+            "file": "spec/conformance/inputs/backtick-expression.m3l.md",
+            "line": 3,
+            "col": 1
+          }
+        },
+        {
+          "name": "email",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "validate",
+              "args": [
+                "pattern(`^[\\w.]+@[\\w.]+$`)"
+              ],
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/backtick-expression.m3l.md",
+            "line": 4,
+            "col": 1
+          }
+        },
+        {
+          "name": "raw_val",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "computed",
+          "attributes": [
+            {
+              "name": "computed_raw",
+              "args": [
+                "`metadata->>'category'`",
+                "platform: postgresql"
+              ],
+              "isStandard": true
+            }
+          ],
+          "computed": {
+            "expression": "metadata->>'category",
+            "platform": "postgresql"
+          },
+          "loc": {
+            "file": "spec/conformance/inputs/backtick-expression.m3l.md",
+            "line": 5,
+            "col": 1
+          }
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "active",
+          "default_value_type": "literal",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/backtick-expression.m3l.md",
+            "line": 6,
+            "col": 1
+          }
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "now()",
+          "default_value_type": "expression",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/backtick-expression.m3l.md",
+            "line": 7,
+            "col": 1
+          }
+        },
+        {
+          "name": "discount",
+          "type": "decimal",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "price * 0.9",
+          "default_value_type": "expression",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/backtick-expression.m3l.md",
+            "line": 8,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/backtick-expression.m3l.md",
+        "line": 1,
+        "col": 1
+      }
+    },
+    {
+      "name": "CodeBlockExpr",
+      "type": "model",
+      "source": "spec/conformance/inputs/backtick-expression.m3l.md",
+      "line": 10,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/backtick-expression.m3l.md",
+            "line": 11,
+            "col": 1
+          }
+        },
+        {
+          "name": "price",
+          "type": "decimal",
+          "params": [
+            10.0,
+            2.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/backtick-expression.m3l.md",
+            "line": 12,
+            "col": 1
+          }
+        },
+        {
+          "name": "quantity",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/backtick-expression.m3l.md",
+            "line": 13,
+            "col": 1
+          }
+        },
+        {
+          "name": "total_spent",
+          "type": "decimal",
+          "params": [
+            12.0,
+            2.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/backtick-expression.m3l.md",
+            "line": 14,
+            "col": 1
+          }
+        },
+        {
+          "name": "tier",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "computed",
+          "attributes": [
+            {
+              "name": "computed",
+              "isStandard": true
+            }
+          ],
+          "computed": {
+            "expression": "CASE\n  WHEN total_spent > 10000 THEN 'Gold'\n  WHEN total_spent > 5000  THEN 'Silver'\n  ELSE 'Bronze'\nEND"
+          },
+          "loc": {
+            "file": "spec/conformance/inputs/backtick-expression.m3l.md",
+            "line": 17,
+            "col": 1
+          }
+        },
+        {
+          "name": "simple",
+          "type": "decimal",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "computed",
+          "attributes": [
+            {
+              "name": "computed",
+              "args": [
+                "`price * quantity`"
+              ],
+              "isStandard": true
+            }
+          ],
+          "computed": {
+            "expression": "price * quantity"
+          },
+          "loc": {
+            "file": "spec/conformance/inputs/backtick-expression.m3l.md",
+            "line": 25,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/backtick-expression.m3l.md",
+        "line": 10,
+        "col": 1
+      }
+    },
+    {
+      "name": "FieldBlockquoteDesc",
+      "type": "model",
+      "source": "spec/conformance/inputs/backtick-expression.m3l.md",
+      "line": 27,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/backtick-expression.m3l.md",
+            "line": 28,
+            "col": 1
+          }
+        },
+        {
+          "name": "email",
+          "type": "string",
+          "params": [
+            320.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "description": "Primary contact email.\nUsed for login and account recovery.",
+          "attributes": [
+            {
+              "name": "unique",
+              "isStandard": true
+            },
+            {
+              "name": "not_null",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/backtick-expression.m3l.md",
+            "line": 29,
+            "col": 1
+          }
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "params": [
+            100.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "description": "Inline description still works",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/backtick-expression.m3l.md",
+            "line": 32,
+            "col": 1
+          }
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "description": "Multi-line field description\nspanning three lines\nfor demonstration purposes.",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/backtick-expression.m3l.md",
+            "line": 33,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/backtick-expression.m3l.md",
+        "line": 27,
+        "col": 1
+      }
+    }
+  ],
+  "enums": [],
+  "interfaces": [],
+  "views": [],
+  "attributeRegistry": [],
+  "errors": [],
+  "warnings": []
+}

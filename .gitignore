@@ -1,3 +1,17 @@
 node_modules/
 dist/
 claudedocs/
+
+# Rust
+target/
+
+# .NET
+bindings/csharp/bin/
+bindings/csharp/obj/
+
+# WASM
+crates/m3l-wasm/pkg/
+
+# NAPI
+crates/m3l-napi/*.node
+.serena/

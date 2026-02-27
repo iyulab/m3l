@@ -1,0 +1,42 @@
+{
+  "parserVersion": "0.4.0",
+  "astVersion": "1.0",
+  "project": {},
+  "sources": [
+    "spec/conformance/inputs/enum-standalone.m3l.md"
+  ],
+  "models": [],
+  "enums": [
+    {
+      "name": "Status",
+      "type": "enum",
+      "source": "spec/conformance/inputs/enum-standalone.m3l.md",
+      "line": 1,
+      "inherits": [],
+      "values": [
+        {
+          "name": "active",
+          "description": "Active"
+        },
+        {
+          "name": "inactive",
+          "description": "Inactive"
+        },
+        {
+          "name": "pending",
+          "description": "Pending"
+        }
+      ],
+      "loc": {
+        "file": "spec/conformance/inputs/enum-standalone.m3l.md",
+        "line": 1,
+        "col": 1
+      }
+    }
+  ],
+  "interfaces": [],
+  "views": [],
+  "attributeRegistry": [],
+  "errors": [],
+  "warnings": []
+}

@@ -1,0 +1,115 @@
+{
+  "parserVersion": "0.4.0",
+  "astVersion": "1.0",
+  "project": {},
+  "sources": [
+    "spec/conformance/inputs/basic-model.m3l.md"
+  ],
+  "models": [
+    {
+      "name": "User",
+      "type": "model",
+      "source": "spec/conformance/inputs/basic-model.m3l.md",
+      "line": 1,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/basic-model.m3l.md",
+            "line": 2,
+            "col": 1
+          }
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "params": [
+            100.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "not_null",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/basic-model.m3l.md",
+            "line": 3,
+            "col": 1
+          }
+        },
+        {
+          "name": "email",
+          "type": "string",
+          "params": [
+            320.0
+          ],
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "unique",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/basic-model.m3l.md",
+            "line": 4,
+            "col": 1
+          }
+        },
+        {
+          "name": "is_active",
+          "type": "boolean",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "true",
+          "default_value_type": "literal",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/basic-model.m3l.md",
+            "line": 5,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/basic-model.m3l.md",
+        "line": 1,
+        "col": 1
+      }
+    }
+  ],
+  "enums": [],
+  "interfaces": [],
+  "views": [],
+  "attributeRegistry": [],
+  "errors": [],
+  "warnings": []
+}

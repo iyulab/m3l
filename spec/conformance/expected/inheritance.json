@@ -1,0 +1,162 @@
+{
+  "parserVersion": "0.4.0",
+  "astVersion": "1.0",
+  "project": {},
+  "sources": [
+    "spec/conformance/inputs/inheritance.m3l.md"
+  ],
+  "models": [
+    {
+      "name": "BaseModel",
+      "type": "model",
+      "source": "spec/conformance/inputs/inheritance.m3l.md",
+      "line": 1,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/inheritance.m3l.md",
+            "line": 2,
+            "col": 1
+          }
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "now()",
+          "default_value_type": "expression",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/inheritance.m3l.md",
+            "line": 3,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/inheritance.m3l.md",
+        "line": 1,
+        "col": 1
+      }
+    },
+    {
+      "name": "User",
+      "type": "model",
+      "source": "spec/conformance/inputs/inheritance.m3l.md",
+      "line": 5,
+      "inherits": [
+        "BaseModel"
+      ],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/inheritance.m3l.md",
+            "line": 2,
+            "col": 1
+          }
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "now()",
+          "default_value_type": "expression",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/inheritance.m3l.md",
+            "line": 3,
+            "col": 1
+          }
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "params": [
+            100.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/inheritance.m3l.md",
+            "line": 6,
+            "col": 1
+          }
+        },
+        {
+          "name": "email",
+          "type": "string",
+          "params": [
+            320.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/inheritance.m3l.md",
+            "line": 7,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/inheritance.m3l.md",
+        "line": 5,
+        "col": 1
+      }
+    }
+  ],
+  "enums": [],
+  "interfaces": [],
+  "views": [],
+  "attributeRegistry": [],
+  "errors": [],
+  "warnings": []
+}

@@ -137,7 +137,7 @@ M3L files serve dual purposes: machine-parseable schema definitions and human-re
 2. **Visual Semantics**: Different structural elements (fields, enums, sections) should be visually distinguishable when rendered
 3. **Scannable Layout**: Documents should be navigable via standard markdown features (TOC generation, header anchors, search)
 4. **Graceful Density**: Single lines should remain readable without horizontal scrolling on typical screen widths (~100 characters)
-5. **Standard Elements Only**: M3L uses only standard markdown elements (headers, lists, blockquotes, inline code, horizontal rules, HTML comments). No extended markdown syntax (footnotes, definition lists, task lists) is required.
+5. **Standard Elements Only**: M3L uses only standard markdown elements (headers, lists, blockquotes, inline code, fenced code blocks, horizontal rules, HTML comments). No extended markdown syntax (footnotes, definition lists, task lists) is required.
 
 #### 1.5.1 Markdown-Safe Characters
 
@@ -156,7 +156,7 @@ The following table shows M3L special characters and their markdown safety statu
 | `::` | Type indicator | — | ✅ Safe |
 | `<>` | Many-to-many rel | HTML tag | ⚠️ May be stripped |
 | `---` | Model separator | Horizontal rule | ✅ Intentional |
-| `` ` `` | Framework attr wrap | Inline code | ✅ Intentional |
+| `` ` `` | Expression wrap + Framework attr | Inline code | ✅ Intentional |
 
 **`<>` Notation**: The many-to-many relationship symbol `<>` may be interpreted as an HTML tag in some viewers and stripped from output. In rendered documentation contexts, prefer the explicit Relations section format:
 
@@ -571,6 +571,28 @@ Default values can be more than simple constants. M3L supports various forms of 
 
 ```markdown
 - status: string = if(is_verified, "active", "pending")
+```
+
+#### 2.5.5.4 Expression Defaults (Backtick Syntax)
+
+Backtick-wrapped default values explicitly mark the value as an expression rather than a literal:
+
+```markdown
+- status: string = "active"          # Literal string (default_value_type: literal)
+- created_at: timestamp = `now()`    # Expression (default_value_type: expression)
+- discount: decimal = `price * 0.9`  # Expression (default_value_type: expression)
+```
+
+The parser sets `default_value_type` to distinguish between literal values and expressions. Backtick-wrapped values are rendered as inline code in markdown viewers, providing visual distinction between data and logic.
+
+#### 2.5.5.5 Backtick Expressions in Attribute Arguments
+
+Attribute arguments can use backtick syntax for expressions, avoiding quote escaping issues:
+
+```markdown
+- profit: decimal @computed(`(price - cost) / price * 100`)
+- email: string @validate(pattern(`^[\w.]+@[\w.]+$`))
+- json_val: string @computed_raw(`metadata->>'category'`, platform: "postgresql")
 ```
 
 #### 2.5.6 Custom Framework Attributes
@@ -1108,6 +1130,19 @@ Completely hidden in rendered output. Use for TODOs, temporary notes, and parser
 <!-- This model is deprecated, see UserV2 -->
 ```
 
+#### 4.2.6 Field-level Blockquote Descriptions
+
+Fields can use indented blockquotes for multi-line descriptions:
+
+```markdown
+- email: string(320) @unique @not_null
+  > Primary contact email.
+  > Used for login, notifications, and account recovery.
+  > Must be verified before account activation.
+```
+
+Indented blockquotes (2+ spaces before `>`) are attached to the preceding field as its description. Non-indented blockquotes remain model-level descriptions. Both inline `"description"` and blockquote forms are valid; if both are present on the same field, the blockquote takes precedence.
+
 ### 4.3 Behavior Definition
 
 Behaviors define events and actions associated with a model.
@@ -1238,6 +1273,23 @@ For expressions that require platform-specific syntax, use `@computed_raw` to ex
 ```
 
 > **Note**: `@computed` expressions are opaque strings passed through to the implementation layer. M3L does not define an expression language. `@computed_raw` provides an explicit signal that the expression is not portable. See [10.7 Platform-Specific Expressions](#107-platform-specific-expressions) for details.
+
+#### 4.4.6 Multi-line Computed Expressions
+
+Complex computed expressions can use fenced code blocks for readability:
+
+```markdown
+- tier: string @computed
+  ```
+  CASE
+    WHEN total_spent > 10000 THEN 'Gold'
+    WHEN total_spent > 5000  THEN 'Silver'
+    ELSE 'Bronze'
+  END
+  ```
+```
+
+When `@computed` has no inline arguments and a fenced code block follows (indented under the field), the code block content becomes the computed expression. Both inline (`@computed("expr")` or `` @computed(`expr`) ``) and code block forms are valid.
 
 ### 4.5 Lookup Fields
 
@@ -1599,6 +1651,29 @@ A view can use another view as its data source by specifying it in the `from` di
 - `@materialized` views must specify a refresh strategy in the `### Refresh` section.
 - Joins require **explicit conditions only** (no implicit joins).
 - M3L Views focus on **declarative composition**. Complex subqueries, UNION, window functions, etc. are delegated to the implementation layer.
+
+#### 4.7.8 SQL Code Block Source
+
+As an alternative to key-value Source definitions, views can use SQL code blocks directly:
+
+```markdown
+## CustomerReport ::view
+
+### Source
+```sql
+FROM Customer c
+JOIN Order o ON c.id = o.customer_id
+WHERE o.status != 'cancelled'
+GROUP BY c.id, c.name
+```
+
+- customer_name: string @from(Customer.name)
+- total_orders: integer @computed(`COUNT(o.id)`)
+```
+
+The SQL block and key-value formats cannot be mixed within the same Source section. Field definitions follow after the code block.
+
+AST: When a SQL code block is used, `source_def.raw_sql` contains the SQL text and `source_def.language_hint` contains the language tag (e.g., "sql"). The `from`, `joins`, `where` etc. fields are not populated.
 
 ### 4.8 Conditional Fields
 
@@ -2446,10 +2521,10 @@ Conforming parsers should use these error codes for consistent diagnostics.
 
 | Code | Message Template | Description |
 |---|---|---|
-| `M3L-W001` | Field `{field}` has no description | Strict mode: field lacks documentation |
-| `M3L-W002` | Model `{model}` has no description | Strict mode: model lacks documentation |
-| `M3L-W003` | Deprecated syntax: `{syntax}` | Use of deprecated cascade/type syntax |
-| `M3L-W004` | Line length exceeds 100 characters | Readability guideline exceeded |
+| `M3L-W001` | Field `{field}` line length exceeds 80 chars | Strict mode: field definition line too long |
+| `M3L-W002` | Object nesting exceeds 3 levels at `{field}` | Strict mode: deeply nested object fields |
+| `M3L-W003` | Deprecated syntax: `{syntax}` | Use of deprecated `datetime` type or cascade attributes (`@cascade`, `@no_action`, `@set_null`, `@restrict`) |
+| `M3L-W004` | Lookup chain `{path}` exceeds 3 hops | Strict mode: `@lookup` path traverses too many relations |
 
 ### 10.6 Import Resolution
 

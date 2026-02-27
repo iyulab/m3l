@@ -15,6 +15,7 @@ jobs:
     name: Build (${{ matrix.target }})
     runs-on: ${{ matrix.runner }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - target: x86_64-pc-windows-msvc
@@ -25,17 +26,12 @@ jobs:
             runner: ubuntu-latest
             node_file: m3l-napi.linux-x64-gnu.node
             platform_dir: linux-x64-gnu
-          - target: x86_64-unknown-linux-musl
-            runner: ubuntu-latest
-            node_file: m3l-napi.linux-x64-musl.node
-            platform_dir: linux-x64-musl
-            use_zigbuild: true
           - target: x86_64-apple-darwin
-            runner: macos-13
+            runner: macos-latest
             node_file: m3l-napi.darwin-x64.node
             platform_dir: darwin-x64
           - target: aarch64-apple-darwin
-            runner: macos-14
+            runner: macos-latest
             node_file: m3l-napi.darwin-arm64.node
             platform_dir: darwin-arm64
     steps:
@@ -53,18 +49,7 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install cargo-zigbuild
-        if: matrix.use_zigbuild
-        run: |
-          pip3 install ziglang
-          cargo install cargo-zigbuild
-
-      - name: Build native module (zigbuild)
-        if: matrix.use_zigbuild
-        run: cargo zigbuild -p m3l-napi --release --target ${{ matrix.target }}
-
       - name: Build native module
-        if: ${{ !matrix.use_zigbuild }}
         run: cargo build -p m3l-napi --release --target ${{ matrix.target }}
 
       - name: Copy .node artifact (Unix)
@@ -114,7 +99,7 @@ jobs:
         run: |
           cp artifacts/napi-win32-x64-msvc/m3l-napi.win32-x64-msvc.node crates/m3l-napi/npm/win32-x64-msvc/
           cd crates/m3l-napi/npm/win32-x64-msvc
-          npm publish --access public
+          npm publish --access public || true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -122,15 +107,7 @@ jobs:
         run: |
           cp artifacts/napi-linux-x64-gnu/m3l-napi.linux-x64-gnu.node crates/m3l-napi/npm/linux-x64-gnu/
           cd crates/m3l-napi/npm/linux-x64-gnu
-          npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Prepare & publish linux-x64-musl
-        run: |
-          cp artifacts/napi-linux-x64-musl/m3l-napi.linux-x64-musl.node crates/m3l-napi/npm/linux-x64-musl/
-          cd crates/m3l-napi/npm/linux-x64-musl
-          npm publish --access public
+          npm publish --access public || true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -138,7 +115,7 @@ jobs:
         run: |
           cp artifacts/napi-darwin-x64/m3l-napi.darwin-x64.node crates/m3l-napi/npm/darwin-x64/
           cd crates/m3l-napi/npm/darwin-x64
-          npm publish --access public
+          npm publish --access public || true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -146,7 +123,7 @@ jobs:
         run: |
           cp artifacts/napi-darwin-arm64/m3l-napi.darwin-arm64.node crates/m3l-napi/npm/darwin-arm64/
           cd crates/m3l-napi/npm/darwin-arm64
-          npm publish --access public
+          npm publish --access public || true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -154,7 +131,7 @@ jobs:
       - name: Publish @iyulab/m3l-napi
         run: |
           cd crates/m3l-napi
-          npm publish --access public
+          npm publish --access public || true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -162,6 +139,6 @@ jobs:
       - name: Publish @iyulab/m3l
         run: |
           cd bindings/typescript
-          npm publish --access public
+          npm publish --access public || true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

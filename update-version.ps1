@@ -141,7 +141,6 @@ Update-File `
 $napiOptDeps = @(
     '@iyulab/m3l-napi-win32-x64-msvc',
     '@iyulab/m3l-napi-linux-x64-gnu',
-    '@iyulab/m3l-napi-linux-x64-musl',
     '@iyulab/m3l-napi-darwin-x64',
     '@iyulab/m3l-napi-darwin-arm64'
 )
@@ -159,7 +158,7 @@ Write-Host ""
 # --- NAPI platform stubs ---
 Write-Host "[NAPI platform stubs]" -ForegroundColor White
 
-$platformDirs = @('win32-x64-msvc', 'linux-x64-gnu', 'linux-x64-musl', 'darwin-x64', 'darwin-arm64')
+$platformDirs = @('win32-x64-msvc', 'linux-x64-gnu', 'darwin-x64', 'darwin-arm64')
 foreach ($dir in $platformDirs) {
     Update-File `
         -Path (Join-Path $root "crates/m3l-napi/npm/$dir/package.json") `

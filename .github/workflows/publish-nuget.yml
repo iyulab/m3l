@@ -15,6 +15,7 @@ jobs:
     name: Build native (${{ matrix.target }})
     runs-on: ${{ matrix.runner }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - target: x86_64-pc-windows-msvc
@@ -26,11 +27,11 @@ jobs:
             rid: linux-x64
             lib_name: libm3l_cabi.so
           - target: x86_64-apple-darwin
-            runner: macos-13
+            runner: macos-latest
             rid: osx-x64
             lib_name: libm3l_cabi.dylib
           - target: aarch64-apple-darwin
-            runner: macos-14
+            runner: macos-latest
             rid: osx-arm64
             lib_name: libm3l_cabi.dylib
     steps:

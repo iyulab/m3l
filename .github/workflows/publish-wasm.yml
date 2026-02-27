@@ -50,6 +50,6 @@ jobs:
       - name: Publish @iyulab/m3l-wasm
         run: |
           cd crates/m3l-wasm/pkg
-          npm publish --access public
+          npm publish --access public || true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

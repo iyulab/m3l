@@ -13,7 +13,7 @@ use reader::{read_m3l_files, read_project_config};
 #[command(
     name = "m3l",
     version,
-    about = "M3L parser and validator — parse .m3l.md files into JSON AST"
+    about = "M3L parser and validator — parse .m3l, .m3l.md, .md files into JSON AST"
 )]
 struct Cli {
     #[command(subcommand)]
@@ -164,7 +164,7 @@ pub fn build_ast(input_path: &Path) -> Result<m3l_core::M3lAst, String> {
 
     if files.is_empty() {
         return Err(format!(
-            "No .m3l.md files found at: {}",
+            "No M3L files (.m3l, .m3l.md, .md) found at: {}",
             input_path.display()
         ));
     }
@@ -329,7 +329,7 @@ fn run_validate(input_path: &Path, strict: bool, format: &str) -> Result<(String
 
     if files.is_empty() {
         return Err(format!(
-            "No .m3l.md files found at: {}",
+            "No M3L files (.m3l, .m3l.md, .md) found at: {}",
             input_path.display()
         ));
     }

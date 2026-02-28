@@ -61,12 +61,16 @@ pub fn read_project_config(dir_path: &Path) -> Option<M3lConfig> {
 }
 
 fn scan_directory(dir_path: &Path) -> Result<Vec<M3lFile>, String> {
-    let pattern_md = dir_path.join("**/*.m3l.md");
-    let pattern_plain = dir_path.join("**/*.m3l");
+    // Scan *.m3l.md, *.m3l, and *.md — all three extensions are valid M3L files.
+    let patterns = [
+        dir_path.join("**/*.m3l.md"),
+        dir_path.join("**/*.m3l"),
+        dir_path.join("**/*.md"),
+    ];
 
     let mut paths: Vec<PathBuf> = Vec::new();
 
-    for pattern in [&pattern_md, &pattern_plain] {
+    for pattern in &patterns {
         let pattern_str = pattern.to_string_lossy().replace('\\', "/");
         let entries =
             glob::glob(&pattern_str).map_err(|e| format!("Invalid glob pattern: {}", e))?;
@@ -74,12 +78,7 @@ fn scan_directory(dir_path: &Path) -> Result<Vec<M3lFile>, String> {
         for entry in entries {
             match entry {
                 Ok(path) => {
-                    // Skip .m3l.md matches from the .m3l pattern
-                    if path.extension().is_some_and(|e| e == "m3l")
-                        && path.to_string_lossy().ends_with(".m3l.md")
-                    {
-                        continue;
-                    }
+                    // Deduplicate: .m3l.md files match both *.m3l and *.md patterns
                     if !paths.contains(&path) {
                         paths.push(path);
                     }

@@ -1599,7 +1599,10 @@ mod tests {
         // A non-namespace H1 should not change the namespace
         let input = "# My Data Model\n## User\n- name: string";
         let result = parse_string(input, "test.m3l.md");
-        assert_eq!(result.namespace, None, "non-namespace H1 should not set namespace");
+        assert_eq!(
+            result.namespace, None,
+            "non-namespace H1 should not set namespace"
+        );
         assert_eq!(result.models.len(), 1);
         assert_eq!(result.models[0].name, "User");
     }

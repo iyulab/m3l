@@ -169,17 +169,21 @@ pub fn lex(content: &str, _file: &str) -> Vec<Token> {
             continue;
         }
 
-        // H1 — Namespace
+        // H1 — Namespace (only if `# Namespace: ...` pattern)
+        // Non-namespace H1 lines (e.g. `# My Data Model`) are treated as
+        // document titles and silently ignored — M3L preserves Markdown
+        // heading semantics (Design Principle §3, §5).
         if let Some(caps) = RE_H1.captures(raw) {
             let h1_content = caps[1].trim();
-            let data = parse_namespace(h1_content);
-            tokens.push(Token {
-                token_type: TokenType::Namespace,
-                raw: raw.to_string(),
-                line: line_num,
-                indent: 0,
-                data,
-            });
+            if let Some(data) = parse_namespace(h1_content) {
+                tokens.push(Token {
+                    token_type: TokenType::Namespace,
+                    raw: raw.to_string(),
+                    line: line_num,
+                    indent: 0,
+                    data,
+                });
+            }
             i += 1;
             continue;
         }
@@ -408,15 +412,14 @@ fn parse_name_label(s: &str) -> (String, Option<String>) {
     }
 }
 
-fn parse_namespace(content: &str) -> TokenData {
-    let mut data = TokenData::default();
-    if let Some(caps) = RE_NAMESPACE.captures(content) {
-        data.name = Some(caps[1].trim().to_string());
-        data.is_directive = true; // re-using for is_namespace
-    } else {
-        data.name = Some(content.to_string());
-    }
-    data
+fn parse_namespace(content: &str) -> Option<TokenData> {
+    // Only `# Namespace: ...` produces a token; other H1 lines are
+    // document titles and silently ignored (Design Principle §3, §5).
+    RE_NAMESPACE.captures(content).map(|caps| TokenData {
+        name: Some(caps[1].trim().to_string()),
+        is_directive: true,
+        ..TokenData::default()
+    })
 }
 
 fn parse_field_line(content: &str) -> TokenData {
@@ -893,6 +896,26 @@ mod tests {
         assert_eq!(tokens[0].token_type, TokenType::Namespace);
         assert_eq!(tokens[0].data.name.as_deref(), Some("sample.ecommerce"));
         assert!(tokens[0].data.is_directive); // is_namespace
+    }
+
+    #[test]
+    fn lex_non_namespace_h1_ignored() {
+        // Non-namespace H1 lines should NOT produce any tokens
+        let tokens = lex("# My Data Model", "test.m3l.md");
+        assert_eq!(tokens.len(), 0, "non-namespace H1 should be ignored");
+    }
+
+    #[test]
+    fn lex_non_namespace_h1_does_not_affect_models() {
+        let input = "# Schema Evolution v2\n## User\n- name: string";
+        let tokens = lex(input, "test.m3l.md");
+        // Should have Model + Field, but no Namespace
+        assert!(
+            !tokens.iter().any(|t| t.token_type == TokenType::Namespace),
+            "non-namespace H1 should not produce Namespace token"
+        );
+        assert!(tokens.iter().any(|t| t.token_type == TokenType::Model));
+        assert!(tokens.iter().any(|t| t.token_type == TokenType::Field));
     }
 
     #[test]

@@ -1595,6 +1595,25 @@ mod tests {
     }
 
     #[test]
+    fn parse_non_namespace_h1_ignored() {
+        // A non-namespace H1 should not change the namespace
+        let input = "# My Data Model\n## User\n- name: string";
+        let result = parse_string(input, "test.m3l.md");
+        assert_eq!(result.namespace, None, "non-namespace H1 should not set namespace");
+        assert_eq!(result.models.len(), 1);
+        assert_eq!(result.models[0].name, "User");
+    }
+
+    #[test]
+    fn parse_namespace_then_title_h1() {
+        // Namespace should persist even if followed by a non-namespace H1
+        let input = "# Namespace: sample.domain\n# Document Title\n## User\n- name: string";
+        let result = parse_string(input, "test.m3l.md");
+        assert_eq!(result.namespace.as_deref(), Some("sample.domain"));
+        assert_eq!(result.models.len(), 1);
+    }
+
+    #[test]
     fn parse_section_indexes() {
         let input = "## User\n- id: identifier\n### Indexes\n- idx_email";
         let result = parse_string(input, "test.m3l.md");

@@ -22,6 +22,16 @@ Markdown-based data modeling language. Write data models in readable Markdown, p
 - display_name: string @computed(`name + ' <' + email + '>'`)
 ```
 
+## Design Principles
+
+M3L is a **Markdown extension** — not a separate language that borrows Markdown syntax, but Markdown itself with semantic meaning layered on top.
+
+1. **Readable and writable** — a `.m3l.md` file should be comfortable to read and write as plain Markdown. No special editor required.
+2. **Valid Markdown** — every M3L file renders as meaningful documentation in any Markdown viewer (GitHub, VS Code, Obsidian, etc.). Syntax choices must never break the viewing experience.
+3. **Markdown semantics preserved** — heading levels (`#`, `##`, `###`), lists (`-`), blockquotes (`>`), and code fences retain their Markdown meaning. M3L adds schema semantics on top, not instead.
+4. **Minimal surprise** — if a construct looks like standard Markdown, it should behave like standard Markdown. Parser behavior must align with what a Markdown-literate user would expect.
+5. **Parser is a consumer, not an owner** — the parser interprets the document; it does not define what Markdown means. Unrecognized Markdown constructs should be tolerated, not corrupted.
+
 ## What This Repo Provides
 
 This repository is the **specification and parser** for M3L. It provides:

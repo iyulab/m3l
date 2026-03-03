@@ -11,9 +11,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Lint API exposed through FFI bindings (C ABI, WASM, NAPI) — `lint()` function
 - Strongly-typed C# AST models (`M3lAstModels.cs`) with `ParseToAst()`, `ParseMultiToAst()`, `ValidateToResult()`
 - 27 TypeScript AST interfaces in `index.d.ts` for full type safety
+- 8 new conformance test fixtures (empty file, deep nesting, duplicate fields, etc.) — 14→22
+- `m3l.config.yaml` schema documented in specification §5.3
+- Implementation status markers on all spec sections (Implemented/Partial/Planned)
+- Format idempotency and AST preservation tests (`#[ignore]` pending formatter bug)
 
 ### Fixed
 - `PARSER_VERSION` constant now auto-syncs with `Cargo.toml` via `env!("CARGO_PKG_VERSION")`
+
+### Known Issues
+- Formatter duplicates inherited fields on re-format (tracked in claudedocs)
 
 ## [0.5.0] - 2026-02-27
 

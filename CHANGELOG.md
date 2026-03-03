@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- `@pattern`, `@min_length`, `@max_length` Standard Attributes for string validation
+- Lint API exposed through FFI bindings (C ABI, WASM, NAPI) — `lint()` function
+- Strongly-typed C# AST models (`M3lAstModels.cs`) with `ParseToAst()`, `ParseMultiToAst()`, `ValidateToResult()`
+- 27 TypeScript AST interfaces in `index.d.ts` for full type safety
+
 ### Fixed
 - `PARSER_VERSION` constant now auto-syncs with `Cargo.toml` via `env!("CARGO_PKG_VERSION")`
 

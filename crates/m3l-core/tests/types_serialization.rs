@@ -272,8 +272,11 @@ fn catalogs_content() {
     // Standard attributes
     assert!(STANDARD_ATTRIBUTES.contains("primary"));
     assert!(STANDARD_ATTRIBUTES.contains("override"));
+    assert!(STANDARD_ATTRIBUTES.contains("pattern"));
+    assert!(STANDARD_ATTRIBUTES.contains("min_length"));
+    assert!(STANDARD_ATTRIBUTES.contains("max_length"));
     assert!(!STANDARD_ATTRIBUTES.contains("custom_attr"));
-    assert_eq!(STANDARD_ATTRIBUTES.len(), 31);
+    assert_eq!(STANDARD_ATTRIBUTES.len(), 34);
 
     // Kind sections
     assert!(KIND_SECTIONS.contains("Lookup"));

@@ -211,6 +211,8 @@ name = "m3l-cabi"
 version = "0.5.0"
 dependencies = [
  "m3l-core",
+ "m3l-lint",
+ "serde_json",
 ]
 
 [[package]]
@@ -250,9 +252,11 @@ name = "m3l-napi"
 version = "0.5.0"
 dependencies = [
  "m3l-core",
+ "m3l-lint",
  "napi",
  "napi-build",
  "napi-derive",
+ "serde_json",
 ]
 
 [[package]]
@@ -260,6 +264,8 @@ name = "m3l-wasm"
 version = "0.5.0"
 dependencies = [
  "m3l-core",
+ "m3l-lint",
+ "serde_json",
  "wasm-bindgen",
 ]
 

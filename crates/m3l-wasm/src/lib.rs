@@ -4,6 +4,7 @@
 //! All functions take string inputs and return JSON strings.
 
 use m3l_core::{parse_multi_to_json, parse_to_json, validate_to_json};
+use m3l_lint::lint_to_json;
 use wasm_bindgen::prelude::*;
 
 /// Parse a single M3L file and return the AST as JSON.
@@ -33,4 +34,14 @@ pub fn wasm_parse_multi(files_json: &str) -> String {
 #[wasm_bindgen(js_name = "validate")]
 pub fn wasm_validate(content: &str, options_json: &str) -> String {
     validate_to_json(content, options_json)
+}
+
+/// Lint M3L content and return diagnostics as JSON.
+///
+/// @param content - M3L markdown text
+/// @param config_json - JSON config `{ rules?: Record<string, "off"|"warn"|"error"> }`
+/// @returns JSON string with `{ success: boolean, data?: LintResult, error?: string }`
+#[wasm_bindgen(js_name = "lint")]
+pub fn wasm_lint(content: &str, config_json: &str) -> String {
+    lint_to_json(content, config_json)
 }

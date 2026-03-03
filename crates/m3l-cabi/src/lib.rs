@@ -10,6 +10,7 @@ use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 
 use m3l_core::{parse_multi_to_json, parse_to_json, validate_to_json};
+use m3l_lint::lint_to_json;
 
 /// Parse a single M3L file and return the AST as JSON.
 ///
@@ -82,7 +83,36 @@ pub unsafe extern "C" fn m3l_validate(
     to_c_string(&result)
 }
 
-/// Free a string previously returned by m3l_parse, m3l_parse_multi, or m3l_validate.
+/// Lint M3L content and return diagnostics as JSON.
+///
+/// # Safety
+/// - `content` must be a valid null-terminated UTF-8 string.
+/// - `config_json` must be a valid null-terminated UTF-8 JSON string.
+/// - The returned pointer must be freed with `m3l_free_string`.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn m3l_lint(
+    content: *const c_char,
+    config_json: *const c_char,
+) -> *mut c_char {
+    let content = unsafe { CStr::from_ptr(content) };
+    let config_json = unsafe { CStr::from_ptr(config_json) };
+
+    let content_str = match content.to_str() {
+        Ok(s) => s,
+        Err(_) => return to_c_string(r#"{"success":false,"error":"Invalid UTF-8 in content"}"#),
+    };
+    let config_str = match config_json.to_str() {
+        Ok(s) => s,
+        Err(_) => {
+            return to_c_string(r#"{"success":false,"error":"Invalid UTF-8 in config_json"}"#)
+        }
+    };
+
+    let result = lint_to_json(content_str, config_str);
+    to_c_string(&result)
+}
+
+/// Free a string previously returned by m3l_parse, m3l_parse_multi, m3l_validate, or m3l_lint.
 ///
 /// # Safety
 /// - `ptr` must be a pointer previously returned by one of the m3l_* functions,

@@ -150,6 +150,85 @@ fn builtin_rules() -> Vec<Box<dyn LintRule>> {
 }
 
 // ---------------------------------------------------------------------------
+// FFI helper — full pipeline: parse → resolve → lint → JSON
+// ---------------------------------------------------------------------------
+
+/// Lint M3L content and return results as JSON.
+///
+/// Input: M3L markdown text + optional config JSON
+/// Output: JSON string with `{ success: bool, data?: LintResult, error?: string }`
+///
+/// The `config_json` parameter accepts a JSON object matching [`LintConfig`].
+/// If empty or `"{}"`, default configuration is used.
+pub fn lint_to_json(content: &str, config_json: &str) -> String {
+    let config: LintConfig = if config_json.is_empty() || config_json == "{}" {
+        LintConfig::default()
+    } else {
+        match serde_json::from_str(config_json) {
+            Ok(c) => c,
+            Err(e) => {
+                return serde_json::to_string(&FfiLintResult {
+                    success: false,
+                    data: None,
+                    error: Some(format!("Invalid config JSON: {e}")),
+                })
+                .unwrap();
+            }
+        }
+    };
+
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let parsed = m3l_core::parse_string(content, "input.m3l.md");
+        let ast = m3l_core::resolve(&[parsed], None);
+        let linter = Linter::new(config);
+        let diagnostics = linter.lint(&ast);
+        LintResultData {
+            diagnostics,
+            file_count: ast.sources.len(),
+        }
+    }));
+
+    match result {
+        Ok(data) => {
+            let ffi_result = FfiLintResult {
+                success: true,
+                data: Some(data),
+                error: None,
+            };
+            serde_json::to_string(&ffi_result).unwrap_or_else(|e| {
+                serde_json::to_string(&FfiLintResult {
+                    success: false,
+                    data: None,
+                    error: Some(format!("JSON serialization error: {e}")),
+                })
+                .unwrap()
+            })
+        }
+        Err(_) => serde_json::to_string(&FfiLintResult {
+            success: false,
+            data: None,
+            error: Some("Internal linter panic".to_string()),
+        })
+        .unwrap(),
+    }
+}
+
+#[derive(Debug, Serialize)]
+struct FfiLintResult {
+    pub success: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub data: Option<LintResultData>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct LintResultData {
+    pub diagnostics: Vec<LintDiagnostic>,
+    pub file_count: usize,
+}
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
@@ -209,5 +288,48 @@ mod tests {
         let mut config = LintConfig::default();
         config.rules.insert("test-rule".into(), RuleLevel::Error);
         assert_eq!(config.severity_for(&TestRule), LintSeverity::Error);
+    }
+
+    #[test]
+    fn lint_to_json_empty_content() {
+        let result = lint_to_json("", "{}");
+        let parsed: serde_json::Value = serde_json::from_str(&result).unwrap();
+        assert_eq!(parsed["success"], true);
+        assert!(parsed["data"]["diagnostics"].is_array());
+    }
+
+    #[test]
+    fn lint_to_json_default_config() {
+        let content = "# TestModel\n\n- name: string\n";
+        let result = lint_to_json(content, "");
+        let parsed: serde_json::Value = serde_json::from_str(&result).unwrap();
+        assert_eq!(parsed["success"], true);
+        assert!(parsed["data"]["diagnostics"].is_array());
+        assert!(parsed["data"]["file_count"].is_number());
+    }
+
+    #[test]
+    fn lint_to_json_invalid_config() {
+        let result = lint_to_json("# Model\n", "not-json");
+        let parsed: serde_json::Value = serde_json::from_str(&result).unwrap();
+        assert_eq!(parsed["success"], false);
+        assert!(parsed["error"]
+            .as_str()
+            .unwrap()
+            .contains("Invalid config JSON"));
+    }
+
+    #[test]
+    fn lint_to_json_with_custom_config() {
+        let content = "# test_model\n\n- Name: string\n";
+        let config = r#"{"rules":{"naming-convention":"off"}}"#;
+        let result = lint_to_json(content, config);
+        let parsed: serde_json::Value = serde_json::from_str(&result).unwrap();
+        assert_eq!(parsed["success"], true);
+        // naming-convention is off, so no naming diagnostics
+        let diagnostics = parsed["data"]["diagnostics"].as_array().unwrap();
+        for d in diagnostics {
+            assert_ne!(d["rule"].as_str().unwrap(), "naming-convention");
+        }
     }
 }

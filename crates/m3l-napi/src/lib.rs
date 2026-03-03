@@ -7,6 +7,7 @@
 extern crate napi_derive;
 
 use m3l_core::{parse_multi_to_json, parse_to_json, validate_to_json};
+use m3l_lint::lint_to_json;
 
 /// Parse a single M3L file and return the AST as JSON.
 ///
@@ -35,4 +36,14 @@ pub fn parse_multi(files_json: String) -> String {
 #[napi]
 pub fn validate(content: String, options_json: String) -> String {
     validate_to_json(&content, &options_json)
+}
+
+/// Lint M3L content and return diagnostics as JSON.
+///
+/// @param content - M3L markdown text
+/// @param config_json - JSON config `{ rules?: Record<string, "off"|"warn"|"error"> }`
+/// @returns JSON string with `{ success: boolean, data?: LintResult, error?: string }`
+#[napi]
+pub fn lint(content: String, config_json: String) -> String {
+    lint_to_json(&content, &config_json)
 }

@@ -47,7 +47,7 @@ fn cli_parse_single_file() {
     let stdout = String::from_utf8_lossy(&output.stdout);
 
     let ast: serde_json::Value = serde_json::from_str(&stdout).expect("invalid JSON output");
-    assert_eq!(ast["parserVersion"], "0.4.0");
+    assert_eq!(ast["parserVersion"], env!("CARGO_PKG_VERSION"));
     assert_eq!(ast["astVersion"], "1.0");
     assert!(ast["models"].is_array());
     assert!(!ast["models"].as_array().unwrap().is_empty());
@@ -153,7 +153,7 @@ fn cli_parse_output_file() {
 
     let content = std::fs::read_to_string(&tmp).expect("output file should exist");
     let ast: serde_json::Value = serde_json::from_str(&content).expect("invalid JSON in file");
-    assert_eq!(ast["parserVersion"], "0.4.0");
+    assert_eq!(ast["parserVersion"], env!("CARGO_PKG_VERSION"));
 
     std::fs::remove_file(&tmp).ok();
 }

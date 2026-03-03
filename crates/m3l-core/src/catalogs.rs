@@ -58,6 +58,9 @@ pub static STANDARD_ATTRIBUTES: LazyLock<HashSet<&'static str>> = LazyLock::new(
     // Validation
     s.insert("min");
     s.insert("max");
+    s.insert("min_length");
+    s.insert("max_length");
+    s.insert("pattern");
     s.insert("validate");
     s.insert("not_null");
     // Derived fields

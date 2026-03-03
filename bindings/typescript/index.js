@@ -5,8 +5,9 @@
  * All parsing is performed by the Rust m3l-core library.
  */
 
-const { parse, parseMulti, validate } = require('@iyulab/m3l-napi');
+const { parse, parseMulti, validate, lint } = require('@iyulab/m3l-napi');
 
 module.exports.parse = parse;
 module.exports.parseMulti = parseMulti;
 module.exports.validate = validate;
+module.exports.lint = lint;

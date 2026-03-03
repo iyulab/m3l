@@ -1483,3 +1483,135 @@ fn deep_compare_03_types_showcase_vs_reference() {
     assert_eq!(rust_json["project"]["name"], ts_json["project"]["name"]);
     deep_compare_ast_structure(&rust_json, &ts_json, "03-types-showcase");
 }
+
+// ===========================================================================
+// Deep JSON comparison for edge-case fixtures
+// ===========================================================================
+
+#[test]
+fn deep_compare_empty_file_vs_reference() {
+    let input = include_str!("../../../spec/conformance/inputs/empty-file.m3l.md");
+    let ast = full_pipeline(input, "empty-file.m3l.md");
+    let rust_json: serde_json::Value = serde_json::to_value(&ast).unwrap();
+    let ref_json: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../spec/conformance/expected/empty-file.json"
+    ))
+    .unwrap();
+
+    assert_eq!(
+        rust_json["models"].as_array().unwrap().len(),
+        ref_json["models"].as_array().unwrap().len()
+    );
+    assert_eq!(
+        rust_json["enums"].as_array().unwrap().len(),
+        ref_json["enums"].as_array().unwrap().len()
+    );
+}
+
+#[test]
+fn deep_compare_deep_nesting_vs_reference() {
+    let input = include_str!("../../../spec/conformance/inputs/deep-nesting.m3l.md");
+    let ast = full_pipeline(input, "deep-nesting.m3l.md");
+    let rust_json: serde_json::Value = serde_json::to_value(&ast).unwrap();
+    let ref_json: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../spec/conformance/expected/deep-nesting.json"
+    ))
+    .unwrap();
+
+    deep_compare_ast_structure(&rust_json, &ref_json, "deep-nesting");
+}
+
+#[test]
+fn deep_compare_duplicate_fields_vs_reference() {
+    let input = include_str!("../../../spec/conformance/inputs/duplicate-fields.m3l.md");
+    let ast = full_pipeline(input, "duplicate-fields.m3l.md");
+    let rust_json: serde_json::Value = serde_json::to_value(&ast).unwrap();
+    let ref_json: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../spec/conformance/expected/duplicate-fields.json"
+    ))
+    .unwrap();
+
+    // Cannot use deep_compare_ast_structure here because duplicate "name" fields
+    // cause ambiguous name-based matching. Compare counts and errors instead.
+    assert_eq!(
+        rust_json["models"].as_array().unwrap().len(),
+        ref_json["models"].as_array().unwrap().len()
+    );
+    assert_eq!(
+        rust_json["models"][0]["fields"].as_array().unwrap().len(),
+        ref_json["models"][0]["fields"].as_array().unwrap().len()
+    );
+    assert!(
+        !rust_json["errors"].as_array().unwrap().is_empty(),
+        "Rust output should have errors for duplicate fields"
+    );
+}
+
+#[test]
+fn deep_compare_multi_namespace_vs_reference() {
+    let input = include_str!("../../../spec/conformance/inputs/multi-namespace.m3l.md");
+    let ast = full_pipeline(input, "multi-namespace.m3l.md");
+    let rust_json: serde_json::Value = serde_json::to_value(&ast).unwrap();
+    let ref_json: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../spec/conformance/expected/multi-namespace.json"
+    ))
+    .unwrap();
+
+    assert_eq!(rust_json["project"]["name"], ref_json["project"]["name"]);
+    deep_compare_ast_structure(&rust_json, &ref_json, "multi-namespace");
+}
+
+#[test]
+fn deep_compare_all_field_kinds_vs_reference() {
+    let input = include_str!("../../../spec/conformance/inputs/all-field-kinds.m3l.md");
+    let ast = full_pipeline(input, "all-field-kinds.m3l.md");
+    let rust_json: serde_json::Value = serde_json::to_value(&ast).unwrap();
+    let ref_json: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../spec/conformance/expected/all-field-kinds.json"
+    ))
+    .unwrap();
+
+    deep_compare_ast_structure(&rust_json, &ref_json, "all-field-kinds");
+}
+
+#[test]
+fn deep_compare_enum_with_labels_vs_reference() {
+    let input = include_str!("../../../spec/conformance/inputs/enum-with-labels.m3l.md");
+    let ast = full_pipeline(input, "enum-with-labels.m3l.md");
+    let rust_json: serde_json::Value = serde_json::to_value(&ast).unwrap();
+    let ref_json: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../spec/conformance/expected/enum-with-labels.json"
+    ))
+    .unwrap();
+
+    assert_eq!(
+        rust_json["enums"].as_array().unwrap().len(),
+        ref_json["enums"].as_array().unwrap().len()
+    );
+    assert_eq!(rust_json["enums"][0]["name"], ref_json["enums"][0]["name"]);
+    assert_eq!(
+        rust_json["enums"][0]["values"].as_array().unwrap().len(),
+        ref_json["enums"][0]["values"].as_array().unwrap().len()
+    );
+}
+
+#[test]
+fn deep_compare_attribute_registry_vs_reference() {
+    let input = include_str!("../../../spec/conformance/inputs/attribute-registry.m3l.md");
+    let ast = full_pipeline(input, "attribute-registry.m3l.md");
+    let rust_json: serde_json::Value = serde_json::to_value(&ast).unwrap();
+    let ref_json: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../spec/conformance/expected/attribute-registry.json"
+    ))
+    .unwrap();
+
+    deep_compare_ast_structure(&rust_json, &ref_json, "attribute-registry");
+    assert_eq!(
+        rust_json["attributeRegistry"].as_array().unwrap().len(),
+        ref_json["attributeRegistry"].as_array().unwrap().len()
+    );
+    assert_eq!(
+        rust_json["attributeRegistry"][0]["name"],
+        ref_json["attributeRegistry"][0]["name"]
+    );
+}

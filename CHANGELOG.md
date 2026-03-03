@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-03-03
+
 ### Added
 - `@pattern`, `@min_length`, `@max_length` Standard Attributes for string validation
 - Lint API exposed through FFI bindings (C ABI, WASM, NAPI) — `lint()` function
@@ -73,7 +75,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Initial C# parser (`M3LParser`)
 - Basic lexer/parser/resolver pipeline
 
-[Unreleased]: https://github.com/iyulab/m3l/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/iyulab/m3l/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/iyulab/m3l/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/iyulab/m3l/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/iyulab/m3l/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/iyulab/m3l/compare/v0.2.0...v0.3.0

@@ -208,7 +208,7 @@ dependencies = [
 
 [[package]]
 name = "m3l-cabi"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "m3l-core",
  "m3l-lint",
@@ -217,7 +217,7 @@ dependencies = [
 
 [[package]]
 name = "m3l-cli"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "clap",
  "glob",
@@ -230,7 +230,7 @@ dependencies = [
 
 [[package]]
 name = "m3l-core"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "pretty_assertions",
  "regex",
@@ -240,7 +240,7 @@ dependencies = [
 
 [[package]]
 name = "m3l-lint"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "m3l-core",
  "serde",
@@ -249,7 +249,7 @@ dependencies = [
 
 [[package]]
 name = "m3l-napi"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "m3l-core",
  "m3l-lint",
@@ -261,7 +261,7 @@ dependencies = [
 
 [[package]]
 name = "m3l-wasm"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "m3l-core",
  "m3l-lint",

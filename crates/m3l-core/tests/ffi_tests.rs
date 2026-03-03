@@ -68,6 +68,20 @@ fn ffi_parse_json_structure() {
     assert!(v["data"]["warnings"].is_array());
 }
 
+#[test]
+fn ffi_parser_version_matches_cargo_version() {
+    let content = "## Item\n- id : int\n";
+    let result = parse_to_json(content, "test.m3l.md");
+    let v = assert_success(&result);
+
+    let parser_version = v["data"]["parserVersion"].as_str().unwrap();
+    assert_eq!(
+        parser_version,
+        env!("CARGO_PKG_VERSION"),
+        "parserVersion in AST should match Cargo.toml version"
+    );
+}
+
 // ---------------------------------------------------------------------------
 // parse_multi_to_json
 // ---------------------------------------------------------------------------

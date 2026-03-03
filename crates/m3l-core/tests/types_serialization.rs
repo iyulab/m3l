@@ -1,4 +1,5 @@
 use m3l_core::types::*;
+use m3l_core::PARSER_VERSION;
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -136,7 +137,7 @@ fn model_node_json_keys() {
 #[test]
 fn m3l_ast_json_keys() {
     let ast = M3lAst {
-        parser_version: "0.4.0".into(),
+        parser_version: PARSER_VERSION.into(),
         ast_version: "1.0".into(),
         project: ProjectInfo {
             name: Some("test".into()),

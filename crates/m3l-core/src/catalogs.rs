@@ -89,5 +89,5 @@ pub static KIND_SECTIONS: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
 });
 
 /// Parser and AST version constants.
-pub const PARSER_VERSION: &str = "0.4.0";
+pub const PARSER_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const AST_VERSION: &str = "1.0";

@@ -1,0 +1,15 @@
+{
+  "parserVersion": "0.5.0",
+  "astVersion": "1.0",
+  "project": {},
+  "sources": [
+    "spec/conformance/inputs/empty-file.m3l.md"
+  ],
+  "models": [],
+  "enums": [],
+  "interfaces": [],
+  "views": [],
+  "attributeRegistry": [],
+  "errors": [],
+  "warnings": []
+}

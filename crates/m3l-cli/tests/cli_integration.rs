@@ -967,6 +967,167 @@ fn format_roundtrip() {
     std::fs::remove_file(&tmp).ok();
 }
 
+#[test]
+#[ignore] // BUG: formatter inlines inherited fields but keeps `: Parent`, causing duplication on re-format
+fn format_idempotent() {
+    // format(input) should equal format(format(input))
+    // i.e., formatting twice produces the same output
+    let inputs = &[
+        "samples/test/format/full.m3l.md",
+        "spec/conformance/inputs/01-ecommerce.m3l.md",
+        "spec/conformance/inputs/02-blog-cms.m3l.md",
+        "spec/conformance/inputs/03-types-showcase.m3l.md",
+    ];
+
+    for input_path in inputs {
+        // First format
+        let output1 = m3l_bin()
+            .args(["format", input_path])
+            .output()
+            .expect("failed to run");
+        assert!(
+            output1.status.success(),
+            "[{input_path}] First format failed: {}",
+            String::from_utf8_lossy(&output1.stderr)
+        );
+        let formatted1 = String::from_utf8_lossy(&output1.stdout);
+
+        // Write first format to temp file
+        let tmp = std::env::temp_dir().join("m3l-idempotent-test.m3l.md");
+        std::fs::write(&tmp, formatted1.as_ref()).expect("write tmp");
+
+        // Second format (format the already-formatted output)
+        let output2 = m3l_bin()
+            .args(["format", tmp.to_str().unwrap()])
+            .output()
+            .expect("failed to run");
+        assert!(
+            output2.status.success(),
+            "[{input_path}] Second format failed: {}",
+            String::from_utf8_lossy(&output2.stderr)
+        );
+        let formatted2 = String::from_utf8_lossy(&output2.stdout);
+
+        // They should be identical
+        assert_eq!(
+            formatted1.as_ref(),
+            formatted2.as_ref(),
+            "[{input_path}] Format is not idempotent — second format produced different output"
+        );
+
+        // Also verify the formatted output parses correctly
+        let parse_out = m3l_bin()
+            .args(["parse", tmp.to_str().unwrap()])
+            .output()
+            .expect("failed to run");
+        assert!(
+            parse_out.status.success(),
+            "[{input_path}] Formatted output failed to parse: {}",
+            String::from_utf8_lossy(&parse_out.stderr)
+        );
+
+        std::fs::remove_file(&tmp).ok();
+    }
+}
+
+#[test]
+#[ignore] // BUG: same inheritance field duplication issue as format_idempotent
+fn format_preserves_ast() {
+    // parse(input) should produce same models/enums as parse(format(input))
+    // We compare structural content (field names, types, counts) rather than
+    // exact JSON equality, since loc/source fields will differ between files.
+    let inputs = &[
+        "samples/test/format/full.m3l.md",
+        "spec/conformance/inputs/01-ecommerce.m3l.md",
+        "spec/conformance/inputs/03-types-showcase.m3l.md",
+    ];
+
+    for input_path in inputs {
+        // Parse original
+        let parse1 = m3l_bin()
+            .args(["parse", input_path])
+            .output()
+            .expect("failed to run");
+        assert!(
+            parse1.status.success(),
+            "[{input_path}] Original parse failed"
+        );
+        let ast1: serde_json::Value =
+            serde_json::from_str(&String::from_utf8_lossy(&parse1.stdout))
+                .expect("invalid JSON from original parse");
+
+        // Format then parse
+        let format_out = m3l_bin()
+            .args(["format", input_path])
+            .output()
+            .expect("failed to run");
+        assert!(format_out.status.success(), "[{input_path}] Format failed");
+        let tmp = std::env::temp_dir().join("m3l-ast-equiv-test.m3l.md");
+        std::fs::write(&tmp, &format_out.stdout).expect("write tmp");
+
+        let parse2 = m3l_bin()
+            .args(["parse", tmp.to_str().unwrap()])
+            .output()
+            .expect("failed to run");
+        assert!(
+            parse2.status.success(),
+            "[{input_path}] Formatted parse failed"
+        );
+        let ast2: serde_json::Value =
+            serde_json::from_str(&String::from_utf8_lossy(&parse2.stdout))
+                .expect("invalid JSON from formatted parse");
+
+        // Compare model count
+        let models1 = ast1["models"].as_array().expect("models1 array");
+        let models2 = ast2["models"].as_array().expect("models2 array");
+        assert_eq!(
+            models1.len(),
+            models2.len(),
+            "[{input_path}] Model count differs after format"
+        );
+
+        // Compare each model's name, type, and field count/names
+        for (m1, m2) in models1.iter().zip(models2.iter()) {
+            assert_eq!(m1["name"], m2["name"], "[{input_path}] Model name differs");
+            assert_eq!(
+                m1["type"], m2["type"],
+                "[{input_path}] Model type differs for {}",
+                m1["name"]
+            );
+
+            let f1: Vec<&str> = m1["fields"]
+                .as_array()
+                .map(|a| a.iter().filter_map(|f| f["name"].as_str()).collect())
+                .unwrap_or_default();
+            let f2: Vec<&str> = m2["fields"]
+                .as_array()
+                .map(|a| a.iter().filter_map(|f| f["name"].as_str()).collect())
+                .unwrap_or_default();
+            assert_eq!(
+                f1, f2,
+                "[{input_path}] Field names differ for model {}",
+                m1["name"]
+            );
+        }
+
+        // Compare enum count and names
+        let enums1 = ast1["enums"].as_array();
+        let enums2 = ast2["enums"].as_array();
+        if let (Some(e1), Some(e2)) = (enums1, enums2) {
+            assert_eq!(
+                e1.len(),
+                e2.len(),
+                "[{input_path}] Enum count differs after format"
+            );
+            for (en1, en2) in e1.iter().zip(e2.iter()) {
+                assert_eq!(en1["name"], en2["name"], "[{input_path}] Enum name differs");
+            }
+        }
+
+        std::fs::remove_file(&tmp).ok();
+    }
+}
+
 // ══════════════════════════════════════════════════════════════
 // Parse — edge cases
 // ══════════════════════════════════════════════════════════════

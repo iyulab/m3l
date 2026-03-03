@@ -34,6 +34,7 @@
 5. [External References](#5-external-references)
    1. [Imports](#51-imports)
    2. [External Schema References](#52-external-schema-references)
+   3. [Project Configuration](#53-project-configuration)
 6. [Versioning and Migration](#6-versioning-and-migration)
    1. [Schema Versioning](#61-schema-versioning)
    2. [Migration Notation](#62-migration-notation)
@@ -170,6 +171,7 @@ The following table shows M3L special characters and their markdown safety statu
 ## 2. Basic Syntax
 
 ### 2.1 Namespace Definition
+> **Status: Implemented** — Fully supported in `m3l-core` parser.
 
 Namespaces logically group models and schemas.
 
@@ -249,6 +251,7 @@ For multiple namespaces in a single document:
 ```
 
 ### 2.2 Model Definition
+> **Status: Implemented** — Fully supported in `m3l-core` parser.
 
 Models are the basic units of data structure in M3L.
 
@@ -346,6 +349,7 @@ Models are primarily separated by `##` headers. For documents with complex or le
 - The M3L parser treats horizontal rules as whitespace (ignored)
 
 ### 2.3 Field Definition
+> **Status: Implemented** — Fully supported in `m3l-core` parser.
 
 Fields define individual attributes of a model.
 
@@ -450,6 +454,7 @@ Switch to extended format when any of these apply:
 ```
 
 ### 2.4 Data Type Notation
+> **Status: Implemented** — Fully supported in `m3l-core` parser.
 
 M3L provides consistent rules for denoting data types:
 
@@ -493,6 +498,7 @@ Derived fields can infer their type from the source:
 ```
 
 ### 2.5 Attribute Notation
+> **Status: Implemented** — Fully supported in `m3l-core` parser.
 
 In M3L, the `@` prefix is used to define attributes of fields or models. These can be interpreted as constraints, validations, behaviors, etc.
 
@@ -617,6 +623,7 @@ M3L uses type indicators after `::` to define special element types:
 - `::view` — Derived view type (read-only, virtual model composed from other models)
 
 ### 3.1 Enum Definition
+> **Status: Implemented** — Fully supported in `m3l-core` parser.
 
 Enums provide a predefined set of values that can be used for specific fields.
 
@@ -795,6 +802,7 @@ For enums used only within a single field, define values inline. The `values:` k
 ```
 
 ### 3.2 Relationship Definition
+> **Status: Implemented** — Fully supported in `m3l-core` parser.
 
 Relationships define connections between models.
 
@@ -918,6 +926,7 @@ Used to name and describe the reverse side of a relationship.
 - If `### Relations` metadata contradicts `@reference` → parser error
 
 ### 3.3 Index Definition
+> **Status: Implemented** — Fully supported in `m3l-core` parser.
 
 Indexes are used to optimize query performance.
 
@@ -980,6 +989,7 @@ For example:
 ```
 
 ### 3.4 Inheritance and Interfaces
+> **Status: Implemented** — Fully supported in `m3l-core` parser and resolver.
 
 Inheritance provides a mechanism for sharing common attributes between models.
 
@@ -1031,6 +1041,7 @@ When inheriting conflicting fields:
 ```
 
 ### 3.5 Metadata Definition
+> **Status: Implemented** — Fully supported in `m3l-core` parser.
 
 Metadata provides additional information about the model itself or implementation details.
 
@@ -1054,6 +1065,7 @@ Metadata provides additional information about the model itself or implementatio
 ## 4. Advanced Features
 
 ### 4.1 Composite Key Definition
+> **Status: Partial** — `@primary` attribute is recognized; `@primary(order)` parameter parsing and `### PrimaryKey` section are not yet implemented.
 
 Composite keys are primary keys composed of two or more fields.
 
@@ -1073,6 +1085,7 @@ Multi-line format:
 ```
 
 ### 4.2 Comments and Documentation
+> **Status: Implemented** — Fully supported in `m3l-core` parser (description strings, blockquotes, inline comments, HTML comments).
 
 M3L provides multiple documentation mechanisms with distinct purposes, ordered by preference:
 
@@ -1144,6 +1157,7 @@ Fields can use indented blockquotes for multi-line descriptions:
 Indented blockquotes (2+ spaces before `>`) are attached to the preceding field as its description. Non-indented blockquotes remain model-level descriptions. Both inline `"description"` and blockquote forms are valid; if both are present on the same field, the blockquote takes precedence.
 
 ### 4.3 Behavior Definition
+> **Status: Implemented** — Fully supported in `m3l-core` parser (Behaviors section and `@behavior` attribute).
 
 Behaviors define events and actions associated with a model.
 
@@ -1167,6 +1181,7 @@ Behaviors define events and actions associated with a model.
 ```
 
 ### 4.4 Computed Fields (Row-Level)
+> **Status: Implemented** — Fully supported in `m3l-core` parser (`@computed`, `@computed_raw`, code block expressions).
 
 Computed fields derive their values from expressions and other fields **within the same row**, providing calculated columns in the database. For cross-model derivations, see [Lookup Fields (4.5)](#45-lookup-fields) and [Rollup Fields (4.6)](#46-rollup-fields).
 
@@ -1292,6 +1307,7 @@ Complex computed expressions can use fenced code blocks for readability:
 When `@computed` has no inline arguments and a fenced code block follows (indented under the field), the code block content becomes the computed expression. Both inline (`@computed("expr")` or `` @computed(`expr`) ``) and code block forms are valid.
 
 ### 4.5 Lookup Fields
+> **Status: Implemented** — Fully supported in `m3l-core` parser and validator (E002, W004).
 
 Lookup fields reference a value from a related model by following a foreign key relationship. They are **read-only** and computed at runtime unless `@persisted` is specified.
 
@@ -1380,6 +1396,7 @@ Simple Format and Extended Format correspondence:
 ```
 
 ### 4.6 Rollup Fields
+> **Status: Implemented** — Fully supported in `m3l-core` parser and validator (E001).
 
 Rollup fields aggregate values from child records in a 1:N relationship. They are **read-only** and computed at runtime unless `@persisted` is specified.
 
@@ -1510,6 +1527,7 @@ Rollup results can be referenced by other Rollup or Computed fields:
 - `@persisted` Rollup requires a materialization strategy; update triggers must be defined in the implementation layer.
 
 ### 4.7 Derived Views
+> **Status: Implemented** — Fully supported in `m3l-core` parser and validator (`::view`, Source section, E004).
 
 Derived Views are virtual models composed from multiple models. They correspond to database Views and use the `::view` type indicator.
 
@@ -1676,6 +1694,7 @@ The SQL block and key-value formats cannot be mixed within the same Source secti
 AST: When a SQL code block is used, `source_def.raw_sql` contains the SQL text and `source_def.language_hint` contains the language tag (e.g., "sql"). The `from`, `joins`, `where` etc. fields are not populated.
 
 ### 4.8 Conditional Fields
+> **Status: Planned** — Not yet implemented in parser.
 
 Fields that exist or are required only under certain conditions.
 
@@ -1694,6 +1713,7 @@ Fields that exist or are required only under certain conditions.
 ```
 
 ### 4.9 Complex Data Structures
+> **Status: Partial** — `object` sub-fields and `map<K,V>` type parsing implemented. Nesting depth warning (W002) implemented. Array-of-objects and deep nesting validation are basic.
 
 Defining complex nested data structures.
 
@@ -1773,6 +1793,7 @@ Object nesting should not exceed 3 levels for readability in markdown viewers. D
 ```
 
 ### 4.10 Validation Rules
+> **Status: Partial** — `@validate` attribute is recognized and passed through to AST. Cross-field validation (### Validations section) is not yet implemented.
 
 Rules for validating field values.
 
@@ -1803,6 +1824,7 @@ Rules for validating field values.
 ```
 
 ### 4.11 Templates and Generics
+> **Status: Planned** — Generic type parameters (`<T>`) are parsed at the lexer level, but template definition and instantiation logic is not yet implemented.
 
 Defining reusable templates with generic parameters.
 
@@ -1824,6 +1846,7 @@ Defining reusable templates with generic parameters.
 ## 5. External References
 
 ### 5.1 Imports
+> **Status: Implemented** — `@import` parsing, alias support, and circular import detection (E003) are fully implemented.
 
 Importing definitions from other M3L files.
 
@@ -1842,6 +1865,7 @@ Importing definitions from other M3L files.
 See [10.6 Import Resolution](#106-import-resolution) for detailed rules.
 
 ### 5.2 External Schema References
+> **Status: Planned** — Not yet implemented in parser. The `external://` protocol is specified but has no parser support.
 
 Referencing external schemas or models.
 
@@ -1849,9 +1873,65 @@ Referencing external schemas or models.
 - category_id: identifier @reference(external://taxonomy.Category)
 ```
 
+### 5.3 Project Configuration
+> **Status: Implemented** — Fully supported in `m3l-cli`.
+
+M3L projects can include a `m3l.config.yaml` file in the project root to configure how the CLI discovers and processes source files. This file is optional — when absent, the CLI uses default behavior.
+
+#### 5.3.1 File Location
+
+The configuration file must be named `m3l.config.yaml` and placed in the project root directory. The project root is determined by the directory passed to the CLI (or the current working directory).
+
+#### 5.3.2 Schema
+
+```yaml
+name: my-project
+version: "1.0.0"
+sources:
+  - "models/**/*.m3l.md"
+  - "schemas/*.m3l"
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `name` | `string` | No | Project name. Included in the AST output as `project.name`. |
+| `version` | `string` | No | Project version. Included in the AST output as `project.version`. |
+| `sources` | `string[]` | No | Array of glob patterns specifying which files to parse. Patterns are resolved relative to the project root. |
+
+#### 5.3.3 Default Behavior
+
+When no `m3l.config.yaml` exists, or when the `sources` field is omitted or empty, the CLI scans the project directory recursively for files matching:
+
+- `**/*.m3l.md`
+- `**/*.m3l`
+- `**/*.md`
+
+Files are deduplicated (e.g., `foo.m3l.md` matches both `*.m3l` and `*.md` patterns) and sorted alphabetically before parsing.
+
+#### 5.3.4 Source Pattern Examples
+
+```yaml
+# Parse only models in a specific directory
+sources:
+  - "models/**/*.m3l.md"
+
+# Multiple directories with different extensions
+sources:
+  - "domain/**/*.m3l.md"
+  - "shared/*.m3l"
+  - "schemas/**/*.md"
+
+# Single file
+sources:
+  - "schema.m3l.md"
+```
+
+> **Note**: The `sources` patterns use standard glob syntax (`*`, `**`, `?`). The `**` pattern matches any number of directories, including zero.
+
 ## 6. Versioning and Migration
 
 ### 6.1 Schema Versioning
+> **Status: Planned** — Not yet implemented in parser.
 
 Version information for the schema.
 
@@ -1865,6 +1945,7 @@ Version information for the schema.
 ```
 
 ### 6.2 Migration Notation
+> **Status: Planned** — Not yet implemented in parser.
 
 Defining changes between schema versions.
 

@@ -1,0 +1,11 @@
+## Config
+- settings: object
+  - display: object
+    - theme: object
+      - colors: object
+        - primary: string
+        - secondary: string
+      - font_size: integer
+    - language: string
+  - notifications: boolean
+- version: string

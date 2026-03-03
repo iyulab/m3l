@@ -1,0 +1,162 @@
+{
+  "parserVersion": "0.5.0",
+  "astVersion": "1.0",
+  "project": {
+    "name": "Auth"
+  },
+  "sources": [
+    "spec/conformance/inputs/multi-namespace.m3l.md"
+  ],
+  "models": [
+    {
+      "name": "User",
+      "type": "model",
+      "source": "spec/conformance/inputs/multi-namespace.m3l.md",
+      "line": 3,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/multi-namespace.m3l.md",
+            "line": 4,
+            "col": 1
+          }
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "params": [
+            100.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/multi-namespace.m3l.md",
+            "line": 5,
+            "col": 1
+          }
+        },
+        {
+          "name": "email",
+          "type": "string",
+          "params": [
+            320.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/multi-namespace.m3l.md",
+            "line": 6,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/multi-namespace.m3l.md",
+        "line": 3,
+        "col": 1
+      }
+    },
+    {
+      "name": "Invoice",
+      "type": "model",
+      "source": "spec/conformance/inputs/multi-namespace.m3l.md",
+      "line": 10,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/multi-namespace.m3l.md",
+            "line": 11,
+            "col": 1
+          }
+        },
+        {
+          "name": "amount",
+          "type": "decimal",
+          "params": [
+            10.0,
+            2.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/multi-namespace.m3l.md",
+            "line": 12,
+            "col": 1
+          }
+        },
+        {
+          "name": "due_date",
+          "type": "date",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/multi-namespace.m3l.md",
+            "line": 13,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/multi-namespace.m3l.md",
+        "line": 10,
+        "col": 1
+      }
+    }
+  ],
+  "enums": [],
+  "interfaces": [],
+  "views": [],
+  "attributeRegistry": [],
+  "errors": [],
+  "warnings": []
+}

@@ -322,6 +322,266 @@ fn conformance_backtick_expression() {
 }
 
 // ===========================================================================
+// Edge-case conformance fixtures
+// ===========================================================================
+
+#[test]
+fn conformance_empty_file() {
+    let input = "";
+    let ast = full_pipeline(input, "empty-file.m3l.md");
+
+    assert_eq!(ast.models.len(), 0);
+    assert_eq!(ast.enums.len(), 0);
+    assert_eq!(ast.interfaces.len(), 0);
+    assert_eq!(ast.views.len(), 0);
+    assert!(ast.errors.is_empty());
+}
+
+#[test]
+fn conformance_deep_nesting() {
+    let input = r#"## Config
+- settings: object
+  - display: object
+    - theme: object
+      - colors: object
+        - primary: string
+        - secondary: string
+      - font_size: integer
+    - language: string
+  - notifications: boolean
+- version: string"#;
+
+    let ast = full_pipeline(input, "deep-nesting.m3l.md");
+
+    assert_eq!(ast.models.len(), 1);
+    assert!(ast.errors.is_empty());
+
+    let config = &ast.models[0];
+    assert_eq!(config.name, "Config");
+    assert_eq!(config.fields.len(), 2); // settings + version
+
+    // settings is object type
+    let settings = &config.fields[0];
+    assert_eq!(settings.name, "settings");
+    assert_eq!(settings.field_type.as_deref(), Some("object"));
+
+    // version is a top-level field
+    let version = &config.fields[1];
+    assert_eq!(version.name, "version");
+    assert_eq!(version.field_type.as_deref(), Some("string"));
+}
+
+#[test]
+fn conformance_duplicate_fields() {
+    let input = r#"## User
+- name: string
+- email: string
+- name: integer"#;
+
+    let ast = full_pipeline(input, "duplicate-fields.m3l.md");
+
+    assert_eq!(ast.models.len(), 1);
+
+    // Should produce E005 or E006 duplicate field error
+    assert!(
+        !ast.errors.is_empty(),
+        "Expected error for duplicate field 'name'"
+    );
+    assert!(
+        ast.errors
+            .iter()
+            .any(|e| e.code == "M3L-E005" || e.code == "M3L-E006"),
+        "Expected M3L-E005 or M3L-E006 for duplicate field, got: {:?}",
+        ast.errors.iter().map(|e| &e.code).collect::<Vec<_>>()
+    );
+
+    // Fields should still be parsed (3 fields including duplicate)
+    let user = &ast.models[0];
+    assert_eq!(user.fields.len(), 3);
+}
+
+#[test]
+fn conformance_all_field_kinds() {
+    let input = include_str!("../../../spec/conformance/inputs/all-field-kinds.m3l.md");
+    let ast = full_pipeline(input, "all-field-kinds.m3l.md");
+
+    assert_eq!(ast.models.len(), 2); // Customer + Order
+    let order = ast.models.iter().find(|m| m.name == "Order").unwrap();
+
+    // stored fields
+    let id = order.fields.iter().find(|f| f.name == "id").unwrap();
+    assert_eq!(id.kind, m3l_core::FieldKind::Stored);
+
+    let status = order.fields.iter().find(|f| f.name == "status").unwrap();
+    assert_eq!(status.kind, m3l_core::FieldKind::Stored);
+    assert_eq!(status.default_value.as_deref(), Some("pending"));
+
+    // lookup field
+    let customer_name = order
+        .fields
+        .iter()
+        .find(|f| f.name == "customer_name")
+        .unwrap();
+    assert_eq!(customer_name.kind, m3l_core::FieldKind::Lookup);
+    assert_eq!(
+        customer_name.lookup.as_ref().unwrap().path,
+        "customer_id.name"
+    );
+
+    // rollup field
+    let order_total = order
+        .fields
+        .iter()
+        .find(|f| f.name == "order_total")
+        .unwrap();
+    assert_eq!(order_total.kind, m3l_core::FieldKind::Rollup);
+    assert_eq!(order_total.rollup.as_ref().unwrap().aggregate, "sum");
+    assert_eq!(
+        order_total.rollup.as_ref().unwrap().field.as_deref(),
+        Some("amount")
+    );
+
+    // computed field
+    let display_label = order
+        .fields
+        .iter()
+        .find(|f| f.name == "display_label")
+        .unwrap();
+    assert_eq!(display_label.kind, m3l_core::FieldKind::Computed);
+    assert!(display_label
+        .computed
+        .as_ref()
+        .unwrap()
+        .expression
+        .contains("status"));
+}
+
+#[test]
+fn conformance_attribute_registry() {
+    let input = include_str!("../../../spec/conformance/inputs/attribute-registry.m3l.md");
+    let ast = full_pipeline(input, "attribute-registry.m3l.md");
+
+    // Should have 1 attribute in the registry
+    assert_eq!(ast.attribute_registry.len(), 1);
+    let auditable = &ast.attribute_registry[0];
+    assert_eq!(auditable.name, "auditable");
+    assert_eq!(
+        auditable.description.as_deref(),
+        Some("Marks a field as requiring audit tracking")
+    );
+    assert!(auditable.target.contains(&"field".to_string()));
+
+    // Should have 1 model
+    assert_eq!(ast.models.len(), 1);
+    let user = &ast.models[0];
+
+    // name field should have @auditable registered attribute
+    let name = user.fields.iter().find(|f| f.name == "name").unwrap();
+    assert!(name.attributes.iter().any(|a| a.name == "auditable"));
+    let auditable_attr = name
+        .attributes
+        .iter()
+        .find(|a| a.name == "auditable")
+        .unwrap();
+    assert_eq!(auditable_attr.is_registered, Some(true));
+}
+
+#[test]
+fn conformance_enum_with_labels() {
+    let input = r#"## Priority ::enum
+- low: "Low Priority"
+- medium: "Medium Priority"
+- high: "High Priority"
+- critical: "Critical""#;
+
+    let ast = full_pipeline(input, "enum-with-labels.m3l.md");
+
+    assert_eq!(ast.enums.len(), 1);
+    assert_eq!(ast.models.len(), 0);
+    assert!(ast.errors.is_empty());
+
+    let priority = &ast.enums[0];
+    assert_eq!(priority.name, "Priority");
+    assert_eq!(priority.values.len(), 4);
+
+    // Check each value has correct name and description
+    assert_eq!(priority.values[0].name, "low");
+    assert_eq!(
+        priority.values[0].description.as_deref(),
+        Some("Low Priority")
+    );
+    assert_eq!(priority.values[1].name, "medium");
+    assert_eq!(
+        priority.values[1].description.as_deref(),
+        Some("Medium Priority")
+    );
+    assert_eq!(priority.values[2].name, "high");
+    assert_eq!(
+        priority.values[2].description.as_deref(),
+        Some("High Priority")
+    );
+    assert_eq!(priority.values[3].name, "critical");
+    assert_eq!(priority.values[3].description.as_deref(), Some("Critical"));
+}
+
+#[test]
+fn conformance_multi_namespace() {
+    let input = include_str!("../../../spec/conformance/inputs/multi-namespace.m3l.md");
+    let ast = full_pipeline(input, "multi-namespace.m3l.md");
+
+    // Two models from two namespaces
+    assert_eq!(ast.models.len(), 2);
+    assert!(ast.errors.is_empty());
+
+    let model_names: Vec<&str> = ast.models.iter().map(|m| m.name.as_str()).collect();
+    assert!(model_names.contains(&"User"));
+    assert!(model_names.contains(&"Invoice"));
+
+    let user = ast.models.iter().find(|m| m.name == "User").unwrap();
+    assert_eq!(user.fields.len(), 3); // id, name, email
+
+    let invoice = ast.models.iter().find(|m| m.name == "Invoice").unwrap();
+    assert_eq!(invoice.fields.len(), 3); // id, amount, due_date
+    let due_date = invoice
+        .fields
+        .iter()
+        .find(|f| f.name == "due_date")
+        .unwrap();
+    assert_eq!(due_date.field_type.as_deref(), Some("date"));
+}
+
+#[test]
+fn conformance_undefined_type() {
+    let input = r#"## Order
+- id: identifier @pk
+- customer: CustomerProfile
+- status: OrderStatus
+- total: decimal(10,2)"#;
+
+    let parsed = parse_string(input, "undefined-type.m3l.md");
+    let ast = resolve(&[parsed], None);
+    let result = validate(&ast, &ValidateOptions { strict: false });
+
+    assert_eq!(ast.models.len(), 1);
+
+    let order = &ast.models[0];
+    assert_eq!(order.fields.len(), 4);
+
+    // customer and status reference undefined types — validator returns E009
+    let e009_errors: Vec<_> = result
+        .errors
+        .iter()
+        .filter(|e| e.code == "M3L-E009")
+        .collect();
+    assert_eq!(
+        e009_errors.len(),
+        2,
+        "Expected 2 E009 errors for CustomerProfile and OrderStatus, got: {:?}",
+        e009_errors
+    );
+}
+
+// ===========================================================================
 // Sample file: 01-ecommerce.m3l.md — verify against reference JSON structure
 // ===========================================================================
 

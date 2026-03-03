@@ -1,0 +1,179 @@
+{
+  "parserVersion": "0.5.0",
+  "astVersion": "1.0",
+  "project": {},
+  "sources": [
+    "spec/conformance/inputs/deep-nesting.m3l.md"
+  ],
+  "models": [
+    {
+      "name": "Config",
+      "type": "model",
+      "source": "spec/conformance/inputs/deep-nesting.m3l.md",
+      "line": 1,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "settings",
+          "type": "object",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "fields": [
+            {
+              "name": "display",
+              "type": "object",
+              "nullable": false,
+              "array": false,
+              "arrayItemNullable": false,
+              "kind": "stored",
+              "attributes": [],
+              "loc": {
+                "file": "spec/conformance/inputs/deep-nesting.m3l.md",
+                "line": 3,
+                "col": 1
+              }
+            },
+            {
+              "name": "theme",
+              "type": "object",
+              "nullable": false,
+              "array": false,
+              "arrayItemNullable": false,
+              "kind": "stored",
+              "attributes": [],
+              "loc": {
+                "file": "spec/conformance/inputs/deep-nesting.m3l.md",
+                "line": 4,
+                "col": 1
+              }
+            },
+            {
+              "name": "colors",
+              "type": "object",
+              "nullable": false,
+              "array": false,
+              "arrayItemNullable": false,
+              "kind": "stored",
+              "attributes": [],
+              "loc": {
+                "file": "spec/conformance/inputs/deep-nesting.m3l.md",
+                "line": 5,
+                "col": 1
+              }
+            },
+            {
+              "name": "primary",
+              "type": "string",
+              "nullable": false,
+              "array": false,
+              "arrayItemNullable": false,
+              "kind": "stored",
+              "attributes": [],
+              "loc": {
+                "file": "spec/conformance/inputs/deep-nesting.m3l.md",
+                "line": 6,
+                "col": 1
+              }
+            },
+            {
+              "name": "secondary",
+              "type": "string",
+              "nullable": false,
+              "array": false,
+              "arrayItemNullable": false,
+              "kind": "stored",
+              "attributes": [],
+              "loc": {
+                "file": "spec/conformance/inputs/deep-nesting.m3l.md",
+                "line": 7,
+                "col": 1
+              }
+            },
+            {
+              "name": "font_size",
+              "type": "integer",
+              "nullable": false,
+              "array": false,
+              "arrayItemNullable": false,
+              "kind": "stored",
+              "attributes": [],
+              "loc": {
+                "file": "spec/conformance/inputs/deep-nesting.m3l.md",
+                "line": 8,
+                "col": 1
+              }
+            },
+            {
+              "name": "language",
+              "type": "string",
+              "nullable": false,
+              "array": false,
+              "arrayItemNullable": false,
+              "kind": "stored",
+              "attributes": [],
+              "loc": {
+                "file": "spec/conformance/inputs/deep-nesting.m3l.md",
+                "line": 9,
+                "col": 1
+              }
+            },
+            {
+              "name": "notifications",
+              "type": "boolean",
+              "nullable": false,
+              "array": false,
+              "arrayItemNullable": false,
+              "kind": "stored",
+              "attributes": [],
+              "loc": {
+                "file": "spec/conformance/inputs/deep-nesting.m3l.md",
+                "line": 10,
+                "col": 1
+              }
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/deep-nesting.m3l.md",
+            "line": 2,
+            "col": 1
+          }
+        },
+        {
+          "name": "version",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/deep-nesting.m3l.md",
+            "line": 11,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/deep-nesting.m3l.md",
+        "line": 1,
+        "col": 1
+      }
+    }
+  ],
+  "enums": [],
+  "interfaces": [],
+  "views": [],
+  "attributeRegistry": [],
+  "errors": [],
+  "warnings": []
+}

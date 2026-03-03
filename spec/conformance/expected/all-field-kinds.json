@@ -1,0 +1,250 @@
+{
+  "parserVersion": "0.5.0",
+  "astVersion": "1.0",
+  "project": {},
+  "sources": [
+    "spec/conformance/inputs/all-field-kinds.m3l.md"
+  ],
+  "models": [
+    {
+      "name": "Customer",
+      "type": "model",
+      "source": "spec/conformance/inputs/all-field-kinds.m3l.md",
+      "line": 1,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/all-field-kinds.m3l.md",
+            "line": 2,
+            "col": 1
+          }
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "params": [
+            100.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/all-field-kinds.m3l.md",
+            "line": 3,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/all-field-kinds.m3l.md",
+        "line": 1,
+        "col": 1
+      }
+    },
+    {
+      "name": "Order",
+      "type": "model",
+      "source": "spec/conformance/inputs/all-field-kinds.m3l.md",
+      "line": 5,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/all-field-kinds.m3l.md",
+            "line": 6,
+            "col": 1
+          }
+        },
+        {
+          "name": "customer_id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "fk",
+              "args": [
+                "Customer.id"
+              ],
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/all-field-kinds.m3l.md",
+            "line": 7,
+            "col": 1
+          }
+        },
+        {
+          "name": "amount",
+          "type": "decimal",
+          "params": [
+            10.0,
+            2.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/all-field-kinds.m3l.md",
+            "line": 8,
+            "col": 1
+          }
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "pending",
+          "default_value_type": "literal",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/all-field-kinds.m3l.md",
+            "line": 9,
+            "col": 1
+          }
+        },
+        {
+          "name": "customer_name",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "lookup",
+          "attributes": [
+            {
+              "name": "lookup",
+              "args": [
+                "customer_id.name"
+              ],
+              "isStandard": true
+            }
+          ],
+          "lookup": {
+            "path": "customer_id.name"
+          },
+          "loc": {
+            "file": "spec/conformance/inputs/all-field-kinds.m3l.md",
+            "line": 12,
+            "col": 1
+          }
+        },
+        {
+          "name": "order_total",
+          "type": "decimal",
+          "params": [
+            12.0,
+            2.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "rollup",
+          "attributes": [
+            {
+              "name": "rollup",
+              "args": [
+                "Order.customer_id",
+                "sum(amount)"
+              ],
+              "isStandard": true
+            }
+          ],
+          "rollup": {
+            "target": "Order",
+            "fk": "customer_id",
+            "aggregate": "sum",
+            "field": "amount"
+          },
+          "loc": {
+            "file": "spec/conformance/inputs/all-field-kinds.m3l.md",
+            "line": 15,
+            "col": 1
+          }
+        },
+        {
+          "name": "display_label",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "computed",
+          "attributes": [
+            {
+              "name": "computed",
+              "args": [
+                "status + ' #' + id"
+              ],
+              "isStandard": true
+            }
+          ],
+          "computed": {
+            "expression": "status + ' #' + id"
+          },
+          "loc": {
+            "file": "spec/conformance/inputs/all-field-kinds.m3l.md",
+            "line": 18,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/all-field-kinds.m3l.md",
+        "line": 5,
+        "col": 1
+      }
+    }
+  ],
+  "enums": [],
+  "interfaces": [],
+  "views": [],
+  "attributeRegistry": [],
+  "errors": [],
+  "warnings": []
+}

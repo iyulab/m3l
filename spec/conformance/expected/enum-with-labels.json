@@ -1,0 +1,46 @@
+{
+  "parserVersion": "0.5.0",
+  "astVersion": "1.0",
+  "project": {},
+  "sources": [
+    "spec/conformance/inputs/enum-with-labels.m3l.md"
+  ],
+  "models": [],
+  "enums": [
+    {
+      "name": "Priority",
+      "type": "enum",
+      "source": "spec/conformance/inputs/enum-with-labels.m3l.md",
+      "line": 1,
+      "inherits": [],
+      "values": [
+        {
+          "name": "low",
+          "description": "Low Priority"
+        },
+        {
+          "name": "medium",
+          "description": "Medium Priority"
+        },
+        {
+          "name": "high",
+          "description": "High Priority"
+        },
+        {
+          "name": "critical",
+          "description": "Critical"
+        }
+      ],
+      "loc": {
+        "file": "spec/conformance/inputs/enum-with-labels.m3l.md",
+        "line": 1,
+        "col": 1
+      }
+    }
+  ],
+  "interfaces": [],
+  "views": [],
+  "attributeRegistry": [],
+  "errors": [],
+  "warnings": []
+}

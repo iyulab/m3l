@@ -586,7 +586,7 @@ fn handle_section_item(
     if let serde_json::Value::Array(ref mut arr) = section_arr {
         arr.push(serde_json::Value::Object(entry));
     }
-    *last_field_idx = None;
+    *last_field_idx = Some(usize::MAX); // sentinel for custom section nested items
 }
 
 fn handle_nested_item(token: &Token, state: &mut ParserState) {
@@ -640,6 +640,31 @@ fn handle_nested_item(token: &Token, state: &mut ParserState) {
                     }
                 }
                 return;
+            }
+
+            // Nested items under custom section entries
+            if state.last_field_idx == Some(usize::MAX) {
+                let section_name = state.current_section.as_deref().unwrap_or("");
+                if section_name != "Indexes"
+                    && section_name != "Relations"
+                    && !section_name.is_empty()
+                {
+                    if let Some(k) = key {
+                        if let Some(section_arr) = model.sections.custom.get_mut(section_name) {
+                            if let serde_json::Value::Array(ref mut arr) = section_arr {
+                                if let Some(last) = arr.last_mut() {
+                                    if let serde_json::Value::Object(ref mut obj) = last {
+                                        obj.insert(
+                                            k.to_string(),
+                                            parse_nested_value(value.unwrap_or("")),
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    return;
+                }
             }
 
             // Nested items under a field

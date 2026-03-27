@@ -251,6 +251,8 @@ mod tests {
             enums: vec![],
             interfaces: vec![],
             views: vec![],
+            flows: vec![],
+            extensions: std::collections::HashMap::new(),
             attribute_registry: vec![],
             errors: vec![],
             warnings: vec![],

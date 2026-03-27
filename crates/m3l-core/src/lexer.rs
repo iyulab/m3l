@@ -99,15 +99,15 @@ pub fn lex(content: &str, _file: &str) -> Vec<Token> {
 
             // Attach to previous field or section token
             for j in (0..tokens.len()).rev() {
-                let tt = tokens[j].token_type;
-                if tt == TokenType::Field || tt == TokenType::Section {
+                let tt = &tokens[j].token_type;
+                if *tt == TokenType::Field || *tt == TokenType::Section {
                     tokens[j].data.code_block = Some(CodeBlock {
                         language: lang_hint.clone(),
                         content: code_content.clone(),
                     });
                     break;
                 }
-                if tt != TokenType::Blank {
+                if *tt != TokenType::Blank {
                     break;
                 }
             }
@@ -196,8 +196,8 @@ pub fn lex(content: &str, _file: &str) -> Vec<Token> {
             if bq_indent >= 2 {
                 // Indented blockquote — attach to previous field token
                 for j in (0..tokens.len()).rev() {
-                    let tt = tokens[j].token_type;
-                    if tt == TokenType::Field {
+                    let tt = &tokens[j].token_type;
+                    if *tt == TokenType::Field {
                         let existing = tokens[j].data.blockquote_desc.take();
                         tokens[j].data.blockquote_desc = Some(match existing {
                             Some(prev) => format!("{}\n{}", prev, bq_text),
@@ -205,7 +205,7 @@ pub fn lex(content: &str, _file: &str) -> Vec<Token> {
                         });
                         break;
                     }
-                    if tt != TokenType::Blank && tt != TokenType::Blockquote {
+                    if *tt != TokenType::Blank && *tt != TokenType::Blockquote {
                         break;
                     }
                 }
@@ -330,7 +330,7 @@ fn tokenize_h2(content: &str, raw: &str, line: usize) -> Token {
             "interface" => TokenType::Interface,
             "view" => TokenType::View,
             "flow" => TokenType::Flow,
-            _ => TokenType::Model,
+            other => TokenType::Extension(other.to_string()),
         };
 
         return Token {

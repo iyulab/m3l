@@ -15,6 +15,7 @@ pub fn resolve(files: &[ParsedFile], project: Option<ProjectInfo>) -> M3lAst {
     let mut all_interfaces: Vec<ModelNode> = Vec::new();
     let mut all_views: Vec<ModelNode> = Vec::new();
     let mut all_flows: Vec<ModelNode> = Vec::new();
+    let mut all_extensions: HashMap<String, Vec<ModelNode>> = HashMap::new();
     let mut all_attr_registry: Vec<AttributeRegistryEntry> = Vec::new();
     let mut sources: Vec<String> = Vec::new();
 
@@ -25,6 +26,9 @@ pub fn resolve(files: &[ParsedFile], project: Option<ProjectInfo>) -> M3lAst {
         all_interfaces.extend(file.interfaces.iter().cloned());
         all_views.extend(file.views.iter().cloned());
         all_flows.extend(file.flows.iter().cloned());
+        for (key, nodes) in &file.extensions {
+            all_extensions.entry(key.clone()).or_default().extend(nodes.iter().cloned());
+        }
         all_attr_registry.extend(file.attribute_registry.iter().cloned());
     }
 
@@ -149,6 +153,13 @@ pub fn resolve(files: &[ParsedFile], project: Option<ProjectInfo>) -> M3lAst {
         ));
     }
 
+    for (_, ext_nodes) in &all_extensions {
+        for ext in ext_nodes {
+            check_duplicate(&ext.name, "extension", &ext.source, ext.line, &all_named, &mut errors);
+            all_named.insert(ext.name.clone(), ("extension".into(), ext.source.clone(), ext.line));
+        }
+    }
+
     // E008: Ambiguous model reference — same name in multiple namespaces
     for (name, entries) in &name_ns_map {
         if entries.len() < 2 {
@@ -257,6 +268,7 @@ pub fn resolve(files: &[ParsedFile], project: Option<ProjectInfo>) -> M3lAst {
         interfaces: all_interfaces,
         views: all_views,
         flows: all_flows,
+        extensions: all_extensions,
         attribute_registry: all_attr_registry,
         errors,
         warnings,
@@ -430,12 +442,13 @@ fn check_duplicate_fields(model: &ModelNode, errors: &mut Vec<Diagnostic>) {
     let mut seen: HashMap<String, usize> = HashMap::new(); // name → line
     for field in &model.fields {
         if let Some(&existing_line) = seen.get(&field.name) {
-            let model_type = match model.model_type {
+            let model_type = match &model.model_type {
                 ModelType::Model => "model",
                 ModelType::View => "view",
                 ModelType::Interface => "interface",
                 ModelType::Enum => "enum",
                 ModelType::Flow => "flow",
+                ModelType::Extension(s) => s.as_str(),
             };
             errors.push(Diagnostic {
                 code: "M3L-E005".to_string(),

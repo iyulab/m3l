@@ -44,6 +44,7 @@ struct ParserState {
     interfaces: Vec<ModelNode>,
     views: Vec<ModelNode>,
     flows: Vec<ModelNode>,
+    extensions: HashMap<String, Vec<ModelNode>>,
     attribute_registry: Vec<AttributeRegistryEntry>,
     current_attr_def: Option<AttrDef>,
     source_directives_done: bool,
@@ -70,6 +71,7 @@ pub fn parse_tokens(tokens: &[Token], file: &str) -> ParsedFile {
         interfaces: Vec::new(),
         views: Vec::new(),
         flows: Vec::new(),
+        extensions: HashMap::new(),
         attribute_registry: Vec::new(),
         current_attr_def: None,
         source_directives_done: false,
@@ -90,18 +92,20 @@ pub fn parse_tokens(tokens: &[Token], file: &str) -> ParsedFile {
         interfaces: state.interfaces,
         views: state.views,
         flows: state.flows,
+        extensions: state.extensions,
         attribute_registry: state.attribute_registry,
         imports: state.imports,
     }
 }
 
 fn process_token(token: &Token, state: &mut ParserState) {
-    match token.token_type {
+    match &token.token_type {
         TokenType::Namespace => handle_namespace(token, state),
         TokenType::Model | TokenType::Interface => handle_model_start(token, state),
         TokenType::Enum => handle_enum_start(token, state),
         TokenType::View => handle_view_start(token, state),
         TokenType::Flow => handle_flow_start(token, state),
+        TokenType::Extension(ext_type) => handle_extension_start(token, ext_type, state),
         TokenType::AttributeDef => handle_attribute_def_start(token, state),
         TokenType::Section => handle_section(token, state),
         TokenType::Field => handle_field(token, state),
@@ -238,6 +242,37 @@ fn handle_flow_start(token: &Token, state: &mut ParserState) {
     };
 
     state.current_element = CurrentElement::Model(Box::new(flow));
+    state.current_section = None;
+    state.current_kind = FieldKind::Stored;
+    state.last_field_idx = None;
+    state.source_directives_done = false;
+}
+
+fn handle_extension_start(token: &Token, ext_type: &str, state: &mut ParserState) {
+    finalize_element(state);
+
+    let node = ModelNode {
+        name: token.data.name.clone().unwrap_or_default(),
+        label: token.data.label.clone(),
+        model_type: ModelType::Extension(ext_type.to_string()),
+        source: state.file.clone(),
+        line: token.line,
+        inherits: Vec::new(),
+        description: None,
+        attributes: parse_raw_attributes(&token.data.attributes),
+        fields: Vec::new(),
+        sections: Sections::default(),
+        materialized: None,
+        source_def: None,
+        refresh: None,
+        loc: SourceLocation {
+            file: state.file.clone(),
+            line: token.line,
+            col: 1,
+        },
+    };
+
+    state.current_element = CurrentElement::Model(Box::new(node));
     state.current_section = None;
     state.current_kind = FieldKind::Stored;
     state.last_field_idx = None;
@@ -863,10 +898,13 @@ fn finalize_element(state: &mut ParserState) {
     let element = std::mem::replace(&mut state.current_element, CurrentElement::None);
     match element {
         CurrentElement::Enum(en) => state.enums.push(en),
-        CurrentElement::Model(model) => match model.model_type {
+        CurrentElement::Model(model) => match &model.model_type {
             ModelType::Interface => state.interfaces.push(*model),
             ModelType::View => state.views.push(*model),
             ModelType::Flow => state.flows.push(*model),
+            ModelType::Extension(ext_type) => {
+                state.extensions.entry(ext_type.clone()).or_default().push(*model);
+            }
             _ => state.models.push(*model),
         },
         CurrentElement::None => {}

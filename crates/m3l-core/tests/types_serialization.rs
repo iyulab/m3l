@@ -149,6 +149,7 @@ fn m3l_ast_json_keys() {
         interfaces: vec![],
         views: vec![],
         flows: vec![],
+        extensions: std::collections::HashMap::new(),
         attribute_registry: vec![],
         errors: vec![],
         warnings: vec![],

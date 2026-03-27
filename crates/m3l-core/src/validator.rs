@@ -69,12 +69,13 @@ pub fn validate(ast: &M3lAst, options: &ValidateOptions) -> ValidateResult {
         let mut seen: HashSet<&str> = HashSet::new();
         for field in &model.fields {
             if seen.contains(field.name.as_str()) {
-                let model_type = match model.model_type {
+                let model_type = match &model.model_type {
                     ModelType::Model => "model",
                     ModelType::View => "view",
                     ModelType::Interface => "interface",
                     ModelType::Enum => "enum",
                     ModelType::Flow => "flow",
+                    ModelType::Extension(s) => s.as_str(),
                 };
                 errors.push(Diagnostic {
                     code: "M3L-E006".into(),
@@ -174,12 +175,13 @@ fn validate_field_types(
     defined_names: &HashSet<&str>,
     errors: &mut Vec<Diagnostic>,
 ) {
-    let model_type = match model.model_type {
+    let model_type = match &model.model_type {
         ModelType::Model => "model",
         ModelType::View => "view",
         ModelType::Interface => "interface",
         ModelType::Enum => "enum",
         ModelType::Flow => "flow",
+        ModelType::Extension(s) => s.as_str(),
     };
 
     for field in fields {
@@ -317,12 +319,13 @@ fn validate_relations_references(model: &ModelNode, errors: &mut Vec<Diagnostic>
                 None => (model.source.clone(), model.line),
             };
 
-            let model_type = match model.model_type {
+            let model_type = match &model.model_type {
                 ModelType::Model => "model",
                 ModelType::View => "view",
                 ModelType::Interface => "interface",
                 ModelType::Enum => "enum",
                 ModelType::Flow => "flow",
+                ModelType::Extension(s) => s.as_str(),
             };
 
             errors.push(Diagnostic {
@@ -420,12 +423,13 @@ fn validate_registry_attrs(
     registry_map: &HashMap<&str, &AttributeRegistryEntry>,
     warnings: &mut Vec<Diagnostic>,
 ) {
-    let model_type = match model.model_type {
+    let model_type = match &model.model_type {
         ModelType::Model => "model",
         ModelType::View => "view",
         ModelType::Interface => "interface",
         ModelType::Enum => "enum",
         ModelType::Flow => "flow",
+        ModelType::Extension(s) => s.as_str(),
     };
 
     for field in fields {

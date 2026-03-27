@@ -16,7 +16,7 @@ pub struct SourceLocation {
 // Token types (internal, not serialized to JSON output)
 // ---------------------------------------------------------------------------
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TokenType {
     Namespace,
     Model,
@@ -24,6 +24,7 @@ pub enum TokenType {
     Interface,
     View,
     Flow,
+    Extension(String),
     AttributeDef,
     Section,
     Field,
@@ -238,14 +239,41 @@ pub struct FieldNode {
     pub loc: SourceLocation,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ModelType {
     Model,
     Enum,
     Interface,
     View,
     Flow,
+    Extension(String),
+}
+
+impl Serialize for ModelType {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        match self {
+            ModelType::Model => serializer.serialize_str("model"),
+            ModelType::Enum => serializer.serialize_str("enum"),
+            ModelType::Interface => serializer.serialize_str("interface"),
+            ModelType::View => serializer.serialize_str("view"),
+            ModelType::Flow => serializer.serialize_str("flow"),
+            ModelType::Extension(s) => serializer.serialize_str(s),
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for ModelType {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let s = String::deserialize(deserializer)?;
+        match s.as_str() {
+            "model" => Ok(ModelType::Model),
+            "enum" => Ok(ModelType::Enum),
+            "interface" => Ok(ModelType::Interface),
+            "view" => Ok(ModelType::View),
+            "flow" => Ok(ModelType::Flow),
+            _ => Ok(ModelType::Extension(s)),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -383,6 +411,7 @@ pub struct ParsedFile {
     pub interfaces: Vec<ModelNode>,
     pub views: Vec<ModelNode>,
     pub flows: Vec<ModelNode>,
+    pub extensions: HashMap<String, Vec<ModelNode>>,
     pub attribute_registry: Vec<AttributeRegistryEntry>,
     /// Import paths found in this file (for circular import detection).
     pub imports: Vec<String>,
@@ -402,6 +431,8 @@ pub struct M3lAst {
     pub interfaces: Vec<ModelNode>,
     pub views: Vec<ModelNode>,
     pub flows: Vec<ModelNode>,
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    pub extensions: HashMap<String, Vec<ModelNode>>,
     #[serde(rename = "attributeRegistry")]
     pub attribute_registry: Vec<AttributeRegistryEntry>,
     pub errors: Vec<Diagnostic>,

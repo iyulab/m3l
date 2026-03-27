@@ -157,6 +157,16 @@ pub fn resolve(files: &[ParsedFile], project: Option<ProjectInfo>) -> M3lAst {
         for ext in ext_nodes {
             check_duplicate(&ext.name, "extension", &ext.source, ext.line, &all_named, &mut errors);
             all_named.insert(ext.name.clone(), ("extension".into(), ext.source.clone(), ext.line));
+            let ns = source_ns
+                .get(ext.source.as_str())
+                .copied()
+                .flatten()
+                .map(String::from);
+            name_ns_map.entry(ext.name.clone()).or_default().push((
+                ns,
+                ext.source.clone(),
+                ext.line,
+            ));
         }
     }
 
@@ -207,6 +217,11 @@ pub fn resolve(files: &[ParsedFile], project: Option<ProjectInfo>) -> M3lAst {
     for model in all_models.iter().chain(all_views.iter()).chain(all_flows.iter()) {
         check_duplicate_fields(model, &mut errors);
     }
+    for (_, ext_nodes) in &all_extensions {
+        for ext in ext_nodes {
+            check_duplicate_fields(ext, &mut errors);
+        }
+    }
 
     // Tag isRegistered on attributes matching the registry
     if !all_attr_registry.is_empty() {
@@ -237,6 +252,14 @@ pub fn resolve(files: &[ParsedFile], project: Option<ProjectInfo>) -> M3lAst {
             tag_attrs(&mut iface.attributes);
             for f in iface.fields.iter_mut() {
                 tag_attrs(&mut f.attributes);
+            }
+        }
+        for (_, ext_nodes) in all_extensions.iter_mut() {
+            for ext in ext_nodes.iter_mut() {
+                tag_attrs(&mut ext.attributes);
+                for f in ext.fields.iter_mut() {
+                    tag_attrs(&mut f.attributes);
+                }
             }
         }
     }

@@ -62,6 +62,9 @@ public enum ModelType
 
     [JsonPropertyName("view")]
     View,
+
+    [JsonPropertyName("flow")]
+    Flow,
 }
 
 /// <summary>
@@ -541,6 +544,9 @@ public class M3lAst
 
     [JsonPropertyName("views")]
     public List<ModelNode> Views { get; set; } = [];
+
+    [JsonPropertyName("flows")]
+    public List<ModelNode> Flows { get; set; } = [];
 
     [JsonPropertyName("attributeRegistry")]
     public List<AttributeRegistryEntry> AttributeRegistry { get; set; } = [];

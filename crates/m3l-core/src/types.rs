@@ -23,6 +23,7 @@ pub enum TokenType {
     Enum,
     Interface,
     View,
+    Flow,
     AttributeDef,
     Section,
     Field,
@@ -244,6 +245,7 @@ pub enum ModelType {
     Enum,
     Interface,
     View,
+    Flow,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -380,6 +382,7 @@ pub struct ParsedFile {
     pub enums: Vec<EnumNode>,
     pub interfaces: Vec<ModelNode>,
     pub views: Vec<ModelNode>,
+    pub flows: Vec<ModelNode>,
     pub attribute_registry: Vec<AttributeRegistryEntry>,
     /// Import paths found in this file (for circular import detection).
     pub imports: Vec<String>,
@@ -398,6 +401,7 @@ pub struct M3lAst {
     pub enums: Vec<EnumNode>,
     pub interfaces: Vec<ModelNode>,
     pub views: Vec<ModelNode>,
+    pub flows: Vec<ModelNode>,
     #[serde(rename = "attributeRegistry")]
     pub attribute_registry: Vec<AttributeRegistryEntry>,
     pub errors: Vec<Diagnostic>,

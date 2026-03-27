@@ -14,6 +14,7 @@ pub fn resolve(files: &[ParsedFile], project: Option<ProjectInfo>) -> M3lAst {
     let mut all_enums: Vec<EnumNode> = Vec::new();
     let mut all_interfaces: Vec<ModelNode> = Vec::new();
     let mut all_views: Vec<ModelNode> = Vec::new();
+    let mut all_flows: Vec<ModelNode> = Vec::new();
     let mut all_attr_registry: Vec<AttributeRegistryEntry> = Vec::new();
     let mut sources: Vec<String> = Vec::new();
 
@@ -23,6 +24,7 @@ pub fn resolve(files: &[ParsedFile], project: Option<ProjectInfo>) -> M3lAst {
         all_enums.extend(file.enums.iter().cloned());
         all_interfaces.extend(file.interfaces.iter().cloned());
         all_views.extend(file.views.iter().cloned());
+        all_flows.extend(file.flows.iter().cloned());
         all_attr_registry.extend(file.attribute_registry.iter().cloned());
     }
 
@@ -130,6 +132,23 @@ pub fn resolve(files: &[ParsedFile], project: Option<ProjectInfo>) -> M3lAst {
         ));
     }
 
+    for flow in &all_flows {
+        all_named.insert(
+            flow.name.clone(),
+            ("flow".into(), flow.source.clone(), flow.line),
+        );
+        let ns = source_ns
+            .get(flow.source.as_str())
+            .copied()
+            .flatten()
+            .map(String::from);
+        name_ns_map.entry(flow.name.clone()).or_default().push((
+            ns,
+            flow.source.clone(),
+            flow.line,
+        ));
+    }
+
     // E008: Ambiguous model reference — same name in multiple namespaces
     for (name, entries) in &name_ns_map {
         if entries.len() < 2 {
@@ -174,7 +193,7 @@ pub fn resolve(files: &[ParsedFile], project: Option<ProjectInfo>) -> M3lAst {
     }
 
     // Check duplicate field names
-    for model in all_models.iter().chain(all_views.iter()) {
+    for model in all_models.iter().chain(all_views.iter()).chain(all_flows.iter()) {
         check_duplicate_fields(model, &mut errors);
     }
 
@@ -237,6 +256,7 @@ pub fn resolve(files: &[ParsedFile], project: Option<ProjectInfo>) -> M3lAst {
         enums: all_enums,
         interfaces: all_interfaces,
         views: all_views,
+        flows: all_flows,
         attribute_registry: all_attr_registry,
         errors,
         warnings,
@@ -415,6 +435,7 @@ fn check_duplicate_fields(model: &ModelNode, errors: &mut Vec<Diagnostic>) {
                 ModelType::View => "view",
                 ModelType::Interface => "interface",
                 ModelType::Enum => "enum",
+                ModelType::Flow => "flow",
             };
             errors.push(Diagnostic {
                 code: "M3L-E005".to_string(),

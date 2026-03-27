@@ -329,6 +329,7 @@ fn tokenize_h2(content: &str, raw: &str, line: usize) -> Token {
             "enum" => TokenType::Enum,
             "interface" => TokenType::Interface,
             "view" => TokenType::View,
+            "flow" => TokenType::Flow,
             _ => TokenType::Model,
         };
 

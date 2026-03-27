@@ -148,6 +148,7 @@ fn m3l_ast_json_keys() {
         enums: vec![],
         interfaces: vec![],
         views: vec![],
+        flows: vec![],
         attribute_registry: vec![],
         errors: vec![],
         warnings: vec![],

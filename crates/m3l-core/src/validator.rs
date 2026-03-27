@@ -17,7 +17,7 @@ pub fn validate(ast: &M3lAst, options: &ValidateOptions) -> ValidateResult {
     let mut errors: Vec<Diagnostic> = ast.errors.clone();
     let mut warnings: Vec<Diagnostic> = ast.warnings.clone();
 
-    let all_models: Vec<&ModelNode> = ast.models.iter().chain(ast.views.iter()).collect();
+    let all_models: Vec<&ModelNode> = ast.models.iter().chain(ast.views.iter()).chain(ast.flows.iter()).collect();
     let model_map: HashMap<&str, &ModelNode> =
         all_models.iter().map(|m| (m.name.as_str(), *m)).collect();
 
@@ -74,6 +74,7 @@ pub fn validate(ast: &M3lAst, options: &ValidateOptions) -> ValidateResult {
                     ModelType::View => "view",
                     ModelType::Interface => "interface",
                     ModelType::Enum => "enum",
+                    ModelType::Flow => "flow",
                 };
                 errors.push(Diagnostic {
                     code: "M3L-E006".into(),
@@ -178,6 +179,7 @@ fn validate_field_types(
         ModelType::View => "view",
         ModelType::Interface => "interface",
         ModelType::Enum => "enum",
+        ModelType::Flow => "flow",
     };
 
     for field in fields {
@@ -320,6 +322,7 @@ fn validate_relations_references(model: &ModelNode, errors: &mut Vec<Diagnostic>
                 ModelType::View => "view",
                 ModelType::Interface => "interface",
                 ModelType::Enum => "enum",
+                ModelType::Flow => "flow",
             };
 
             errors.push(Diagnostic {
@@ -422,6 +425,7 @@ fn validate_registry_attrs(
         ModelType::View => "view",
         ModelType::Interface => "interface",
         ModelType::Enum => "enum",
+        ModelType::Flow => "flow",
     };
 
     for field in fields {

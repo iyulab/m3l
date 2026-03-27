@@ -43,6 +43,7 @@ struct ParserState {
     enums: Vec<EnumNode>,
     interfaces: Vec<ModelNode>,
     views: Vec<ModelNode>,
+    flows: Vec<ModelNode>,
     attribute_registry: Vec<AttributeRegistryEntry>,
     current_attr_def: Option<AttrDef>,
     source_directives_done: bool,
@@ -68,6 +69,7 @@ pub fn parse_tokens(tokens: &[Token], file: &str) -> ParsedFile {
         enums: Vec::new(),
         interfaces: Vec::new(),
         views: Vec::new(),
+        flows: Vec::new(),
         attribute_registry: Vec::new(),
         current_attr_def: None,
         source_directives_done: false,
@@ -87,6 +89,7 @@ pub fn parse_tokens(tokens: &[Token], file: &str) -> ParsedFile {
         enums: state.enums,
         interfaces: state.interfaces,
         views: state.views,
+        flows: state.flows,
         attribute_registry: state.attribute_registry,
         imports: state.imports,
     }
@@ -98,6 +101,7 @@ fn process_token(token: &Token, state: &mut ParserState) {
         TokenType::Model | TokenType::Interface => handle_model_start(token, state),
         TokenType::Enum => handle_enum_start(token, state),
         TokenType::View => handle_view_start(token, state),
+        TokenType::Flow => handle_flow_start(token, state),
         TokenType::AttributeDef => handle_attribute_def_start(token, state),
         TokenType::Section => handle_section(token, state),
         TokenType::Field => handle_field(token, state),
@@ -203,6 +207,37 @@ fn handle_view_start(token: &Token, state: &mut ParserState) {
     };
 
     state.current_element = CurrentElement::Model(Box::new(view));
+    state.current_section = None;
+    state.current_kind = FieldKind::Stored;
+    state.last_field_idx = None;
+    state.source_directives_done = false;
+}
+
+fn handle_flow_start(token: &Token, state: &mut ParserState) {
+    finalize_element(state);
+
+    let flow = ModelNode {
+        name: token.data.name.clone().unwrap_or_default(),
+        label: token.data.label.clone(),
+        model_type: ModelType::Flow,
+        source: state.file.clone(),
+        line: token.line,
+        inherits: Vec::new(),
+        description: None,
+        attributes: parse_raw_attributes(&token.data.attributes),
+        fields: Vec::new(),
+        sections: Sections::default(),
+        materialized: None,
+        source_def: None,
+        refresh: None,
+        loc: SourceLocation {
+            file: state.file.clone(),
+            line: token.line,
+            col: 1,
+        },
+    };
+
+    state.current_element = CurrentElement::Model(Box::new(flow));
     state.current_section = None;
     state.current_kind = FieldKind::Stored;
     state.last_field_idx = None;
@@ -806,6 +841,7 @@ fn finalize_element(state: &mut ParserState) {
         CurrentElement::Model(model) => match model.model_type {
             ModelType::Interface => state.interfaces.push(*model),
             ModelType::View => state.views.push(*model),
+            ModelType::Flow => state.flows.push(*model),
             _ => state.models.push(*model),
         },
         CurrentElement::None => {}

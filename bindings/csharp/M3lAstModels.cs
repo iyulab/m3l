@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -547,6 +548,9 @@ public class M3lAst
 
     [JsonPropertyName("flows")]
     public List<ModelNode> Flows { get; set; } = [];
+
+    [JsonPropertyName("extensions")]
+    public Dictionary<string, List<JsonElement>> Extensions { get; set; } = [];
 
     [JsonPropertyName("attributeRegistry")]
     public List<AttributeRegistryEntry> AttributeRegistry { get; set; } = [];

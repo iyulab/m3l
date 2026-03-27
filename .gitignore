@@ -8,6 +8,7 @@ target/
 # .NET
 bindings/csharp/bin/
 bindings/csharp/obj/
+bindings/csharp/runtimes/
 
 # WASM
 crates/m3l-wasm/pkg/

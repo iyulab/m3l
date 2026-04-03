@@ -27,7 +27,10 @@ pub fn resolve(files: &[ParsedFile], project: Option<ProjectInfo>) -> M3lAst {
         all_views.extend(file.views.iter().cloned());
         all_flows.extend(file.flows.iter().cloned());
         for (key, nodes) in &file.extensions {
-            all_extensions.entry(key.clone()).or_default().extend(nodes.iter().cloned());
+            all_extensions
+                .entry(key.clone())
+                .or_default()
+                .extend(nodes.iter().cloned());
         }
         all_attr_registry.extend(file.attribute_registry.iter().cloned());
     }
@@ -153,10 +156,20 @@ pub fn resolve(files: &[ParsedFile], project: Option<ProjectInfo>) -> M3lAst {
         ));
     }
 
-    for (_, ext_nodes) in &all_extensions {
+    for ext_nodes in all_extensions.values() {
         for ext in ext_nodes {
-            check_duplicate(&ext.name, "extension", &ext.source, ext.line, &all_named, &mut errors);
-            all_named.insert(ext.name.clone(), ("extension".into(), ext.source.clone(), ext.line));
+            check_duplicate(
+                &ext.name,
+                "extension",
+                &ext.source,
+                ext.line,
+                &all_named,
+                &mut errors,
+            );
+            all_named.insert(
+                ext.name.clone(),
+                ("extension".into(), ext.source.clone(), ext.line),
+            );
             let ns = source_ns
                 .get(ext.source.as_str())
                 .copied()
@@ -214,10 +227,14 @@ pub fn resolve(files: &[ParsedFile], project: Option<ProjectInfo>) -> M3lAst {
     }
 
     // Check duplicate field names
-    for model in all_models.iter().chain(all_views.iter()).chain(all_flows.iter()) {
+    for model in all_models
+        .iter()
+        .chain(all_views.iter())
+        .chain(all_flows.iter())
+    {
         check_duplicate_fields(model, &mut errors);
     }
-    for (_, ext_nodes) in &all_extensions {
+    for ext_nodes in all_extensions.values() {
         for ext in ext_nodes {
             check_duplicate_fields(ext, &mut errors);
         }

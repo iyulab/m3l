@@ -17,7 +17,12 @@ pub fn validate(ast: &M3lAst, options: &ValidateOptions) -> ValidateResult {
     let mut errors: Vec<Diagnostic> = ast.errors.clone();
     let mut warnings: Vec<Diagnostic> = ast.warnings.clone();
 
-    let all_models: Vec<&ModelNode> = ast.models.iter().chain(ast.views.iter()).chain(ast.flows.iter()).collect();
+    let all_models: Vec<&ModelNode> = ast
+        .models
+        .iter()
+        .chain(ast.views.iter())
+        .chain(ast.flows.iter())
+        .collect();
     let model_map: HashMap<&str, &ModelNode> =
         all_models.iter().map(|m| (m.name.as_str(), *m)).collect();
 

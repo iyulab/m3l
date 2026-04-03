@@ -22,7 +22,7 @@ static RE_PLATFORM: LazyLock<Regex> =
 
 enum CurrentElement {
     Model(Box<ModelNode>),
-    Enum(EnumNode),
+    Enum(Box<EnumNode>),
     None,
 }
 
@@ -179,7 +179,7 @@ fn handle_enum_start(token: &Token, state: &mut ParserState) {
         },
     };
 
-    state.current_element = CurrentElement::Enum(enum_node);
+    state.current_element = CurrentElement::Enum(Box::new(enum_node));
     state.current_section = None;
     state.current_kind = FieldKind::Stored;
     state.last_field_idx = None;
@@ -897,13 +897,17 @@ fn finalize_element(state: &mut ParserState) {
 
     let element = std::mem::replace(&mut state.current_element, CurrentElement::None);
     match element {
-        CurrentElement::Enum(en) => state.enums.push(en),
+        CurrentElement::Enum(en) => state.enums.push(*en),
         CurrentElement::Model(model) => match &model.model_type {
             ModelType::Interface => state.interfaces.push(*model),
             ModelType::View => state.views.push(*model),
             ModelType::Flow => state.flows.push(*model),
             ModelType::Extension(ext_type) => {
-                state.extensions.entry(ext_type.clone()).or_default().push(*model);
+                state
+                    .extensions
+                    .entry(ext_type.clone())
+                    .or_default()
+                    .push(*model);
             }
             _ => state.models.push(*model),
         },

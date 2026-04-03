@@ -1,4 +1,4 @@
-use m3l_core::{parse_string, resolve, validate, ValidateOptions, ModelType};
+use m3l_core::{parse_string, resolve, validate, ModelType, ValidateOptions};
 
 fn full_pipeline(input: &str, source: &str) -> m3l_core::M3lAst {
     let parsed = parse_string(input, source);
@@ -86,7 +86,10 @@ fn flow_with_metadata() {
     let flow = &ast.flows[0];
     assert_eq!(flow.name, "OrderProcess");
     assert_eq!(
-        flow.sections.metadata.get("domain").and_then(|v| v.as_str()),
+        flow.sections
+            .metadata
+            .get("domain")
+            .and_then(|v| v.as_str()),
         Some("ecommerce")
     );
 }

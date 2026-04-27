@@ -537,6 +537,11 @@ fn handle_section_item(
     }
 
     // Indexes section
+    //
+    // 라벨드 형식 `idx_xxx: @index(col)` / `idx_yyy: @unique(c1, c2)` 도 첨부된 attribute의
+    // name/args/unique 정보를 entry에 보존한다. 그래야 SQL/ORM 코드 생성기가 directive 형식
+    // (`- @index(col)` / `- @unique(c1, c2)`)과 동등하게 처리 가능.
+    // 0.5.5 이전: name/label/loc만 emit → consumer가 인덱스 컬럼을 알 수 없어 SQL emit 누락.
     if section == "Indexes" {
         let mut entry = serde_json::Map::new();
         entry.insert(
@@ -546,6 +551,21 @@ fn handle_section_item(
         if let Some(ref label) = data.label {
             entry.insert("label".into(), serde_json::json!(label));
         }
+
+        // 첫 번째 @index/@unique attribute를 directive와 동등 구조로 emit
+        if let Some(attr) = data
+            .attributes
+            .iter()
+            .find(|a| a.name == "index" || a.name == "unique")
+        {
+            entry.insert("type".into(), serde_json::json!("indexed"));
+            entry.insert("attr".into(), serde_json::json!(attr.name.clone()));
+            entry.insert("unique".into(), serde_json::json!(attr.name == "unique"));
+            if !attr.args.is_empty() {
+                entry.insert("args".into(), attr_args_to_json(&attr.args));
+            }
+        }
+
         entry.insert("loc".into(), loc);
         model
             .sections
@@ -1589,23 +1609,21 @@ fn parse_arg_value(s: &str) -> AttrArgValue {
     AttrArgValue::String(unquoted.to_string())
 }
 
+/// directive(`- @index(...)` / `- @unique(...)` / `- @relation(...)` 등) attribute의
+/// args를 JSON으로 직렬화. 인자 수와 무관하게 **항상 array**로 emit하여 consumer가
+/// 분기 없이 처리 가능하게 한다.
+///
+/// 0.5.5 이전: 단일 인자는 raw scalar(string/number/bool), 다인자만 array.
+/// 그 결과 모든 consumer가 ValueKind 분기를 강제로 작성해야 하는 부담이 있었음.
 fn attr_args_to_json(args: &[AttrArgValue]) -> serde_json::Value {
-    if args.len() == 1 {
-        match &args[0] {
+    serde_json::json!(args
+        .iter()
+        .map(|a| match a {
             AttrArgValue::String(s) => serde_json::json!(s),
             AttrArgValue::Number(n) => serde_json::json!(n),
             AttrArgValue::Bool(b) => serde_json::json!(b),
-        }
-    } else {
-        serde_json::json!(args
-            .iter()
-            .map(|a| match a {
-                AttrArgValue::String(s) => serde_json::json!(s),
-                AttrArgValue::Number(n) => serde_json::json!(n),
-                AttrArgValue::Bool(b) => serde_json::json!(b),
-            })
-            .collect::<Vec<_>>())
-    }
+        })
+        .collect::<Vec<_>>())
 }
 
 #[cfg(test)]
@@ -1724,6 +1742,52 @@ mod tests {
         let input = "## User\n- id: identifier\n### Indexes\n- idx_email";
         let result = parse_string(input, "test.m3l.md");
         assert!(!result.models[0].sections.indexes.is_empty());
+    }
+
+    /// 0.5.5 — 라벨드 형식 `idx_xxx: @index(col)`도 attribute name/args/unique 정보를
+    /// directive 형식과 동등 구조로 보존해야 한다.
+    /// 회귀: 0.5.4에서는 `name`만 보존되어 SQL 생성기가 인덱스 컬럼을 알 수 없었음.
+    #[test]
+    fn parse_section_indexes_labeled_preserves_attribute() {
+        let input = "## Order\n- id: identifier\n- customer_id: identifier\n### Indexes\n- idx_customer: @index(customer_id)\n- idx_email: @unique(email, account_id)";
+        let result = parse_string(input, "test.m3l.md");
+        let indexes = &result.models[0].sections.indexes;
+        assert_eq!(indexes.len(), 2);
+
+        let first = &indexes[0];
+        assert_eq!(first.get("name").and_then(|v| v.as_str()), Some("idx_customer"));
+        assert_eq!(first.get("attr").and_then(|v| v.as_str()), Some("index"));
+        assert_eq!(first.get("unique").and_then(|v| v.as_bool()), Some(false));
+        let args = first.get("args").expect("args 필수");
+        assert!(args.is_array(), "args는 항상 array — 0.5.5+");
+        assert_eq!(args.as_array().unwrap()[0].as_str(), Some("customer_id"));
+
+        let second = &indexes[1];
+        assert_eq!(second.get("attr").and_then(|v| v.as_str()), Some("unique"));
+        assert_eq!(second.get("unique").and_then(|v| v.as_bool()), Some(true));
+        let args2 = second.get("args").expect("args 필수").as_array().unwrap();
+        assert_eq!(args2.len(), 2);
+        assert_eq!(args2[0].as_str(), Some("email"));
+        assert_eq!(args2[1].as_str(), Some("account_id"));
+    }
+
+    /// 0.5.5 — directive args는 인자 수와 무관하게 항상 array.
+    /// 회귀: 0.5.4에서는 단일 인자가 raw scalar로 emit되어 consumer가 ValueKind 분기 강제.
+    #[test]
+    fn parse_directive_args_always_array() {
+        let input = "## Order\n- id: identifier\n- @index(customer_id)\n- @unique(part, season)";
+        let result = parse_string(input, "test.m3l.md");
+        let indexes = &result.models[0].sections.indexes;
+        assert_eq!(indexes.len(), 2);
+
+        let single = indexes[0].get("args").expect("args 필수");
+        assert!(single.is_array(), "단일 인자 directive도 array (0.5.4 결함 fix)");
+        assert_eq!(single.as_array().unwrap().len(), 1);
+        assert_eq!(single.as_array().unwrap()[0].as_str(), Some("customer_id"));
+
+        let multi = indexes[1].get("args").expect("args 필수");
+        assert!(multi.is_array());
+        assert_eq!(multi.as_array().unwrap().len(), 2);
     }
 
     #[test]

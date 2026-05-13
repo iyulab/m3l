@@ -29,6 +29,12 @@ static RE_TYPE_PART: LazyLock<Regex> = LazyLock::new(|| {
 });
 static RE_FRAMEWORK_ATTR: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"`\[([^\]]+)\]`").unwrap());
+// Binding reference: # EntityName.ColumnName[!]  (PascalCase.PascalCase 패턴)
+// Optional trailing quoted description is captured (group 4) and preserved in content for
+// downstream parse_type_and_attrs to handle. Must be checked BEFORE RE_INLINE_COMMENT.
+static RE_BINDING: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r#"\s+#\s+([A-Z][A-Za-z0-9]*)\.([A-Z][A-Za-z0-9]*)(!)?(\s+"[^"]*")?\s*$"#).unwrap()
+});
 static RE_INLINE_COMMENT: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\s+#\s+(.+)$").unwrap());
 
 static RE_NAME_LABEL: LazyLock<Regex> =
@@ -434,6 +440,18 @@ fn parse_field_line(content: &str) -> TokenData {
     }
 
     let mut content = content.to_string();
+
+    // Binding: # Entity.Column[!] — must check BEFORE inline comment (both use '#')
+    // Group 4 captures an optional trailing quoted description (e.g. "설명") so we
+    // preserve it in content for parse_type_and_attrs to pick up downstream.
+    if let Some(caps) = RE_BINDING.captures(&content) {
+        data.binding_entity = Some(caps[1].to_string());
+        data.binding_column = Some(caps[2].to_string());
+        data.binding_is_hard = caps.get(3).is_some();
+        let preserved_tail = caps.get(4).map(|m| m.as_str()).unwrap_or("");
+        let match_start = caps.get(0).unwrap().start();
+        content = format!("{}{}", &content[..match_start], preserved_tail);
+    }
 
     // Strip inline comment
     if let Some(caps) = RE_INLINE_COMMENT.captures(&content) {
@@ -1068,6 +1086,34 @@ mod tests {
         parse_type_and_attrs("map<string,integer>", &mut data);
         assert_eq!(data.type_name.as_deref(), Some("map"));
         assert_eq!(data.type_generic_params, vec!["string", "integer"]);
+    }
+
+    #[test]
+    fn parse_field_binding_hard() {
+        let input = "- priority: string # OrderItem.Key! \"우선순위\"";
+        let tokens = lex(input, "test.m3l.md");
+        assert_eq!(tokens[0].data.binding_entity.as_deref(), Some("OrderItem"));
+        assert_eq!(tokens[0].data.binding_column.as_deref(), Some("Key"));
+        assert!(tokens[0].data.binding_is_hard);
+        assert_eq!(tokens[0].data.description.as_deref(), Some("우선순위"));
+    }
+
+    #[test]
+    fn parse_field_binding_soft() {
+        let input = "- unit: string? # UserMasterItem.Key";
+        let tokens = lex(input, "test.m3l.md");
+        assert_eq!(tokens[0].data.binding_entity.as_deref(), Some("UserMasterItem"));
+        assert_eq!(tokens[0].data.binding_column.as_deref(), Some("Key"));
+        assert!(!tokens[0].data.binding_is_hard);
+    }
+
+    #[test]
+    fn parse_field_comment_unaffected() {
+        // 소문자/자유 텍스트 # comment 는 기존처럼 comment로 파싱
+        let input = "- name: string # 이름 필드입니다";
+        let tokens = lex(input, "test.m3l.md");
+        assert!(tokens[0].data.binding_entity.is_none());
+        assert!(tokens[0].data.comment.is_some());
     }
 
     #[test]

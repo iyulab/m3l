@@ -24,6 +24,7 @@ fn field_node_json_keys() {
         computed: None,
         enum_values: None,
         fields: None,
+        binding: None,
         loc: SourceLocation {
             file: "test.m3l.md".into(),
             line: 1,

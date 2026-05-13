@@ -1088,7 +1088,14 @@ fn build_field_node(
         lookup: None,
         rollup: None,
         computed: None,
-        binding: None,
+        binding: match (&data.binding_entity, &data.binding_column) {
+            (Some(entity), Some(column)) => Some(BindingDef {
+                entity: entity.clone(),
+                column: column.clone(),
+                is_hard: data.binding_is_hard,
+            }),
+            _ => None,
+        },
         enum_values: None,
         fields: None,
         loc: SourceLocation {
@@ -1902,5 +1909,31 @@ mod tests {
             result.models[0].fields[0].field_type.as_deref(),
             Some("Auth.User")
         );
+    }
+
+    #[test]
+    fn parse_binding_field_end_to_end() {
+        let input = "## Order\n- unit: string? # UserMasterItem.Key \"단위\"";
+        let result = parse_string(input, "test.m3l.md");
+        let field = &result.models[0].fields[0];
+        assert_eq!(field.name, "unit");
+        let binding = field.binding.as_ref().expect("binding should be set");
+        assert_eq!(binding.entity, "UserMasterItem");
+        assert_eq!(binding.column, "Key");
+        assert!(!binding.is_hard);
+        assert_eq!(field.description.as_deref(), Some("단위"));
+    }
+
+    #[test]
+    fn parse_binding_field_hard() {
+        let input = "## Order\n- status: string # Status.Id! \"상태\"";
+        let result = parse_string(input, "test.m3l.md");
+        let field = &result.models[0].fields[0];
+        assert_eq!(field.name, "status");
+        let binding = field.binding.as_ref().expect("binding should be set");
+        assert_eq!(binding.entity, "Status");
+        assert_eq!(binding.column, "Id");
+        assert!(binding.is_hard);
+        assert_eq!(field.description.as_deref(), Some("상태"));
     }
 }

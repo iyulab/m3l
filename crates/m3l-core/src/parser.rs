@@ -1088,6 +1088,7 @@ fn build_field_node(
         lookup: None,
         rollup: None,
         computed: None,
+        binding: None,
         enum_values: None,
         fields: None,
         loc: SourceLocation {

@@ -73,6 +73,11 @@ pub struct TokenData {
     pub blockquote_desc: Option<String>,
     pub enum_value_description: Option<String>,
 
+    // Binding: # Entity.Column[!]
+    pub binding_entity: Option<String>,
+    pub binding_column: Option<String>,
+    pub binding_is_hard: bool,
+
     // Section
     pub kind_section: bool,
 
@@ -170,6 +175,13 @@ pub struct EnumValue {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BindingDef {
+    pub entity: String,
+    pub column: String,
+    pub is_hard: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct LookupDef {
     pub path: String,
 }
@@ -232,6 +244,8 @@ pub struct FieldNode {
     pub rollup: Option<RollupDef>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub computed: Option<ComputedDef>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub binding: Option<BindingDef>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub enum_values: Option<Vec<EnumValue>>,
     #[serde(skip_serializing_if = "Option::is_none")]

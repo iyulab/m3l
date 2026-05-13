@@ -1117,6 +1117,16 @@ mod tests {
     }
 
     #[test]
+    fn parse_field_binding_with_trailing_text_falls_through_to_comment() {
+        // "# PascalCase.PascalCase extra words" should NOT be parsed as a binding
+        // (extra trailing text blocks the regex anchor) — falls through to inline comment
+        let input = "- status: string # OrderItem.Key was here";
+        let tokens = lex(input, "test.m3l.md");
+        assert!(tokens[0].data.binding_entity.is_none(), "should not be a binding");
+        assert!(tokens[0].data.comment.is_some(), "should be a comment");
+    }
+
+    #[test]
     fn parse_type_and_attrs_cascade() {
         let mut data = TokenData::default();
         parse_type_and_attrs("identifier @reference(Order) !", &mut data);

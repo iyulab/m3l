@@ -1,6 +1,6 @@
 {
   "name": "@iyulab/m3l",
-  "version": "0.5.5",
+  "version": "0.5.6",
   "description": "M3L parser — Markdown-based schema definition language (.m3l.md → JSON AST)",
   "license": "MIT",
   "main": "index.js",
@@ -10,7 +10,7 @@
     "index.d.ts"
   ],
   "dependencies": {
-    "@iyulab/m3l-napi": "0.5.5"
+    "@iyulab/m3l-napi": "0.5.6"
   },
   "engines": {
     "node": ">= 18"

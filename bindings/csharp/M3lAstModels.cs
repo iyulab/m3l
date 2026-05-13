@@ -163,6 +163,21 @@ public class CustomAttribute
 }
 
 /// <summary>
+/// Value-source binding declared with the # operator in M3L fields.
+/// </summary>
+public class BindingDef
+{
+    [JsonPropertyName("entity")]
+    public string Entity { get; set; } = "";
+
+    [JsonPropertyName("column")]
+    public string Column { get; set; } = "";
+
+    [JsonPropertyName("is_hard")]
+    public bool IsHard { get; set; }
+}
+
+/// <summary>
 /// Lookup definition for a lookup field.
 /// </summary>
 public class LookupDef
@@ -277,6 +292,9 @@ public class FieldNode
 
     [JsonPropertyName("computed")]
     public ComputedDef? Computed { get; set; }
+
+    [JsonPropertyName("binding")]
+    public BindingDef? Binding { get; set; }
 
     [JsonPropertyName("enum_values")]
     public List<EnumValue>? EnumValues { get; set; }

@@ -342,6 +342,12 @@ pub struct ModelNode {
     #[serde(rename = "type")]
     pub model_type: ModelType,
     pub source: String,
+    /// Namespace of the source file (`# Namespace: ...`), if any. Stamped at
+    /// parse time so each declared type is self-describing — a consumer can map
+    /// it to a schema and qualify cross-namespace references without re-deriving
+    /// the file→namespace mapping.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub namespace: Option<String>,
     pub line: usize,
     pub inherits: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -366,6 +372,9 @@ pub struct EnumNode {
     #[serde(rename = "type")]
     pub enum_type: ModelType, // always ModelType::Enum
     pub source: String,
+    /// Namespace of the source file (`# Namespace: ...`), if any. See `ModelNode::namespace`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub namespace: Option<String>,
     pub line: usize,
     pub inherits: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]

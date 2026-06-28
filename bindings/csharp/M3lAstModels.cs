@@ -408,6 +408,10 @@ public class ModelNode
     [JsonPropertyName("source")]
     public string Source { get; set; } = "";
 
+    /// <summary>Namespace of the source file (<c># Namespace: ...</c>), if any.</summary>
+    [JsonPropertyName("namespace")]
+    public string? Namespace { get; set; }
+
     [JsonPropertyName("line")]
     public int Line { get; set; }
 
@@ -455,6 +459,10 @@ public class EnumNode
 
     [JsonPropertyName("source")]
     public string Source { get; set; } = "";
+
+    /// <summary>Namespace of the source file (<c># Namespace: ...</c>), if any.</summary>
+    [JsonPropertyName("namespace")]
+    public string? Namespace { get; set; }
 
     [JsonPropertyName("line")]
     public int Line { get; set; }

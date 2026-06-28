@@ -52,6 +52,11 @@ static RE_H2_INHERIT: LazyLock<Regex> =
 static RE_H2_DESC: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#""([^"]+)""#).unwrap());
 static RE_MODEL_ATTR: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"@([\w]+)(?:\(([^)]*)\))?").unwrap());
+/// Backticks wrapping an attribute on a heading (e.g. `` `@ledger` ``). Authors
+/// use them so the attribute renders as code in Markdown; they carry no M3L
+/// meaning. Stripped so the bare and backtick-wrapped forms parse identically.
+static RE_BACKTICK_ATTR: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"`(@[\w]+(?:\([^)]*\))?)`").unwrap());
 
 /// Tokenize M3L markdown content into a sequence of tokens.
 pub fn lex(content: &str, _file: &str) -> Vec<Token> {
@@ -301,6 +306,12 @@ pub fn lex(content: &str, _file: &str) -> Vec<Token> {
 
 #[allow(clippy::field_reassign_with_default)]
 fn tokenize_h2(content: &str, raw: &str, line: usize) -> Token {
+    // Normalize backtick-wrapped attributes (`` `@ledger` `` → `@ledger`) so the
+    // Markdown-prettified form parses like the bare form instead of being folded
+    // into the model name by the fallback branch.
+    let normalized = RE_BACKTICK_ATTR.replace_all(content, "$1");
+    let content: &str = &normalized;
+
     // Check for type indicator: ## Name ::enum, ::interface, ::view, ::attribute
     if let Some(caps) = RE_TYPE_INDICATOR.captures(content) {
         let namepart = &caps[1];

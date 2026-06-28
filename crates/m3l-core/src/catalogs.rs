@@ -45,6 +45,7 @@ pub static STANDARD_ATTRIBUTES: LazyLock<HashSet<&'static str>> = LazyLock::new(
     s.insert("index");
     s.insert("generated");
     s.insert("immutable");
+    s.insert("check"); // @check("expr") — CHECK constraint (field or model level)
     // References / relations
     s.insert("reference");
     s.insert("fk");
@@ -73,6 +74,7 @@ pub static STANDARD_ATTRIBUTES: LazyLock<HashSet<&'static str>> = LazyLock::new(
     // Model-level
     s.insert("public");
     s.insert("private");
+    s.insert("ledger"); // table-level append-only marker (no UPDATE/DELETE)
     s.insert("materialized");
     s.insert("meta");
     s.insert("behavior");

@@ -155,6 +155,8 @@ export interface ModelNode {
   label?: string;
   type: ModelType;
   source: string;
+  /** Namespace of the source file (`# Namespace: ...`), if any. */
+  namespace?: string;
   line: number;
   inherits: string[];
   description?: string;
@@ -174,6 +176,8 @@ export interface EnumNode {
   label?: string;
   type: ModelType;
   source: string;
+  /** Namespace of the source file (`# Namespace: ...`), if any. */
+  namespace?: string;
   line: number;
   inherits: string[];
   description?: string;

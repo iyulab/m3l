@@ -137,6 +137,7 @@ fn handle_model_start(token: &Token, state: &mut ParserState) {
         label: token.data.label.clone(),
         model_type,
         source: state.file.clone(),
+        namespace: state.namespace.clone(),
         line: token.line,
         inherits: token.data.inherits.clone(),
         description: None,
@@ -168,6 +169,7 @@ fn handle_enum_start(token: &Token, state: &mut ParserState) {
         label: token.data.label.clone(),
         enum_type: ModelType::Enum,
         source: state.file.clone(),
+        namespace: state.namespace.clone(),
         line: token.line,
         inherits: token.data.inherits.clone(),
         description: token.data.description.clone(),
@@ -194,6 +196,7 @@ fn handle_view_start(token: &Token, state: &mut ParserState) {
         label: token.data.label.clone(),
         model_type: ModelType::View,
         source: state.file.clone(),
+        namespace: state.namespace.clone(),
         line: token.line,
         inherits: Vec::new(),
         description: None,
@@ -225,6 +228,7 @@ fn handle_flow_start(token: &Token, state: &mut ParserState) {
         label: token.data.label.clone(),
         model_type: ModelType::Flow,
         source: state.file.clone(),
+        namespace: state.namespace.clone(),
         line: token.line,
         inherits: Vec::new(),
         description: None,
@@ -256,6 +260,7 @@ fn handle_extension_start(token: &Token, ext_type: &str, state: &mut ParserState
         label: token.data.label.clone(),
         model_type: ModelType::Extension(ext_type.to_string()),
         source: state.file.clone(),
+        namespace: state.namespace.clone(),
         line: token.line,
         inherits: Vec::new(),
         description: None,
@@ -1665,6 +1670,52 @@ mod tests {
         let input = "## Customer : BaseModel\n- email: string";
         let result = parse_string(input, "test.m3l.md");
         assert_eq!(result.models[0].inherits, vec!["BaseModel"]);
+    }
+
+    #[test]
+    fn model_ledger_attribute_is_standard() {
+        // Table-level append-only marker. The largest consumer (U-Solutions)
+        // turns `@ledger` into REVOKE UPDATE,DELETE + a guard trigger.
+        let result = parse_string("## StockMove @ledger\n- id: identifier", "t.m3l.md");
+        let m = &result.models[0];
+        assert_eq!(m.name, "StockMove");
+        let ledger = m
+            .attributes
+            .iter()
+            .find(|a| a.name == "ledger")
+            .expect("ledger model attribute");
+        assert_eq!(ledger.is_standard, Some(true));
+    }
+
+    #[test]
+    fn model_attribute_tolerates_backticks() {
+        // Authors often wrap attributes in backticks so they render as code in
+        // Markdown (`## StockMove `@ledger``). This must parse identically to the
+        // bare form — not silently fold the backtick text into the model name.
+        let result = parse_string("## StockMove `@ledger`\n- id: identifier", "t.m3l.md");
+        let m = &result.models[0];
+        assert_eq!(m.name, "StockMove");
+        let ledger = m
+            .attributes
+            .iter()
+            .find(|a| a.name == "ledger")
+            .expect("ledger attribute parsed from backtick form");
+        assert_eq!(ledger.is_standard, Some(true));
+    }
+
+    #[test]
+    fn field_check_attribute_is_standard() {
+        let result = parse_string(
+            "## Move\n- qty: decimal @check(\"qty <> 0\")",
+            "t.m3l.md",
+        );
+        let f = &result.models[0].fields[0];
+        let chk = f
+            .attributes
+            .iter()
+            .find(|a| a.name == "check")
+            .expect("check field attribute");
+        assert_eq!(chk.is_standard, Some(true));
     }
 
     #[test]

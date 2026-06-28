@@ -775,6 +775,37 @@ mod tests {
     }
 
     #[test]
+    fn resolve_stamps_namespace_on_nodes() {
+        // A multi-file project: each declared type must carry the namespace of
+        // its source file so a consumer (e.g. a PG-DDL generator) can map each
+        // model to its schema and qualify cross-schema references.
+        let core = parse_string(
+            "# Namespace: core\n## Item\n- id: identifier\n\n## Status ::enum\n- on: \"On\"",
+            "core.m3l.md",
+        );
+        let stock = parse_string(
+            "# Namespace: stock\n## StockMove\n- id: identifier",
+            "stock.m3l.md",
+        );
+        let ast = resolve(&[core, stock], None);
+
+        let item = ast.models.iter().find(|m| m.name == "Item").unwrap();
+        let mv = ast.models.iter().find(|m| m.name == "StockMove").unwrap();
+        assert_eq!(item.namespace.as_deref(), Some("core"));
+        assert_eq!(mv.namespace.as_deref(), Some("stock"));
+
+        let status = ast.enums.iter().find(|e| e.name == "Status").unwrap();
+        assert_eq!(status.namespace.as_deref(), Some("core"));
+    }
+
+    #[test]
+    fn resolve_namespace_none_when_absent() {
+        let f = parse_string("## User\n- id: identifier", "no_ns.m3l.md");
+        let ast = resolve(&[f], None);
+        assert_eq!(ast.models[0].namespace, None);
+    }
+
+    #[test]
     fn resolve_override_inheritance() {
         let input =
             "## Base ::interface\n- name: string\n\n## Child : Base\n- name: text @override";

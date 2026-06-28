@@ -106,6 +106,7 @@ fn model_node_json_keys() {
         label: None,
         model_type: ModelType::Model,
         source: "test.m3l.md".into(),
+        namespace: None,
         line: 1,
         inherits: vec![],
         description: None,
@@ -133,6 +134,18 @@ fn model_node_json_keys() {
     assert!(!obj.contains_key("materialized"));
     assert!(!obj.contains_key("source_def"));
     assert!(!obj.contains_key("refresh"));
+    // namespace omitted when None
+    assert!(!obj.contains_key("namespace"));
+}
+
+#[test]
+fn model_namespace_serializes_camelcase() {
+    use m3l_core::parser::parse_string;
+    use m3l_core::resolver::resolve;
+    let parsed = parse_string("# Namespace: core\n## Item\n- id: identifier", "core.m3l.md");
+    let ast = resolve(&[parsed], None);
+    let json = serde_json::to_value(&ast).unwrap();
+    assert_eq!(json["models"][0]["namespace"], "core");
 }
 
 #[test]
@@ -177,6 +190,7 @@ fn enum_node_json() {
         label: None,
         enum_type: ModelType::Enum,
         source: "test.m3l.md".into(),
+        namespace: None,
         line: 5,
         inherits: vec![],
         description: None,
@@ -278,8 +292,10 @@ fn catalogs_content() {
     assert!(STANDARD_ATTRIBUTES.contains("pattern"));
     assert!(STANDARD_ATTRIBUTES.contains("min_length"));
     assert!(STANDARD_ATTRIBUTES.contains("max_length"));
+    assert!(STANDARD_ATTRIBUTES.contains("ledger")); // table-level append-only
+    assert!(STANDARD_ATTRIBUTES.contains("check")); // CHECK constraint
     assert!(!STANDARD_ATTRIBUTES.contains("custom_attr"));
-    assert_eq!(STANDARD_ATTRIBUTES.len(), 34);
+    assert_eq!(STANDARD_ATTRIBUTES.len(), 36);
 
     // Kind sections
     assert!(KIND_SECTIONS.contains("Lookup"));

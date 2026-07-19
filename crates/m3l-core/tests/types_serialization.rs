@@ -142,7 +142,10 @@ fn model_node_json_keys() {
 fn model_namespace_serializes_camelcase() {
     use m3l_core::parser::parse_string;
     use m3l_core::resolver::resolve;
-    let parsed = parse_string("# Namespace: core\n## Item\n- id: identifier", "core.m3l.md");
+    let parsed = parse_string(
+        "# Namespace: core\n## Item\n- id: identifier",
+        "core.m3l.md",
+    );
     let ast = resolve(&[parsed], None);
     let json = serde_json::to_value(&ast).unwrap();
     assert_eq!(json["models"][0]["namespace"], "core");
@@ -199,6 +202,7 @@ fn enum_node_json() {
             description: Some("Active status".into()),
             value_type: None,
             value: None,
+            attributes: None,
         }],
         loc: SourceLocation {
             file: "test.m3l.md".into(),

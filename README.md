@@ -60,6 +60,7 @@ This repository is the **specification and parser** for M3L. It provides:
 - **Multi-line computed** — fenced code blocks for complex expressions (CASE, multi-line SQL)
 - **Derived views** — with source, where, order_by, joins, or raw SQL code blocks
 - **Field blockquote descriptions** — `  > multi-line docs` attached to fields
+- **Enum value attributes** — `- legacy: "이관" @system`; M3L records them, consumers interpret
 - **Attribute Registry** — define custom `@` attributes with `::attribute` type indicator
 - **3-tier attribute classification** — standard, registered, unregistered
 - **Custom framework attributes** — `` `[FrameworkAttr]` `` with structured parsing

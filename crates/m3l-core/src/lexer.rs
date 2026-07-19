@@ -632,48 +632,7 @@ pub fn parse_type_and_attrs(rest: &str, data: &mut TokenData) {
     }
 
     // Parse attributes: @name or @name(args), with cascade symbols
-    let mut attrs: Vec<RawAttribute> = Vec::new();
-    while pos < len && (bytes[pos] == b'@' || bytes[pos] == b'!' || bytes[pos] == b'?') {
-        // Cascade symbols
-        if bytes[pos] == b'!' || bytes[pos] == b'?' {
-            let mut symbol = String::from(bytes[pos] as char);
-            pos += 1;
-            if symbol == "!" && pos < len && bytes[pos] == b'!' {
-                symbol = "!!".to_string();
-                pos += 1;
-            }
-            if let Some(last) = attrs.last_mut() {
-                last.cascade = Some(symbol);
-            }
-            skip_ws(&mut pos);
-            continue;
-        }
-
-        pos += 1; // skip @
-        let name_start = pos;
-        while pos < len && is_word_char(bytes[pos]) {
-            pos += 1;
-        }
-        let attr_name = rest[name_start..pos].to_string();
-        let mut args = Vec::new();
-        if pos < len && bytes[pos] == b'(' {
-            let close_p = find_balanced_paren(rest, pos);
-            if close_p >= 0 {
-                let args_str = &rest[pos + 1..close_p as usize];
-                args = parse_attr_args_string(args_str);
-                pos = close_p as usize + 1;
-            }
-        }
-        attrs.push(RawAttribute {
-            name: attr_name,
-            args,
-            cascade: None,
-        });
-        skip_ws(&mut pos);
-    }
-    if !attrs.is_empty() {
-        data.attributes = attrs;
-    }
+    let mut attrs = scan_attributes(rest, &mut pos);
 
     // Trailing description
     skip_ws(&mut pos);
@@ -681,8 +640,76 @@ pub fn parse_type_and_attrs(rest: &str, data: &mut TokenData) {
         let close_idx = find_closing_quote(rest, pos);
         if close_idx >= 0 {
             data.description = Some(rest[pos + 1..close_idx as usize].to_string());
+            pos = close_idx as usize + 1;
+            // Attributes may also *follow* the label. That is the canonical enum
+            // value shape (`- legacy: "이관 정리" @system`), and it reads naturally
+            // for fields too — scanning only before the label dropped them silently.
+            skip_ws(&mut pos);
+            attrs.extend(scan_attributes(rest, &mut pos));
         }
     }
+
+    if !attrs.is_empty() {
+        data.attributes = attrs;
+    }
+}
+
+/// Scan a run of `@name` / `@name(args)` attributes (with `!`/`?`/`!!` cascade
+/// suffixes) starting at `pos`, advancing `pos` past them.
+fn scan_attributes(rest: &str, pos: &mut usize) -> Vec<RawAttribute> {
+    let bytes = rest.as_bytes();
+    let len = bytes.len();
+    let mut attrs: Vec<RawAttribute> = Vec::new();
+
+    let skip_ws = |pos: &mut usize| {
+        while *pos < len && bytes[*pos] == b' ' {
+            *pos += 1;
+        }
+    };
+
+    while *pos < len && (bytes[*pos] == b'@' || bytes[*pos] == b'!' || bytes[*pos] == b'?') {
+        // Cascade symbols
+        if bytes[*pos] == b'!' || bytes[*pos] == b'?' {
+            let mut symbol = String::from(bytes[*pos] as char);
+            *pos += 1;
+            if symbol == "!" && *pos < len && bytes[*pos] == b'!' {
+                symbol = "!!".to_string();
+                *pos += 1;
+            }
+            match attrs.last_mut() {
+                Some(last) => last.cascade = Some(symbol),
+                // A cascade symbol with no attribute to attach to is malformed;
+                // stop rather than spin on the same byte.
+                None => return attrs,
+            }
+            skip_ws(pos);
+            continue;
+        }
+
+        *pos += 1; // skip @
+        let name_start = *pos;
+        while *pos < len && is_word_char(bytes[*pos]) {
+            *pos += 1;
+        }
+        let attr_name = rest[name_start..*pos].to_string();
+        let mut args = Vec::new();
+        if *pos < len && bytes[*pos] == b'(' {
+            let close_p = find_balanced_paren(rest, *pos);
+            if close_p >= 0 {
+                let args_str = &rest[*pos + 1..close_p as usize];
+                args = parse_attr_args_string(args_str);
+                *pos = close_p as usize + 1;
+            }
+        }
+        attrs.push(RawAttribute {
+            name: attr_name,
+            args,
+            cascade: None,
+        });
+        skip_ws(pos);
+    }
+
+    attrs
 }
 
 fn find_balanced_paren(s: &str, open_pos: usize) -> i32 {
@@ -802,6 +829,12 @@ fn parse_nested_item(content: &str) -> TokenData {
     let field_data = parse_field_line(content);
     if data.key.is_none() || data.name.is_none() {
         data.name = field_data.name;
+    }
+    // Attributes are orthogonal to the key/value shape: `- legacy: "이관" @system`
+    // is a key/value nested item that still carries an attribute. Carrying them
+    // only in the non-key branch below silently dropped them for inline enums.
+    if data.attributes.is_empty() {
+        data.attributes = field_data.attributes.clone();
     }
     // Carry over type info if present from parse_field_line on raw_content
     if field_data.type_name.is_some() && data.key.is_none() {
@@ -1113,7 +1146,10 @@ mod tests {
     fn parse_field_binding_soft() {
         let input = "- unit: string? # UserMasterItem.Key";
         let tokens = lex(input, "test.m3l.md");
-        assert_eq!(tokens[0].data.binding_entity.as_deref(), Some("UserMasterItem"));
+        assert_eq!(
+            tokens[0].data.binding_entity.as_deref(),
+            Some("UserMasterItem")
+        );
         assert_eq!(tokens[0].data.binding_column.as_deref(), Some("Key"));
         assert!(!tokens[0].data.binding_is_hard);
     }
@@ -1133,7 +1169,10 @@ mod tests {
         // (extra trailing text blocks the regex anchor) — falls through to inline comment
         let input = "- status: string # OrderItem.Key was here";
         let tokens = lex(input, "test.m3l.md");
-        assert!(tokens[0].data.binding_entity.is_none(), "should not be a binding");
+        assert!(
+            tokens[0].data.binding_entity.is_none(),
+            "should not be a binding"
+        );
         assert!(tokens[0].data.comment.is_some(), "should be a comment");
     }
 

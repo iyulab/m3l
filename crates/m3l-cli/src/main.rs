@@ -160,6 +160,13 @@ fn main() {
 }
 
 pub fn build_ast(input_path: &Path) -> Result<m3l_core::M3lAst, String> {
+    build_ast_with(input_path, m3l_core::ResolveOptions::default())
+}
+
+pub fn build_ast_with(
+    input_path: &Path,
+    options: m3l_core::ResolveOptions,
+) -> Result<m3l_core::M3lAst, String> {
     let files = read_m3l_files(input_path)?;
 
     if files.is_empty() {
@@ -184,7 +191,7 @@ pub fn build_ast(input_path: &Path) -> Result<m3l_core::M3lAst, String> {
         None
     };
 
-    let ast = resolve(&parsed_files, project_info);
+    let ast = m3l_core::resolve_with(&parsed_files, project_info, options);
 
     Ok(ast)
 }

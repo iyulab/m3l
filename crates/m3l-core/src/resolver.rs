@@ -5,7 +5,37 @@ use crate::types::*;
 
 /// Resolve and merge multiple parsed file ASTs into a single M3lAst.
 /// Handles: inheritance resolution, duplicate detection, attribute registry tagging.
+/// Knobs for [`resolve_with`].
+#[derive(Debug, Clone, Copy)]
+pub struct ResolveOptions {
+    /// Copy each parent's fields into the child model (the default, and what
+    /// every semantic consumer wants).
+    ///
+    /// Turn it **off** for consumers that must reproduce the source document
+    /// rather than its semantic closure — the formatter is the motivating case:
+    /// inlined parent fields are indistinguishable from the model's own, so it
+    /// re-emitted them *and* the `: Parent` header, duplicating the fields on
+    /// every round-trip.
+    pub inline_inherited: bool,
+}
+
+impl Default for ResolveOptions {
+    fn default() -> Self {
+        Self {
+            inline_inherited: true,
+        }
+    }
+}
+
 pub fn resolve(files: &[ParsedFile], project: Option<ProjectInfo>) -> M3lAst {
+    resolve_with(files, project, ResolveOptions::default())
+}
+
+pub fn resolve_with(
+    files: &[ParsedFile],
+    project: Option<ProjectInfo>,
+    options: ResolveOptions,
+) -> M3lAst {
     let mut errors: Vec<Diagnostic> = Vec::new();
     let warnings: Vec<Diagnostic> = Vec::new();
 
@@ -214,16 +244,18 @@ pub fn resolve(files: &[ParsedFile], project: Option<ProjectInfo>) -> M3lAst {
     }
 
     // Resolve inheritance
-    for i in 0..all_models.len() {
-        resolve_inheritance(
-            i,
-            &mut all_models,
-            &model_map,
-            &all_interfaces,
-            &interface_map,
-            &all_named,
-            &mut errors,
-        );
+    if options.inline_inherited {
+        for i in 0..all_models.len() {
+            resolve_inheritance(
+                i,
+                &mut all_models,
+                &model_map,
+                &all_interfaces,
+                &interface_map,
+                &all_named,
+                &mut errors,
+            );
+        }
     }
 
     // Check duplicate field names
@@ -271,7 +303,7 @@ pub fn resolve(files: &[ParsedFile], project: Option<ProjectInfo>) -> M3lAst {
                 tag_attrs(&mut f.attributes);
             }
         }
-        for (_, ext_nodes) in all_extensions.iter_mut() {
+        for ext_nodes in all_extensions.values_mut() {
             for ext in ext_nodes.iter_mut() {
                 tag_attrs(&mut ext.attributes);
                 for f in ext.fields.iter_mut() {

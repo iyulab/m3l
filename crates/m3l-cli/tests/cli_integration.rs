@@ -968,7 +968,14 @@ fn format_roundtrip() {
 }
 
 #[test]
-#[ignore] // BUG: formatter inlines inherited fields but keeps `: Parent`, causing duplication on re-format
+// BUG: the AST does not retain source spelling for three constructs, so the
+// formatter cannot reproduce them and a second pass differs:
+//   - attribute args lose quoting/expression text  `@computed('/users/' + username)`
+//   - the nullable-array marker collapses           `string?[]` → `string[]`
+//   - default values lose quoting                   `= Hello \"World\"`
+// Inheritance duplication and multi-line descriptions — the previous causes —
+// are fixed; `format_preserves_ast` now runs unignored.
+#[ignore]
 fn format_idempotent() {
     // format(input) should equal format(format(input))
     // i.e., formatting twice produces the same output
@@ -1031,7 +1038,6 @@ fn format_idempotent() {
 }
 
 #[test]
-#[ignore] // BUG: same inheritance field duplication issue as format_idempotent
 fn format_preserves_ast() {
     // parse(input) should produce same models/enums as parse(format(input))
     // We compare structural content (field names, types, counts) rather than

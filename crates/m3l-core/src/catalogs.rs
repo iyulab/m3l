@@ -46,7 +46,7 @@ pub static STANDARD_ATTRIBUTES: LazyLock<HashSet<&'static str>> = LazyLock::new(
     s.insert("generated");
     s.insert("immutable");
     s.insert("check"); // @check("expr") — CHECK constraint (field or model level)
-    // References / relations
+                       // References / relations
     s.insert("reference");
     s.insert("fk");
     s.insert("relation");

@@ -172,6 +172,14 @@ pub struct EnumValue {
     pub value_type: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<serde_json::Value>,
+    /// Attributes declared on the value itself (`- legacy: "이관" @system`).
+    ///
+    /// M3L assigns no meaning to them — recording them is the parser's whole job,
+    /// exactly as with [`FieldNode::attributes`]. Consumers (generators, linters)
+    /// interpret. Kept `Option` rather than a plain `Vec` so values without
+    /// attributes serialize identically to before this field existed.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub attributes: Option<Vec<FieldAttribute>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

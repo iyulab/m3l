@@ -1615,3 +1615,94 @@ fn deep_compare_attribute_registry_vs_reference() {
         ref_json["attributeRegistry"][0]["name"]
     );
 }
+
+// ===========================================================================
+// Enum value attributes (specification §3.1.8)
+// ===========================================================================
+
+/// Attributes on enum *values* — standalone, typed-with-stored-value, and inline
+/// forms all go through different parser paths and must agree.
+///
+/// M3L assigns the attributes no meaning; recording them is the whole contract.
+/// Values without attributes must keep serializing exactly as before the field
+/// existed, so downstream AST consumers see no change.
+#[test]
+fn conformance_enum_value_attributes() {
+    let input = include_str!("../../../spec/conformance/inputs/enum-value-attributes.m3l.md");
+    let ast = full_pipeline(input, "enum-value-attributes.m3l.md");
+
+    assert!(ast.errors.is_empty(), "unexpected errors: {:?}", ast.errors);
+
+    let payment_method = ast
+        .enums
+        .iter()
+        .find(|e| e.name == "PaymentMethod")
+        .expect("PaymentMethod enum");
+
+    // Untagged values carry no attributes at all (not an empty vec).
+    let cash = &payment_method.values[0];
+    assert_eq!(cash.name, "cash");
+    assert!(cash.attributes.is_none());
+
+    // A tagged value keeps its label AND its attribute.
+    let legacy = &payment_method.values[2];
+    assert_eq!(legacy.name, "legacy_carryover");
+    assert_eq!(legacy.description.as_deref(), Some("레거시 이관 정리"));
+    let attrs = legacy.attributes.as_ref().expect("@system recorded");
+    assert_eq!(attrs.len(), 1);
+    assert_eq!(attrs[0].name, "system");
+    // The parser does not decide whether `system` is meaningful — it is not a
+    // standard attribute, and that is not an error.
+    assert_eq!(attrs[0].is_standard, None);
+
+    // Attributes coexist with a declared type and a stored value, and carry args.
+    let priority = ast
+        .enums
+        .iter()
+        .find(|e| e.name == "ShippingPriority")
+        .expect("ShippingPriority enum");
+    let overnight = &priority.values[1];
+    assert_eq!(overnight.value_type.as_deref(), Some("integer"));
+    assert_eq!(overnight.value.as_ref().and_then(|v| v.as_str()), Some("2"));
+    assert_eq!(overnight.description.as_deref(), Some("Overnight Delivery"));
+    let dep = overnight.attributes.as_ref().expect("@deprecated recorded");
+    assert_eq!(dep[0].name, "deprecated");
+    assert!(dep[0].args.is_some());
+
+    // Inline enum values take a different parser path and must behave identically.
+    let payment = ast
+        .models
+        .iter()
+        .find(|m| m.name == "Payment")
+        .expect("Payment model");
+    let channel = payment
+        .fields
+        .iter()
+        .find(|f| f.name == "channel")
+        .expect("channel field");
+    let values = channel.enum_values.as_ref().expect("inline enum values");
+    assert_eq!(values[0].name, "web");
+    assert!(values[0].attributes.is_none());
+    assert_eq!(values[1].name, "migration");
+    assert_eq!(values[1].description.as_deref(), Some("이관"));
+    assert_eq!(
+        values[1].attributes.as_ref().expect("@system inline")[0].name,
+        "system"
+    );
+}
+
+/// The JSON surface downstream consumers read (mdd-booster's C# bindings among
+/// them): `attributes` present only where declared.
+#[test]
+fn conformance_enum_value_attributes_json_surface() {
+    let input = include_str!("../../../spec/conformance/inputs/enum-value-attributes.m3l.md");
+    let ast = full_pipeline(input, "enum-value-attributes.m3l.md");
+    let json = serde_json::to_value(&ast).unwrap();
+
+    let values = json["enums"][0]["values"].as_array().unwrap();
+    assert!(
+        !values[0].as_object().unwrap().contains_key("attributes"),
+        "untagged value must serialize exactly as before the field existed"
+    );
+    assert_eq!(values[2]["attributes"][0]["name"], "system");
+}

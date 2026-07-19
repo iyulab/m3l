@@ -235,6 +235,14 @@ public class EnumValue
 
     [JsonPropertyName("value")]
     public JsonElement? Value { get; set; }
+
+    /// <summary>
+    /// Attributes declared on the value itself (<c>- legacy: "이관" @system</c>).
+    /// M3L assigns them no meaning — generators interpret, exactly as with field
+    /// attributes. <c>null</c> when the value carries none.
+    /// </summary>
+    [JsonPropertyName("attributes")]
+    public List<FieldAttribute>? Attributes { get; set; }
 }
 
 /// <summary>

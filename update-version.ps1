@@ -5,6 +5,7 @@
 .DESCRIPTION
     Reads D:\data\m3l\VERSION (or repo root VERSION) and updates:
     - Cargo.toml (workspace)                  ([workspace.package] version = "x.y.z")
+    - crates/*/Cargo.toml                     (intra-workspace dep version = "x.y")
     - bindings/csharp/M3L.Native.csproj       (<Version>x.y.z</Version>)
     - bindings/typescript/package.json         ("version": "x.y.z")
     - bindings/typescript/package.json         ("@iyulab/m3l-napi": "x.y.z")
@@ -57,7 +58,10 @@ function Update-File {
         [string]$Path,
         [string]$Pattern,
         [string]$Replacement,
-        [string]$Label
+        [string]$Label,
+        # Not every file in a glob carries the pattern — stay quiet instead of
+        # crying wolf for the ones that legitimately do not.
+        [switch]$Optional
     )
 
     $relativePath = $Path.Replace($root, '').TrimStart('\', '/')
@@ -84,6 +88,8 @@ function Update-File {
             Write-Host "  SET   $relativePath ($Label -> $version)" -ForegroundColor Green
         }
         $script:updated++
+    } elseif ($Optional) {
+        # Nothing to do: this file legitimately has no such version to carry.
     } else {
         Write-Host "  WARN  $relativePath (pattern not found: $Label)" -ForegroundColor Red
     }
@@ -97,6 +103,19 @@ Update-File `
     -Pattern 'version\s*=\s*"[\d.]+"' `
     -Replacement "version = `"$version`"" `
     -Label 'workspace version'
+
+# Intra-workspace dependency specs (`m3l-core = { path = "..", version = "0.5" }`).
+# These are caret requirements on MAJOR.MINOR, so patch bumps inside a minor never
+# tripped them — but a minor bump breaks the workspace build until they follow.
+$depVersion = ($version -split '\.')[0..1] -join '.'
+foreach ($crateToml in Get-ChildItem (Join-Path $root 'crates') -Filter 'Cargo.toml' -Recurse) {
+    Update-File `
+        -Path $crateToml.FullName `
+        -Pattern '(path\s*=\s*"\.\./m3l-[\w-]+"\s*,\s*version\s*=\s*")[\d.]+(")' `
+        -Replacement "`${1}$depVersion`${2}" `
+        -Label 'intra-workspace dep version' `
+        -Optional
+}
 
 Write-Host ""
 

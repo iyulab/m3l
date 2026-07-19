@@ -764,7 +764,38 @@ For enums used only within a single field, define values inline. The `values:` k
 
 > The `values:` key serves as a visual landmark that distinguishes "enum values follow" from extended format attributes (`type:`, `unique:`, etc.). Both forms are valid; the `values:` form is recommended for clarity in rendered markdown.
 
-#### 3.1.8 Enum Collision Rules
+#### 3.1.8 Enum Value Attributes
+
+Individual enum values may carry attributes, using the same `@name` / `@name(args)`
+syntax as fields. They are written after the label:
+
+```markdown
+## PaymentMethod ::enum
+- cash: "Cash"
+- card: "Card"
+- legacy_carryover: "Legacy carry-over settlement" @system
+```
+
+Attributes are also accepted on inline enum values:
+
+```markdown
+- method: enum = "cash"
+  - values:
+    - cash: "Cash"
+    - legacy_carryover: "Legacy carry-over settlement" @system
+```
+
+M3L assigns **no meaning** to these attributes — recording them is the parser's
+entire job, exactly as with field attributes. Consumers decide what they mean.
+A code generator might read `@system` as "keep this value in display label maps,
+but leave it out of input choices"; a linter might read `@deprecated` as a warning
+source. The value itself remains a fully valid stored value in every case — an
+attribute constrains *authoring*, never *storage*.
+
+They appear in the AST as `EnumValue.attributes`, omitted entirely when a value
+carries none.
+
+#### 3.1.9 Enum Collision Rules
 
 **Rule 1**: Inline enums are scoped to their field. They cannot be referenced by other fields.
 

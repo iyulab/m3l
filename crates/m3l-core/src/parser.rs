@@ -11,6 +11,8 @@ use crate::lexer::{lex, parse_type_and_attrs};
 use crate::types::*;
 
 static RE_QUOTE_STR: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"^"(.*)"$"#).unwrap());
+/// Start of a trailing attribute run on a nested item's right-hand side.
+static RE_TRAILING_ATTRS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\s*@\w+").unwrap());
 static RE_CUSTOM_ATTR: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^([A-Za-z_][\w.]*)(?:\((.+)\))?$").unwrap());
 static RE_AGG: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(\w+)(?:\((\w+)\))?$").unwrap());
@@ -351,6 +353,7 @@ fn handle_field(token: &Token, state: &mut ParserState) {
                 description: token.data.description.clone(),
                 value_type: None,
                 value: None,
+                attributes: parse_raw_attributes_opt(&token.data.attributes),
             };
 
             if let Some(ref type_name) = token.data.type_name {
@@ -663,11 +666,13 @@ fn handle_nested_item(token: &Token, state: &mut ParserState) {
                     description: None,
                     value_type: None,
                     value: None,
+                    attributes: parse_raw_attributes_opt(&data.attributes),
                 };
                 if let Some(v) = value {
+                    let v = strip_trailing_attrs(v, !data.attributes.is_empty());
                     if let Some(caps) = RE_QUOTE_STR.captures(v) {
                         val.description = Some(caps[1].to_string());
-                    } else {
+                    } else if !v.is_empty() {
                         val.value = Some(serde_json::Value::String(v.to_string()));
                     }
                 }
@@ -746,11 +751,13 @@ fn handle_nested_item(token: &Token, state: &mut ParserState) {
                                 description: None,
                                 value_type: None,
                                 value: None,
+                                attributes: parse_raw_attributes_opt(&data.attributes),
                             };
                             if let Some(v) = value {
+                                let v = strip_trailing_attrs(v, !data.attributes.is_empty());
                                 if let Some(caps) = RE_QUOTE_STR.captures(v) {
                                     ev.description = Some(caps[1].to_string());
-                                } else {
+                                } else if !v.is_empty() {
                                     ev.value = Some(serde_json::Value::String(v.to_string()));
                                 }
                             }
@@ -775,8 +782,10 @@ fn handle_nested_item(token: &Token, state: &mut ParserState) {
                                     description: None,
                                     value_type: None,
                                     value: None,
+                                    attributes: parse_raw_attributes_opt(&data.attributes),
                                 };
                                 if let Some(v) = value {
+                                    let v = strip_trailing_attrs(v, !data.attributes.is_empty());
                                     if let Some(caps) = RE_QUOTE_STR.captures(v) {
                                         ev.description = Some(caps[1].to_string());
                                     }
@@ -1244,6 +1253,37 @@ fn process_default_value(raw: Option<&str>) -> (Option<String>, Option<DefaultVa
     }
 }
 
+/// [`parse_raw_attributes`], collapsing the empty case to `None`.
+///
+/// Enum values keep attributes optional so a value carrying none serializes
+/// exactly as it did before `EnumValue::attributes` existed.
+/// Strip the trailing attribute run from a nested item's right-hand side.
+///
+/// `- legacy: "이관" @system` reaches the parser as key `legacy` and value
+/// `"이관" @system` — the raw remainder of the line. The attributes have already
+/// been lexed, so leaving them in the RHS made the quoted-label match fail and
+/// stored `"이관" @system` verbatim as the enum value, losing the label.
+///
+/// Only strips when the lexer actually found attributes on this line, so an `@`
+/// that is genuinely part of a value (an email default, say) is left alone.
+fn strip_trailing_attrs(v: &str, had_attrs: bool) -> &str {
+    if !had_attrs {
+        return v;
+    }
+    match RE_TRAILING_ATTRS.find(v) {
+        Some(m) => v[..m.start()].trim_end(),
+        None => v,
+    }
+}
+
+fn parse_raw_attributes_opt(raw_attrs: &[RawAttribute]) -> Option<Vec<FieldAttribute>> {
+    if raw_attrs.is_empty() {
+        None
+    } else {
+        Some(parse_raw_attributes(raw_attrs))
+    }
+}
+
 fn parse_raw_attributes(raw_attrs: &[RawAttribute]) -> Vec<FieldAttribute> {
     raw_attrs
         .iter()
@@ -1705,10 +1745,7 @@ mod tests {
 
     #[test]
     fn field_check_attribute_is_standard() {
-        let result = parse_string(
-            "## Move\n- qty: decimal @check(\"qty <> 0\")",
-            "t.m3l.md",
-        );
+        let result = parse_string("## Move\n- qty: decimal @check(\"qty <> 0\")", "t.m3l.md");
         let f = &result.models[0].fields[0];
         let chk = f
             .attributes
@@ -1814,7 +1851,10 @@ mod tests {
         assert_eq!(indexes.len(), 2);
 
         let first = &indexes[0];
-        assert_eq!(first.get("name").and_then(|v| v.as_str()), Some("idx_customer"));
+        assert_eq!(
+            first.get("name").and_then(|v| v.as_str()),
+            Some("idx_customer")
+        );
         assert_eq!(first.get("attr").and_then(|v| v.as_str()), Some("index"));
         assert_eq!(first.get("unique").and_then(|v| v.as_bool()), Some(false));
         let args = first.get("args").expect("args 필수");
@@ -1840,7 +1880,10 @@ mod tests {
         assert_eq!(indexes.len(), 2);
 
         let single = indexes[0].get("args").expect("args 필수");
-        assert!(single.is_array(), "단일 인자 directive도 array (0.5.4 결함 fix)");
+        assert!(
+            single.is_array(),
+            "단일 인자 directive도 array (0.5.4 결함 fix)"
+        );
         assert_eq!(single.as_array().unwrap().len(), 1);
         assert_eq!(single.as_array().unwrap()[0].as_str(), Some("customer_id"));
 
@@ -1986,5 +2029,89 @@ mod tests {
         assert_eq!(binding.column, "Id");
         assert!(binding.is_hard);
         assert_eq!(field.description.as_deref(), Some("상태"));
+    }
+
+    // --- enum value attributes ---------------------------------------------
+    // Attributes are a general M3L facility that `FieldNode` has always had.
+    // Enum values used to drop them silently, so a model could not say anything
+    // about an individual value beyond its name/label/stored value. The parser
+    // stays meaning-agnostic here — it records `@whatever`; generators decide
+    // what it means (same rule as `@display_labels`).
+
+    #[test]
+    fn enum_value_carries_attributes() {
+        let input = "## PaymentMethod ::enum\n- cash: \"현금\"\n- legacy: \"이관 정리\" @system";
+        let result = parse_string(input, "test.m3l.md");
+        let values = &result.enums[0].values;
+        assert_eq!(values[0].name, "cash");
+        assert!(
+            values[0].attributes.is_none(),
+            "value without attributes must stay None (JSON stays backward-compatible)"
+        );
+        let attrs = values[1]
+            .attributes
+            .as_ref()
+            .expect("legacy should carry @system");
+        assert_eq!(attrs.len(), 1);
+        assert_eq!(attrs[0].name, "system");
+        // The attribute text must not bleed into the label.
+        assert_eq!(values[1].description.as_deref(), Some("이관 정리"));
+    }
+
+    #[test]
+    fn enum_value_attribute_args_are_preserved() {
+        let input = "## Status ::enum\n- archived: \"보관\" @deprecated(\"use closed\")";
+        let result = parse_string(input, "test.m3l.md");
+        let attrs = result.enums[0].values[0]
+            .attributes
+            .as_ref()
+            .expect("attributes");
+        assert_eq!(attrs[0].name, "deprecated");
+        assert!(attrs[0].args.is_some(), "args must survive");
+    }
+
+    #[test]
+    fn inline_enum_value_carries_attributes() {
+        // Inline enums under a field go through a different parser path
+        // (handle_nested_item), which must behave identically.
+        let input = "## Order\n- method: enum\n  - values:\n    - cash: \"현금\"\n    - legacy: \"이관\" @system";
+        let result = parse_string(input, "test.m3l.md");
+        let values = result.models[0].fields[0]
+            .enum_values
+            .as_ref()
+            .expect("inline enum values");
+        assert_eq!(values.len(), 2);
+        assert!(values[0].attributes.is_none());
+        let attrs = values[1]
+            .attributes
+            .as_ref()
+            .expect("@system on inline value");
+        assert_eq!(attrs[0].name, "system");
+        assert_eq!(values[1].description.as_deref(), Some("이관"));
+        // Regression: the attribute text used to defeat the quoted-label match,
+        // so the whole RHS (`"이관" @system`) was stored as the value and the
+        // label was lost.
+        assert!(
+            values[1].value.is_none(),
+            "attribute text must not leak into the stored value"
+        );
+    }
+
+    #[test]
+    fn enum_value_without_attributes_keeps_raw_value() {
+        // strip_trailing_attrs only engages when the lexer actually found
+        // attributes on the line, so an unattributed stored value is untouched.
+        let input = "## Code ::enum\n  - a: A_1\n  - b: B_2";
+        let result = parse_string(input, "test.m3l.md");
+        let values = &result.enums[0].values;
+        assert_eq!(
+            values[0].value.as_ref().and_then(|v| v.as_str()),
+            Some("A_1")
+        );
+        assert!(values[0].attributes.is_none());
+        assert_eq!(
+            values[1].value.as_ref().and_then(|v| v.as_str()),
+            Some("B_2")
+        );
     }
 }

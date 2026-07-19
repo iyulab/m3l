@@ -6,6 +6,45 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-07-19
+
+### Added
+- **Enum value attributes** — individual enum values may carry `@name` / `@name(args)`
+  attributes, matching what fields have always supported (`- legacy: "이관" @system`).
+  M3L assigns them no meaning; consumers interpret. Exposed as `EnumValue.attributes`
+  in the AST (omitted when absent) and `EnumValue.Attributes` in the C# bindings.
+  Specification §3.1.8.
+- `ResolveOptions` / `resolve_with()` — `inline_inherited: false` returns an AST that
+  mirrors the source document instead of its semantic closure. Used by the formatter.
+
+### Fixed
+- Attributes written **after** a label are no longer dropped. `parse_type_and_attrs`
+  scanned for attributes only ahead of the description, but `name: "label" @attr` is
+  the canonical enum value shape — and reads naturally for fields too.
+- Formatter no longer deletes enum value `type`, stored `value`, and attributes, nor
+  whole inline enums, on `m3l format`.
+- Formatter no longer duplicates inherited fields on every re-format (it emitted the
+  `: Parent` header *and* the inlined parent fields). Resolves the long-standing
+  Known Issue below; `format_preserves_ast` now runs unignored.
+- Multi-line descriptions are emitted as blockquote continuation lines instead of a
+  trailing `#` comment, which put a raw newline mid-line and orphaned every line
+  after the first.
+- Inline enum values no longer lose their label to leftover attribute text
+  (`"이관" @system` was stored verbatim as the value).
+- `update-version.ps1` now updates intra-workspace Cargo dependency specs. Patch
+  bumps inside a minor never tripped them, so the first minor bump broke the build.
+
+### Removed
+- `compare-ast.mjs` — referenced `parser/typescript/` and `parser/csharp/` paths that
+  no longer exist, and was called from no script or workflow.
+
+### Known Issues
+- `format_idempotent` remains ignored: the AST does not retain source spelling for
+  attribute argument expressions (`@computed('/users/' + username)`), the
+  nullable-array marker (`string?[]`), or default value quoting, so the formatter
+  cannot reproduce them. Needs a decision on how much raw text the AST should keep.
+- Changelog entries for 0.5.2–0.5.6 were never written; this file jumps 0.5.1 → 0.6.0.
+
 ## [0.5.1] - 2026-03-03
 
 ### Added

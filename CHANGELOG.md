@@ -61,7 +61,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `PARSER_VERSION` constant now auto-syncs with `Cargo.toml` via `env!("CARGO_PKG_VERSION")`
 
 ### Known Issues
-- Formatter duplicates inherited fields on re-format (tracked in claudedocs)
+- Formatter duplicates inherited fields on re-format
 
 ## [0.5.0] - 2026-02-27
 

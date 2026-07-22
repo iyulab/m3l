@@ -35,7 +35,7 @@ jobs:
             node_file: m3l-napi.darwin-arm64.node
             platform_dir: darwin-arm64
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -45,9 +45,9 @@ jobs:
         with:
           key: ${{ matrix.target }}
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Build native module
         run: cargo build -p m3l-napi --release --target ${{ matrix.target }}
@@ -66,7 +66,7 @@ jobs:
         run: cp target/${{ matrix.target }}/release/m3l_napi.dll ${{ matrix.node_file }}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: napi-${{ matrix.platform_dir }}
           path: ${{ matrix.node_file }}
@@ -79,15 +79,15 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 24
           registry-url: https://registry.npmjs.org
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
 

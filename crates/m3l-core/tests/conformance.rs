@@ -1691,8 +1691,8 @@ fn conformance_enum_value_attributes() {
     );
 }
 
-/// The JSON surface downstream consumers read (mdd-booster's C# bindings among
-/// them): `attributes` present only where declared.
+/// The JSON surface downstream consumers read: `attributes` present only where
+/// declared.
 #[test]
 fn conformance_enum_value_attributes_json_surface() {
     let input = include_str!("../../../spec/conformance/inputs/enum-value-attributes.m3l.md");

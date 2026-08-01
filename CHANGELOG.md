@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Documentation
+- **Specification status markers now state their own scope** (§1.6, new). Every
+  `Status:` blockquote reports how much of a section the reference parser and validator
+  cover — and nothing else. Code generation and value-level enforcement are outside all
+  of them, so a construct can be `Implemented` here and consumed by nothing. §4.7 says
+  so on its own line, having been read as a promise that views are generated.
+- **§10.4.2 says what each `Expands To` bound is sized against.** For `email`, `url`,
+  `money`, and `percentage` it bounds the value as written, so the bound may be adopted
+  on its own. `phone` cannot: E.164 is a normalization, and `string(20)` fits `+` plus
+  15 digits — not the same number written with separators, a spelled-out prefix, or an
+  extension. The section now carries a status blockquote (the parser expands neither
+  column) and tabulates which combinations of the two columns stand up.
+
 ## [0.6.0] - 2026-07-19
 
 ### Added

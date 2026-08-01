@@ -7,6 +7,7 @@
    3. [Expression Patterns](#13-expression-patterns)
    4. [Notation Principles](#14-notation-principles)
    5. [Markdown Rendering Principles](#15-markdown-rendering-principles)
+   6. [Specification Status and Conformance Scope](#16-specification-status-and-conformance-scope)
 2. [Basic Syntax](#2-basic-syntax)
    1. [Namespace Definition](#21-namespace-definition)
    2. [Model Definition](#22-model-definition)
@@ -167,6 +168,45 @@ The following table shows M3L special characters and their markdown safety statu
   - target: Tag
   - cardinality: many-to-many
 ```
+
+### 1.6 Specification Status and Conformance Scope
+
+Most sections open with a status blockquote:
+
+> **Status: Implemented** — Fully supported in `m3l-core` parser.
+
+Every such marker answers exactly one question: **how much of that section the
+reference parser and validator cover.**
+
+| Marker | Meaning |
+|---|---|
+| **Implemented** | The reference parser accepts the syntax and surfaces it in the AST; where the blockquote names a validator rule, that rule is enforced. |
+| **Partial** | Part of the section is covered; the blockquote names what is not. |
+| **Planned** | The syntax is specified, but the reference parser does not accept it yet. |
+
+#### 1.6.1 What a status marker does not say
+
+**Code generation is outside every status marker in this document.** M3L defines a
+language and an AST; turning that AST into tables, classes, forms, or migrations is a
+consumer's concern. `Status: Implemented` means the construct reaches the AST — never
+that a consumer acts on it. A construct can be fully implemented here and consumed by
+nothing.
+
+**Value-level enforcement is outside it too.** The parser reads a document; it never
+sees the data the document describes. Where this specification states a format, a
+range, or a bound on *values*, that statement binds consumers, is not checked by the
+parser, and is not reported by any status marker.
+
+#### 1.6.2 Normative and unenforced are independent
+
+A statement here can be normative and unenforced at the same time. Read every
+requirement as addressed to you unless a status marker says the reference
+implementation already covers it.
+
+This matters most where a requirement has **two halves designed against each other**.
+Adopting one half alone does not yield half the requirement — it yields a surface that
+carries the cost of the adopted half without the guarantee that justified it. §10.4.2
+is the worked example, and the reason that section states its own coupling explicitly.
 
 ## 2. Basic Syntax
 
@@ -386,6 +426,10 @@ For common data patterns, M3L provides convenient shorthand types:
 - money: money                   # Equivalent to: decimal(19,4)
 - percentage: percentage         # Equivalent to: decimal(5,2) with 0-100 range
 ```
+
+The reference parser expands none of these — it reports the type name unchanged, so each
+consumer carries the table itself. §10.4.2 states what each bound is sized against, and
+which one cannot be adopted without its validation half.
 
 #### 2.3.2 Extended Field Format (For Complex Cases Only)
 
@@ -1559,6 +1603,7 @@ Rollup results can be referenced by other Rollup or Computed fields:
 
 ### 4.7 Derived Views
 > **Status: Implemented** — Fully supported in `m3l-core` parser and validator (`::view`, Source section, E004).
+> Views reach the AST; whether a consumer emits a database view from them is outside this marker (§1.6.1).
 
 Derived Views are virtual models composed from multiple models. They correspond to database Views and use the `::view` type indicator.
 
@@ -2576,6 +2621,11 @@ The following table defines all official M3L types. Types not listed here are tr
 
 #### 10.4.2 Semantic Types (Shorthands)
 
+> **Status: Partial** — the reference parser recognizes these type names and reports
+> them unchanged. It does **not** expand them to the `Expands To` column, and it does
+> not check the `Implicit Validation` column. Both columns are normative for consumers,
+> which each carry the table themselves (§1.6.2).
+
 | Type | Expands To | Implicit Validation |
 |---|---|---|
 | `email` | `string(320)` | RFC 5321 email format |
@@ -2583,6 +2633,30 @@ The following table defines all official M3L types. Types not listed here are tr
 | `url` | `string(2048)` | RFC 3986 URL format |
 | `money` | `decimal(19,4)` | Non-negative |
 | `percentage` | `decimal(5,2)` | 0–100 range |
+
+##### What the `Expands To` column is sized against
+
+For `email`, `url`, `money`, and `percentage` the bound is the format's own maximum on
+the value **as written** (or a superset of the stated range). A consumer may adopt those
+bounds without the validation column and nothing well-formed is ever rejected — the
+format simply goes unchecked.
+
+**`phone` is the exception, and the only row whose two columns cannot be separated.**
+E.164 is a *normalization*, not merely a rule about which strings are acceptable:
+`string(20)` is sized for `+` followed by at most 15 digits, whereas the same phone
+number written the way people enter it — separators, a spelled-out international prefix,
+an extension — routinely exceeds 20 characters. So the four combinations do not all
+stand up:
+
+| Adopted for `phone` | Result |
+|---|---|
+| Both columns | The specified behavior — values are stored normalized, and 20 fits them. |
+| `Implicit Validation` only | Well-formed values, storage chosen by the consumer. Coherent. |
+| Neither | The type is a documentation hint, like a comment. Coherent. |
+| `Expands To` only | 🔴 **Incoherent** — the bound without the normalization that sized it. It rejects ordinary input while still accepting values that are not phone numbers at all. |
+
+A consumer that cannot adopt a bound as specified should record the value it uses and
+why it differs, so the deviation stays visible when the format half arrives.
 
 #### 10.4.3 Structural Types
 

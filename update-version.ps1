@@ -3,7 +3,7 @@
     Syncs the version from VERSION file to all project manifests.
 
 .DESCRIPTION
-    Reads D:\data\m3l\VERSION (or repo root VERSION) and updates:
+    Reads the repo root VERSION file and updates:
     - Cargo.toml (workspace)                  ([workspace.package] version = "x.y.z")
     - crates/*/Cargo.toml                     (intra-workspace dep version = "x.y")
     - bindings/csharp/M3L.Native.csproj       (<Version>x.y.z</Version>)

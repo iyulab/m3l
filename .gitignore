@@ -1,6 +1,7 @@
 node_modules/
 dist/
 claudedocs/
+CLAUDE.md
 
 # Rust
 target/

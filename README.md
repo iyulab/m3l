@@ -129,7 +129,9 @@ Console.WriteLine(result?.Success); // True
 ## Documentation
 
 - [M3L Specification](docs/specification.md) — full language spec (syntax, types, grammar)
+- [Design Principles](docs/design-principles.md) — why the project draws its boundaries where it does
 - [Examples](samples/) — sample M3L files
+- [Contributing](CONTRIBUTING.md) — development setup, RFC process, conformance fixtures
 
 ## Project Structure
 

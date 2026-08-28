@@ -2714,6 +2714,7 @@ Conforming parsers should use these error codes for consistent diagnostics.
 | `M3L-W005` | Attribute `@{attr}` expects `{type}` argument but got `{type}` | Custom registry attribute (§10.8.7) used with an argument of the wrong type |
 | `M3L-W006` | Attribute `@{attr}` argument `{value}` is outside range `[{min}, {max}]` | Custom registry attribute usage violates its declared `range` |
 | `M3L-W007` | Attribute `@{attr}` is declared for target `[{target}]` but used on `{subject}` | Custom registry attribute used on a field when its `target` is `model` only, or vice versa |
+| `M3L-W008` | Attribute `@{attr}` is required but used without an explicit argument on `{subject}` | Custom registry attribute declared `required: true` was used bare (no argument) |
 
 ### 10.6 Import Resolution
 
@@ -2851,13 +2852,11 @@ a nested field list:
 | `target` | `field`, `model`, or `[field, model]` | Where the attribute may be used. Defaults to `field` if omitted. |
 | `type` | `string`, `number`, or `boolean` | Expected argument type. Defaults to `boolean` if omitted. |
 | `range` | `{min}..{max}` or `{min}, {max}` | For `type: number` only — inclusive bounds an argument value must fall within. |
-| `required` | `true`/`false` | Reserved — not yet enforced by any conformant validator (see below). |
-| `default` | any value matching `type` | The value assumed when the attribute is present with no argument. |
+| `required` | `true`/`false` | When `true`, using `@{name}` without an explicit argument is a validator warning (M3L-W008) — see below. Does **not** mean every matching field/model must carry the attribute; a `required` attribute that is never used is not flagged. |
+| `default` | any value matching `type` | The value assumed when a **non-required** attribute is present with no argument. For a `required` attribute, an explicit argument is mandatory instead — `default` is not a silent stand-in for it. |
 
 Once declared, `@{name}(...)` can be used on any field or model header like a standard attribute
 (`## Task\n- level: integer @priority(5)`, or `## Task @priority(5)` for a model-level usage).
-`type`, `range`, and `target` are validated (M3L-W005/W006/W007 below); `required` and `default`
-are parsed and carried into the AST's `attribute_registry` but a conformant validator is not
-expected to enforce `required` yet — its intended semantics (every matching field/model must
-carry the attribute? or an explicit argument is mandatory whenever the attribute itself is used?)
-are not yet settled by this specification.
+`type`, `range`, `target`, and `required` are all validated (M3L-W005/W006/W007/W008 below);
+`default` is parsed and carried into the AST's `attribute_registry` but is not itself applied by
+the reference validator — value substitution is left to downstream tooling.

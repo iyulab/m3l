@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **M3L-W008** — a custom `::attribute` registry entry marked `required: true` now warns when
+  it's used without an explicit argument (e.g. bare `@priority` rather than `@priority(5)`).
+  Settles the semantics §10.8.7 previously left open: `required` means an explicit argument is
+  mandatory at each usage, not that every matching field/model must carry the attribute —
+  `default` remains the value assumed for a *non*-required attribute used bare.
 - **M3L-W007** — a custom `::attribute` registry entry declares which of `field`/`model` it may
   be used on; using it in a context its `target` doesn't list is now a validator warning, the
   same way a type or range mismatch already was.
@@ -18,8 +23,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Documentation
 - §10.8.7 documents the `::attribute` custom registry syntax (`target`/`type`/`range`/`required`/
-  `default`) and how it interacts with M3L-W005/W006/W007 — previously implemented and tested but
-  absent from the specification. §10.5.2's diagnostic catalog now lists W005–W007.
+  `default`) and how it interacts with M3L-W005/W006/W007/W008 — previously implemented and
+  tested but absent from the specification. §10.5.2's diagnostic catalog now lists W005–W008.
 
 ## [0.6.1] - 2026-08-01
 

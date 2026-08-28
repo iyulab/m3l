@@ -485,8 +485,9 @@ fn validate_model_registry_attrs(
 }
 
 /// Shared M3L-W005 (type mismatch) / M3L-W006 (range violation) / M3L-W007
-/// (used outside its declared `target`) checks for one attribute usage against
-/// its registry entry. `context` is `"field"` or `"model"` — the same vocabulary
+/// (used outside its declared `target`) / M3L-W008 (required attribute used
+/// without an explicit argument) checks for one attribute usage against its
+/// registry entry. `context` is `"field"` or `"model"` — the same vocabulary
 /// `AttributeRegistryEntry::target` uses, so a `target: [field]` attribute used
 /// on a model header (or vice versa) is caught the same way a type/range
 /// mismatch is.
@@ -514,7 +515,23 @@ fn check_registry_attr(
         });
     }
 
+    // M3L-W008: `required` means an explicit argument is mandatory whenever the
+    // attribute is used — `default` is the value assumed for a non-required
+    // attribute used bare, not a silent stand-in for a required one (§10.8.7).
     let Some(ref args) = attr.args else {
+        if reg.required {
+            warnings.push(Diagnostic {
+                code: "M3L-W008".into(),
+                severity: DiagnosticSeverity::Warning,
+                file: loc.file.clone(),
+                line: loc.line,
+                col: 1,
+                message: format!(
+                    "Attribute \"@{}\" is required but used without an explicit argument on {}",
+                    attr.name, subject
+                ),
+            });
+        }
         return;
     };
 
@@ -796,6 +813,63 @@ mod tests {
         assert!(
             !result.warnings.iter().any(|w| w.code == "M3L-W005"),
             "Should not warn when a boolean-typed attribute gets a boolean argument"
+        );
+    }
+
+    #[test]
+    fn validate_w008_required_attr_used_without_argument() {
+        let input = "## priority ::attribute\n- type: number\n- required: true\n- target: field\n\n## Task\n- level: integer @priority";
+        let result = parse_and_validate(input);
+        assert!(
+            result.warnings.iter().any(|w| w.code == "M3L-W008"),
+            "Should warn when a required attribute is used bare (no explicit argument)"
+        );
+    }
+
+    #[test]
+    fn validate_w008_required_attr_used_without_argument_on_model() {
+        let input = "## audited ::attribute\n- type: boolean\n- required: true\n- target: model\n\n## Task @audited\n- id: identifier";
+        let result = parse_and_validate(input);
+        assert!(
+            result.warnings.iter().any(|w| w.code == "M3L-W008"),
+            "Should warn when a required attribute is used bare on a model header"
+        );
+    }
+
+    #[test]
+    fn validate_no_w008_when_argument_given() {
+        let input = "## priority ::attribute\n- type: number\n- required: true\n- target: field\n\n## Task\n- level: integer @priority(5)";
+        let result = parse_and_validate(input);
+        assert!(
+            !result.warnings.iter().any(|w| w.code == "M3L-W008"),
+            "Should not warn when a required attribute is used with an explicit argument"
+        );
+    }
+
+    #[test]
+    fn validate_no_w008_when_not_required() {
+        let input = "## priority ::attribute\n- type: number\n- target: field\n\n## Task\n- level: integer @priority";
+        let result = parse_and_validate(input);
+        assert!(
+            !result.warnings.iter().any(|w| w.code == "M3L-W008"),
+            "Should not warn when a non-required attribute is used bare — default_value may apply"
+        );
+    }
+
+    #[test]
+    fn validate_w007_and_w008_fire_together_on_same_misuse() {
+        // A required, field-only attribute used bare on a model header hits both checks:
+        // wrong target (W007) and missing argument (W008) — the two are independent, not
+        // mutually exclusive.
+        let input = "## ledger ::attribute\n- type: boolean\n- required: true\n- target: field\n\n## StockMove @ledger\n- id: identifier";
+        let result = parse_and_validate(input);
+        assert!(
+            result.warnings.iter().any(|w| w.code == "M3L-W007"),
+            "Should still warn about the target mismatch"
+        );
+        assert!(
+            result.warnings.iter().any(|w| w.code == "M3L-W008"),
+            "Should also warn about the missing required argument"
         );
     }
 

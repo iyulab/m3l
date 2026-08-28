@@ -71,6 +71,7 @@ jobs:
           name: napi-${{ matrix.platform_dir }}
           path: ${{ matrix.node_file }}
           if-no-files-found: error
+          retention-days: 7
 
   publish:
     name: Publish to npm

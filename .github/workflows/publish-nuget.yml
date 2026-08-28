@@ -54,6 +54,7 @@ jobs:
           name: native-${{ matrix.rid }}
           path: target/${{ matrix.target }}/release/${{ matrix.lib_name }}
           if-no-files-found: error
+          retention-days: 7
 
   pack-publish:
     name: Pack & Publish

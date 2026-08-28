@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **M3L-W007** — a custom `::attribute` registry entry declares which of `field`/`model` it may
+  be used on; using it in a context its `target` doesn't list is now a validator warning, the
+  same way a type or range mismatch already was.
+- Registry attribute usages on a **model header** (`## Name @attr`) are now validated at all —
+  type (M3L-W005), range (M3L-W006), and target (M3L-W007) previously checked only field-level
+  usages.
+- M3L-W005 now also catches a `boolean`-typed registry attribute given a non-boolean argument;
+  previously only `number`/`string` mismatches were checked.
+
+### Documentation
+- §10.8.7 documents the `::attribute` custom registry syntax (`target`/`type`/`range`/`required`/
+  `default`) and how it interacts with M3L-W005/W006/W007 — previously implemented and tested but
+  absent from the specification. §10.5.2's diagnostic catalog now lists W005–W007.
+
 ## [0.6.1] - 2026-08-01
 
 ### Documentation

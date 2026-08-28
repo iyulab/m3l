@@ -2711,6 +2711,9 @@ Conforming parsers should use these error codes for consistent diagnostics.
 | `M3L-W002` | Object nesting exceeds 3 levels at `{field}` | Strict mode: deeply nested object fields |
 | `M3L-W003` | Deprecated syntax: `{syntax}` | Use of deprecated `datetime` type or cascade attributes (`@cascade`, `@no_action`, `@set_null`, `@restrict`) |
 | `M3L-W004` | Lookup chain `{path}` exceeds 3 hops | Strict mode: `@lookup` path traverses too many relations |
+| `M3L-W005` | Attribute `@{attr}` expects `{type}` argument but got `{type}` | Custom registry attribute (§10.8.7) used with an argument of the wrong type |
+| `M3L-W006` | Attribute `@{attr}` argument `{value}` is outside range `[{min}, {max}]` | Custom registry attribute usage violates its declared `range` |
+| `M3L-W007` | Attribute `@{attr}` is declared for target `[{target}]` but used on `{subject}` | Custom registry attribute used on a field when its `target` is `model` only, or vice versa |
 
 ### 10.6 Import Resolution
 
@@ -2825,3 +2828,36 @@ The following catalog lists all standard `@` attributes defined by M3L. Parsers 
 | `@override` | — | field | Override inherited field definition |
 
 > Attributes not listed here are treated as extension attributes. Parsers may choose to pass them through to the AST or emit a warning, depending on configuration.
+
+#### 10.8.7 Custom Attribute Registry (`::attribute`)
+
+A document may declare its own attributes beyond the standard catalog above, so a project's
+conventions can be checked the same way `@min`/`@max`/`@pattern` are. A registry entry is a
+heading of the form `## {name} ::attribute`, followed by an optional blockquote description and
+a nested field list:
+
+```markdown
+## priority ::attribute
+> Priority level for task ordering
+- target: [field, model]
+- type: number
+- range: 1..10
+- required: false
+- default: 5
+```
+
+| Field | Values | Meaning |
+|---|---|---|
+| `target` | `field`, `model`, or `[field, model]` | Where the attribute may be used. Defaults to `field` if omitted. |
+| `type` | `string`, `number`, or `boolean` | Expected argument type. Defaults to `boolean` if omitted. |
+| `range` | `{min}..{max}` or `{min}, {max}` | For `type: number` only — inclusive bounds an argument value must fall within. |
+| `required` | `true`/`false` | Reserved — not yet enforced by any conformant validator (see below). |
+| `default` | any value matching `type` | The value assumed when the attribute is present with no argument. |
+
+Once declared, `@{name}(...)` can be used on any field or model header like a standard attribute
+(`## Task\n- level: integer @priority(5)`, or `## Task @priority(5)` for a model-level usage).
+`type`, `range`, and `target` are validated (M3L-W005/W006/W007 below); `required` and `default`
+are parsed and carried into the AST's `attribute_registry` but a conformant validator is not
+expected to enforce `required` yet — its intended semantics (every matching field/model must
+carry the attribute? or an explicit argument is mandatory whenever the attribute itself is used?)
+are not yet settled by this specification.

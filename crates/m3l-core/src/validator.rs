@@ -125,7 +125,7 @@ pub fn validate(ast: &M3lAst, options: &ValidateOptions) -> ValidateResult {
         validate_relations_references(model, &mut errors);
     }
 
-    // M3L-W005/W006: Attribute registry value validation
+    // M3L-W005/W006/W007: Attribute registry value validation
     if !ast.attribute_registry.is_empty() {
         let registry_map: HashMap<&str, &AttributeRegistryEntry> = ast
             .attribute_registry
@@ -135,6 +135,7 @@ pub fn validate(ast: &M3lAst, options: &ValidateOptions) -> ValidateResult {
 
         for model in &all_models {
             validate_registry_attrs(&model.fields, model, &registry_map, &mut warnings);
+            validate_model_registry_attrs(model, &registry_map, &mut warnings);
         }
     }
 
@@ -440,65 +441,122 @@ fn validate_registry_attrs(
     for field in fields {
         for attr in &field.attributes {
             if let Some(reg) = registry_map.get(attr.name.as_str()) {
-                // Check argument type against registry attr_type
-                if let Some(ref args) = attr.args {
-                    for arg in args {
-                        match (reg.attr_type.as_str(), arg) {
-                            ("number", AttrArgValue::String(_)) => {
-                                warnings.push(Diagnostic {
-                                    code: "M3L-W005".into(),
-                                    severity: DiagnosticSeverity::Warning,
-                                    file: field.loc.file.clone(),
-                                    line: field.loc.line,
-                                    col: 1,
-                                    message: format!(
-                                        "Attribute \"@{}\" expects number argument but got string in field \"{}\" of {} \"{}\"",
-                                        attr.name, field.name, model_type, model.name
-                                    ),
-                                });
-                            }
-                            ("string", AttrArgValue::Number(_)) => {
-                                warnings.push(Diagnostic {
-                                    code: "M3L-W005".into(),
-                                    severity: DiagnosticSeverity::Warning,
-                                    file: field.loc.file.clone(),
-                                    line: field.loc.line,
-                                    col: 1,
-                                    message: format!(
-                                        "Attribute \"@{}\" expects string argument but got number in field \"{}\" of {} \"{}\"",
-                                        attr.name, field.name, model_type, model.name
-                                    ),
-                                });
-                            }
-                            _ => {}
-                        }
-
-                        // Range check for number types
-                        if let Some((min, max)) = reg.range {
-                            if let AttrArgValue::Number(n) = arg {
-                                if *n < min || *n > max {
-                                    warnings.push(Diagnostic {
-                                        code: "M3L-W006".into(),
-                                        severity: DiagnosticSeverity::Warning,
-                                        file: field.loc.file.clone(),
-                                        line: field.loc.line,
-                                        col: 1,
-                                        message: format!(
-                                            "Attribute \"@{}\" argument {} is outside range [{}, {}] in field \"{}\" of {} \"{}\"",
-                                            attr.name, n, min, max, field.name, model_type, model.name
-                                        ),
-                                    });
-                                }
-                            }
-                        }
-                    }
-                }
+                let subject = format!(
+                    "field \"{}\" of {} \"{}\"",
+                    field.name, model_type, model.name
+                );
+                check_registry_attr(attr, reg, "field", &field.loc, &subject, warnings);
             }
         }
 
         // Recurse into nested fields
         if let Some(ref sub_fields) = field.fields {
             validate_registry_attrs(sub_fields, model, registry_map, warnings);
+        }
+    }
+}
+
+/// M3L-W005/W006/W007 for attributes attached directly to a model header
+/// (`## Name @attr`), the model-level counterpart to `validate_registry_attrs`'
+/// field-level checks. A registry entry's `target` can name `model` as well as
+/// `field` (`m3l-core/src/parser.rs::finalize_attr_def`), so a model-level usage
+/// is just as checkable as a field-level one — this was previously unvalidated
+/// entirely, not merely missing the target check.
+fn validate_model_registry_attrs(
+    model: &ModelNode,
+    registry_map: &HashMap<&str, &AttributeRegistryEntry>,
+    warnings: &mut Vec<Diagnostic>,
+) {
+    let model_type = match &model.model_type {
+        ModelType::Model => "model",
+        ModelType::View => "view",
+        ModelType::Interface => "interface",
+        ModelType::Enum => "enum",
+        ModelType::Flow => "flow",
+        ModelType::Extension(s) => s.as_str(),
+    };
+
+    for attr in &model.attributes {
+        if let Some(reg) = registry_map.get(attr.name.as_str()) {
+            let subject = format!("{} \"{}\"", model_type, model.name);
+            check_registry_attr(attr, reg, "model", &model.loc, &subject, warnings);
+        }
+    }
+}
+
+/// Shared M3L-W005 (type mismatch) / M3L-W006 (range violation) / M3L-W007
+/// (used outside its declared `target`) checks for one attribute usage against
+/// its registry entry. `context` is `"field"` or `"model"` — the same vocabulary
+/// `AttributeRegistryEntry::target` uses, so a `target: [field]` attribute used
+/// on a model header (or vice versa) is caught the same way a type/range
+/// mismatch is.
+fn check_registry_attr(
+    attr: &FieldAttribute,
+    reg: &AttributeRegistryEntry,
+    context: &str,
+    loc: &SourceLocation,
+    subject: &str,
+    warnings: &mut Vec<Diagnostic>,
+) {
+    if !reg.target.iter().any(|t| t == context) {
+        warnings.push(Diagnostic {
+            code: "M3L-W007".into(),
+            severity: DiagnosticSeverity::Warning,
+            file: loc.file.clone(),
+            line: loc.line,
+            col: 1,
+            message: format!(
+                "Attribute \"@{}\" is declared for target [{}] but used on {}",
+                attr.name,
+                reg.target.join(", "),
+                subject
+            ),
+        });
+    }
+
+    let Some(ref args) = attr.args else {
+        return;
+    };
+
+    for arg in args {
+        let arg_kind = match arg {
+            AttrArgValue::String(_) => "string",
+            AttrArgValue::Number(_) => "number",
+            AttrArgValue::Bool(_) => "boolean",
+        };
+        if reg.attr_type != arg_kind
+            && matches!(reg.attr_type.as_str(), "string" | "number" | "boolean")
+        {
+            warnings.push(Diagnostic {
+                code: "M3L-W005".into(),
+                severity: DiagnosticSeverity::Warning,
+                file: loc.file.clone(),
+                line: loc.line,
+                col: 1,
+                message: format!(
+                    "Attribute \"@{}\" expects {} argument but got {} on {}",
+                    attr.name, reg.attr_type, arg_kind, subject
+                ),
+            });
+        }
+
+        // Range check for number types
+        if let Some((min, max)) = reg.range {
+            if let AttrArgValue::Number(n) = arg {
+                if *n < min || *n > max {
+                    warnings.push(Diagnostic {
+                        code: "M3L-W006".into(),
+                        severity: DiagnosticSeverity::Warning,
+                        file: loc.file.clone(),
+                        line: loc.line,
+                        col: 1,
+                        message: format!(
+                            "Attribute \"@{}\" argument {} is outside range [{}, {}] on {}",
+                            attr.name, n, min, max, subject
+                        ),
+                    });
+                }
+            }
         }
     }
 }
@@ -664,6 +722,80 @@ mod tests {
         assert!(
             !result.warnings.iter().any(|w| w.code == "M3L-W006"),
             "Should not warn when value is in range"
+        );
+    }
+
+    #[test]
+    fn validate_w007_field_only_attr_used_on_model() {
+        let input = "## ledger ::attribute\n- type: boolean\n- target: field\n\n## StockMove @ledger\n- id: identifier";
+        let result = parse_and_validate(input);
+        assert!(
+            result.warnings.iter().any(|w| w.code == "M3L-W007"),
+            "Should warn when a field-only attribute is used on a model header"
+        );
+    }
+
+    #[test]
+    fn validate_w007_model_only_attr_used_on_field() {
+        let input = "## audited ::attribute\n- type: boolean\n- target: model\n\n## Task\n- flag: boolean @audited";
+        let result = parse_and_validate(input);
+        assert!(
+            result.warnings.iter().any(|w| w.code == "M3L-W007"),
+            "Should warn when a model-only attribute is used on a field"
+        );
+    }
+
+    #[test]
+    fn validate_no_w007_when_target_matches() {
+        let input = "## custom_flag ::attribute\n- type: boolean\n- target: [field, model]\n\n## Product @custom_flag\n- active: boolean @custom_flag";
+        let result = parse_and_validate(input);
+        assert!(
+            !result.warnings.iter().any(|w| w.code == "M3L-W007"),
+            "Should not warn when the usage target is declared by the registry entry"
+        );
+    }
+
+    #[test]
+    fn validate_w005_model_level_type_mismatch() {
+        // Registry attribute usages on a model header (`## Name @attr`) previously went
+        // entirely unchecked — only field-level usages were validated.
+        let input = "## rating ::attribute\n- type: number\n- target: model\n\n## Product @rating(high)\n- id: identifier";
+        let result = parse_and_validate(input);
+        assert!(
+            result.warnings.iter().any(|w| w.code == "M3L-W005"),
+            "Should warn about type mismatch on a model-level attribute usage"
+        );
+    }
+
+    #[test]
+    fn validate_w006_model_level_range_violation() {
+        let input = "## priority ::attribute\n- type: number\n- range: 1..10\n- target: model\n\n## Task @priority(15)\n- id: identifier";
+        let result = parse_and_validate(input);
+        assert!(
+            result.warnings.iter().any(|w| w.code == "M3L-W006"),
+            "Should warn about a range violation on a model-level attribute usage"
+        );
+    }
+
+    #[test]
+    fn validate_w005_boolean_type_mismatch() {
+        // Only ("number", String) and ("string", Number) were checked before —
+        // a "boolean"-typed registry entry with a non-boolean argument went unchecked.
+        let input = "## flag ::attribute\n- type: boolean\n- target: field\n\n## Task\n- x: integer @flag(5)";
+        let result = parse_and_validate(input);
+        assert!(
+            result.warnings.iter().any(|w| w.code == "M3L-W005"),
+            "Should warn when a boolean-typed attribute gets a non-boolean argument"
+        );
+    }
+
+    #[test]
+    fn validate_no_w005_boolean_correct_type() {
+        let input = "## flag ::attribute\n- type: boolean\n- target: field\n\n## Task\n- x: integer @flag(true)";
+        let result = parse_and_validate(input);
+        assert!(
+            !result.warnings.iter().any(|w| w.code == "M3L-W005"),
+            "Should not warn when a boolean-typed attribute gets a boolean argument"
         );
     }
 

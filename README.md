@@ -64,7 +64,7 @@ This repository is the **specification and parser** for M3L. It provides:
 - **Attribute Registry** — define custom `@` attributes with `::attribute` type indicator
 - **3-tier attribute classification** — standard, registered, unregistered
 - **Custom framework attributes** — `` `[FrameworkAttr]` `` with structured parsing
-- **Validation** — 14 semantic diagnostics (M3L-E001~E010, W001~W004)
+- **Validation** — 17 semantic diagnostics (M3L-E001~E010, W001~W007)
 - **Multi-file** — directory scanning with `@import` and `m3l.config.yaml`
 
 ## Bindings

@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- **`m3l format` no longer mispositions or drops an array's nullable markers.** `Type?[]?` has
+  two independent markers — a leading `?` for item-nullable, a trailing `?` (after `[]`) for
+  array-nullable — and the formatter previously only ever emitted the leading position, so
+  `string[]?` (array-nullable) came back as `string?[]` (item-nullable, a different field) and
+  `string?[]` lost its marker outright on a second format pass.
+
 ### Added
 - **M3L-W008** — a custom `::attribute` registry entry marked `required: true` now warns when
   it's used without an explicit argument (e.g. bare `@priority` rather than `@priority(5)`).

@@ -114,11 +114,20 @@ fn format_field(lines: &mut Vec<String>, field: &m3l_core::FieldNode, indent: us
             line.push_str(&format!("({})", param_strs.join(", ")));
         }
     }
-    if field.nullable {
-        line.push('?');
-    }
+    // `Type?[]?` — a leading `?` marks the array's items nullable, a trailing
+    // `?` after `[]` marks the array itself nullable (lexer: array ⇒ nullable
+    // reads the trailing marker, array_item_nullable reads the leading one).
+    // For a non-array field, either marker means the scalar type is nullable.
     if field.array {
+        if field.array_item_nullable {
+            line.push('?');
+        }
         line.push_str("[]");
+        if field.nullable {
+            line.push('?');
+        }
+    } else if field.nullable {
+        line.push('?');
     }
 
     if let Some(ref dv) = field.default_value {
@@ -305,5 +314,39 @@ mod tests {
             ast.models[0].fields[0].enum_values, reparsed.models[0].fields[0].enum_values,
             "inline enum values must survive format:\n{formatted}"
         );
+    }
+
+    /// `array` + `nullable`/`array_item_nullable`: parses `Type?[]?` (leading `?`
+    /// = item-nullable, trailing `?` after `[]` = array-nullable). The formatter
+    /// must reproduce both flags at their own position, not just one of them
+    /// or the other's position (ISSUE-m3l-20260829-format-roundtrip-fidelity-gaps).
+    fn roundtrip_array_flags(field_decl: &str) -> (bool, bool) {
+        let src = format!("## T\n- f: {field_decl}");
+        let ast = m3l_core::resolve(&[m3l_core::parse_string(&src, "t.m3l.md")], None);
+        let formatted = format_ast(&ast);
+        let reparsed = m3l_core::resolve(&[m3l_core::parse_string(&formatted, "t.m3l.md")], None);
+        let field = &reparsed.models[0].fields[0];
+        (field.nullable, field.array_item_nullable)
+    }
+
+    #[test]
+    fn format_preserves_item_nullable_without_array_nullable() {
+        let (nullable, item_nullable) = roundtrip_array_flags("string?[]");
+        assert!(!nullable, "array itself must stay non-nullable");
+        assert!(item_nullable, "item-nullable marker must survive format");
+    }
+
+    #[test]
+    fn format_preserves_array_nullable_without_item_nullable() {
+        let (nullable, item_nullable) = roundtrip_array_flags("string[]?");
+        assert!(nullable, "array-nullable marker must survive format");
+        assert!(!item_nullable, "items must stay non-nullable");
+    }
+
+    #[test]
+    fn format_preserves_both_nullable_markers_independently() {
+        let (nullable, item_nullable) = roundtrip_array_flags("string?[]?");
+        assert!(nullable, "array-nullable marker must survive format");
+        assert!(item_nullable, "item-nullable marker must survive format");
     }
 }

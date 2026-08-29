@@ -16,6 +16,8 @@ fn field_node_json_keys() {
         kind: FieldKind::Stored,
         default_value: None,
         default_value_type: None,
+        default_value_quoted: None,
+        default_value_backtick: None,
         description: None,
         attributes: vec![],
         framework_attrs: None,
@@ -51,6 +53,8 @@ fn field_node_json_keys() {
     assert!(!obj.contains_key("generic_params"));
     assert!(!obj.contains_key("default_value"));
     assert!(!obj.contains_key("default_value_type"));
+    assert!(!obj.contains_key("defaultValueQuoted"));
+    assert!(!obj.contains_key("defaultValueBacktick"));
     assert!(!obj.contains_key("description"));
     assert!(!obj.contains_key("framework_attrs"));
     assert!(!obj.contains_key("lookup"));
@@ -72,6 +76,7 @@ fn field_attribute_optional_fields() {
     let attr = FieldAttribute {
         name: "pk".into(),
         args: None,
+        args_quoted: None,
         cascade: None,
         is_standard: None,
         is_registered: None,
@@ -88,6 +93,7 @@ fn field_attribute_with_standard() {
     let attr = FieldAttribute {
         name: "generated".into(),
         args: None,
+        args_quoted: None,
         cascade: None,
         is_standard: Some(true),
         is_registered: None,

@@ -67,9 +67,8 @@ fn format_model(lines: &mut Vec<String>, model: &m3l_core::ModelNode) {
     if !model.attributes.is_empty() {
         for attr in &model.attributes {
             header.push_str(&format!(" @{}", attr.name));
-            if let Some(ref args) = attr.args {
-                let arg_strs: Vec<String> = args.iter().map(format_arg).collect();
-                header.push_str(&format!("({})", arg_strs.join(", ")));
+            if let Some(args_str) = format_attr_args(attr) {
+                header.push_str(&args_str);
             }
         }
     }
@@ -131,14 +130,19 @@ fn format_field(lines: &mut Vec<String>, field: &m3l_core::FieldNode, indent: us
     }
 
     if let Some(ref dv) = field.default_value {
-        line.push_str(&format!(" = {dv}"));
+        if field.default_value_quoted == Some(true) {
+            line.push_str(&format!(" = \"{dv}\""));
+        } else if field.default_value_backtick == Some(true) {
+            line.push_str(&format!(" = `{dv}`"));
+        } else {
+            line.push_str(&format!(" = {dv}"));
+        }
     }
 
     for attr in &field.attributes {
         line.push_str(&format!(" @{}", attr.name));
-        if let Some(ref args) = attr.args {
-            let arg_strs: Vec<String> = args.iter().map(format_arg).collect();
-            line.push_str(&format!("({})", arg_strs.join(", ")));
+        if let Some(args_str) = format_attr_args(attr) {
+            line.push_str(&args_str);
         }
     }
 
@@ -212,9 +216,8 @@ fn format_enum_value(val: &m3l_core::EnumValue, indent: usize) -> String {
                 rhs.push(' ');
             }
             rhs.push_str(&format!("@{}", attr.name));
-            if let Some(ref args) = attr.args {
-                let arg_strs: Vec<String> = args.iter().map(format_arg).collect();
-                rhs.push_str(&format!("({})", arg_strs.join(", ")));
+            if let Some(args_str) = format_attr_args(attr) {
+                rhs.push_str(&args_str);
             }
         }
     }
@@ -237,12 +240,37 @@ fn render_json_scalar(v: &serde_json::Value) -> String {
     }
 }
 
-fn format_arg(arg: &m3l_core::AttrArgValue) -> String {
+fn format_arg(arg: &m3l_core::AttrArgValue, quoted: bool) -> String {
     match arg {
+        // A backtick-delimited argument's backticks are already part of `s`
+        // (see `parse_attr_args_string_with_origin`), so it's never `quoted`
+        // here — only a `"..."`/`'...'`-stripped string is.
+        m3l_core::AttrArgValue::String(s) if quoted => format!("\"{s}\""),
         m3l_core::AttrArgValue::String(s) => s.clone(),
         m3l_core::AttrArgValue::Number(n) => n.to_string(),
         m3l_core::AttrArgValue::Bool(b) => b.to_string(),
     }
+}
+
+/// Render an attribute's `(args)` suffix, reproducing each arg's original
+/// quoting from `args_quoted` (§HD-16 — `AttrArgValue` is untagged so it can't
+/// carry that flag itself). `None` when the attribute has no args at all.
+fn format_attr_args(attr: &m3l_core::FieldAttribute) -> Option<String> {
+    let args = attr.args.as_ref()?;
+    let arg_strs: Vec<String> = args
+        .iter()
+        .enumerate()
+        .map(|(i, arg)| {
+            let quoted = attr
+                .args_quoted
+                .as_ref()
+                .and_then(|q| q.get(i))
+                .copied()
+                .unwrap_or(false);
+            format_arg(arg, quoted)
+        })
+        .collect();
+    Some(format!("({})", arg_strs.join(", ")))
 }
 
 #[cfg(test)]
@@ -348,5 +376,116 @@ mod tests {
         let (nullable, item_nullable) = roundtrip_array_flags("string?[]?");
         assert!(nullable, "array-nullable marker must survive format");
         assert!(item_nullable, "item-nullable marker must survive format");
+    }
+
+    /// A field's first attribute's `args`/`args_quoted`, round-tripped through
+    /// one format pass — `AttrArgValue` is `#[serde(untagged)]`, so without
+    /// `args_quoted` a quoted and bareword string arg parse to the identical
+    /// value and the formatter can't tell them apart on the second pass
+    /// (ISSUE-m3l-20260829-format-roundtrip-fidelity-gaps, cause 1).
+    fn roundtrip_attr_args(
+        field_decl: &str,
+    ) -> (Option<Vec<m3l_core::AttrArgValue>>, Option<Vec<bool>>) {
+        let src = format!("## T\n- f: {field_decl}");
+        let ast = m3l_core::resolve(&[m3l_core::parse_string(&src, "t.m3l.md")], None);
+        let formatted = format_ast(&ast);
+        let reparsed = m3l_core::resolve(&[m3l_core::parse_string(&formatted, "t.m3l.md")], None);
+        let attr = &reparsed.models[0].fields[0].attributes[0];
+        (attr.args.clone(), attr.args_quoted.clone())
+    }
+
+    #[test]
+    fn format_preserves_quoted_attribute_arg() {
+        let (args, quoted) = roundtrip_attr_args(r#"string @reference("Category")"#);
+        assert_eq!(
+            args,
+            Some(vec![m3l_core::AttrArgValue::String("Category".into())])
+        );
+        assert_eq!(quoted, Some(vec![true]), "quoted arg must stay quoted");
+    }
+
+    #[test]
+    fn format_preserves_unquoted_attribute_arg() {
+        let (args, quoted) = roundtrip_attr_args("string @reference(Category)");
+        assert_eq!(
+            args,
+            Some(vec![m3l_core::AttrArgValue::String("Category".into())])
+        );
+        assert!(
+            quoted.is_none_or(|q| !q[0]),
+            "bareword arg must not gain quotes"
+        );
+    }
+
+    /// A field's default-value shape, round-tripped through one format pass —
+    /// covers causes 3 (`Literal` quote-origin) and the backtick-`Expression`
+    /// case discovered while fixing it (ISSUE-m3l-20260829-format-roundtrip-fidelity-gaps).
+    fn roundtrip_default_value(
+        field_decl: &str,
+    ) -> (
+        Option<String>,
+        Option<m3l_core::DefaultValueType>,
+        Option<bool>,
+        Option<bool>,
+    ) {
+        let src = format!("## T\n- f: {field_decl}");
+        let ast = m3l_core::resolve(&[m3l_core::parse_string(&src, "t.m3l.md")], None);
+        let formatted = format_ast(&ast);
+        let reparsed = m3l_core::resolve(&[m3l_core::parse_string(&formatted, "t.m3l.md")], None);
+        let field = &reparsed.models[0].fields[0];
+        (
+            field.default_value.clone(),
+            field.default_value_type.clone(),
+            field.default_value_quoted,
+            field.default_value_backtick,
+        )
+    }
+
+    #[test]
+    fn format_preserves_quoted_default_literal() {
+        let (value, ty, quoted, backtick) = roundtrip_default_value(r#"string = "active""#);
+        assert_eq!(value.as_deref(), Some("active"));
+        assert_eq!(ty, Some(m3l_core::DefaultValueType::Literal));
+        assert_eq!(quoted, Some(true), "quoted default must stay quoted");
+        assert_eq!(backtick, None);
+    }
+
+    #[test]
+    fn format_preserves_bareword_default_literal() {
+        let (value, ty, quoted, backtick) = roundtrip_default_value("string = active");
+        assert_eq!(value.as_deref(), Some("active"));
+        assert_eq!(ty, Some(m3l_core::DefaultValueType::Literal));
+        assert_eq!(quoted, None, "bareword default must not gain quotes");
+        assert_eq!(backtick, None);
+    }
+
+    #[test]
+    fn format_preserves_backtick_default_expression() {
+        // Bare `price * qty` re-parses past its first non-word character —
+        // without the backtick restored, the second format pass silently
+        // truncates the default to `price`.
+        let (value, ty, quoted, backtick) = roundtrip_default_value("decimal = `price * qty`");
+        assert_eq!(value.as_deref(), Some("price * qty"));
+        assert_eq!(ty, Some(m3l_core::DefaultValueType::Expression));
+        assert_eq!(quoted, None);
+        assert_eq!(
+            backtick,
+            Some(true),
+            "backtick expression must keep its delimiters"
+        );
+    }
+
+    #[test]
+    fn format_preserves_paren_default_expression() {
+        // `now()` is Expression too (parenthesized call), but never had
+        // backticks — must not gain them.
+        let (value, ty, quoted, backtick) = roundtrip_default_value("timestamp = now()");
+        assert_eq!(value.as_deref(), Some("now()"));
+        assert_eq!(ty, Some(m3l_core::DefaultValueType::Expression));
+        assert_eq!(quoted, None);
+        assert_eq!(
+            backtick, None,
+            "paren-call expression must not gain backticks"
+        );
     }
 }

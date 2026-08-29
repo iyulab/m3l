@@ -15,12 +15,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   just no longer reports `is_standard: true` in the AST. §10.8.3 now also lists `@public`/
   `@private` directly, closing a separate gap where the catalog omitted them entirely.
 
+- **`FieldAttribute.argsQuoted` and `FieldNode.defaultValueQuoted`/`defaultValueBacktick`
+  (new, optional AST fields).** `AttrArgValue` is `#[serde(untagged)]`, so `@reference("Category")`
+  and `@reference(Category)` previously parsed to the identical bare string — nothing in the AST
+  recorded whether the source had quoted it. `argsQuoted` carries that per-argument, and the two
+  `defaultValue*` flags do the same for a field's `= value`: `defaultValueQuoted` for a `"..."`
+  literal, `defaultValueBacktick` for a `` `...` `` expression. All three are additive and absent
+  by default (omitted from JSON when not applicable), so existing consumers are unaffected.
+
 ### Fixed
 - **`m3l format` no longer mispositions or drops an array's nullable markers.** `Type?[]?` has
   two independent markers — a leading `?` for item-nullable, a trailing `?` (after `[]`) for
   array-nullable — and the formatter previously only ever emitted the leading position, so
   `string[]?` (array-nullable) came back as `string?[]` (item-nullable, a different field) and
   `string?[]` lost its marker outright on a second format pass.
+- **`m3l format` now reproduces quoted attribute arguments and quoted/backtick default values
+  on a second pass instead of silently dropping their delimiters.** Previously every string
+  argument and every default value was re-emitted bare, so `@reference("Category")` came back
+  unquoted, and a backtick-wrapped expression default (`` = `price * qty` ``) lost its backticks
+  outright — which, once re-parsed as a bareword, truncated the default at the first non-word
+  character (`= price`) instead of staying `price * qty`. The formatter now consults the new
+  `argsQuoted`/`defaultValueQuoted`/`defaultValueBacktick` AST fields to restore each one's
+  original delimiter. `m3l format`'s round-trip is now idempotent — `format(input) ==
+  format(format(input))` — end to end.
 
 ### Added
 - **M3L-W008** — a custom `::attribute` registry entry marked `required: true` now warns when

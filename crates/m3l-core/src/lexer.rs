@@ -386,13 +386,16 @@ fn tokenize_h2(content: &str, raw: &str, line: usize) -> Token {
             for caps in RE_MODEL_ATTR.captures_iter(attrs_s) {
                 let attr_name = caps[1].to_string();
                 let args_str = caps.get(2).map(|m| m.as_str().to_string());
-                let args = match args_str {
-                    Some(s) if !s.is_empty() => parse_attr_args_string(&s),
-                    _ => Vec::new(),
+                let (args, args_quoted) = match args_str {
+                    Some(s) if !s.is_empty() => {
+                        parse_attr_args_string_with_origin(&s).into_iter().unzip()
+                    }
+                    _ => (Vec::new(), Vec::new()),
                 };
                 attrs.push(RawAttribute {
                     name: attr_name,
                     args,
+                    args_quoted,
                     cascade: None,
                 });
             }
@@ -693,17 +696,21 @@ fn scan_attributes(rest: &str, pos: &mut usize) -> Vec<RawAttribute> {
         }
         let attr_name = rest[name_start..*pos].to_string();
         let mut args = Vec::new();
+        let mut args_quoted = Vec::new();
         if *pos < len && bytes[*pos] == b'(' {
             let close_p = find_balanced_paren(rest, *pos);
             if close_p >= 0 {
                 let args_str = &rest[*pos + 1..close_p as usize];
-                args = parse_attr_args_string(args_str);
+                (args, args_quoted) = parse_attr_args_string_with_origin(args_str)
+                    .into_iter()
+                    .unzip();
                 *pos = close_p as usize + 1;
             }
         }
         attrs.push(RawAttribute {
             name: attr_name,
             args,
+            args_quoted,
             cascade: None,
         });
         skip_ws(pos);
@@ -800,17 +807,21 @@ fn parse_attributes_balanced(content: &str) -> Vec<RawAttribute> {
             continue;
         }
         let mut args = Vec::new();
+        let mut args_quoted = Vec::new();
         if pos < len && bytes[pos] == b'(' {
             let close_p = find_balanced_paren(content, pos);
             if close_p >= 0 {
                 let args_str = &content[pos + 1..close_p as usize];
-                args = parse_attr_args_string(args_str);
+                (args, args_quoted) = parse_attr_args_string_with_origin(args_str)
+                    .into_iter()
+                    .unzip();
                 pos = close_p as usize + 1;
             }
         }
         attrs.push(RawAttribute {
             name,
             args,
+            args_quoted,
             cascade: None,
         });
     }
@@ -855,9 +866,23 @@ fn parse_nested_item(content: &str) -> TokenData {
     data
 }
 
-/// Parse a comma-separated attribute args string into AttrArgValue vec.
+/// Parse a comma-separated attribute args string into an `AttrArgValue` vec.
 /// Handles quoted strings, backtick expressions, numbers, booleans, and plain strings.
 pub fn parse_attr_args_string(s: &str) -> Vec<AttrArgValue> {
+    parse_attr_args_string_with_origin(s)
+        .into_iter()
+        .map(|(v, _)| v)
+        .collect()
+}
+
+/// Same as [`parse_attr_args_string`], but also reports, per argument, whether
+/// the source wrapped it in `"..."`/`'...'` quotes — information `AttrArgValue`
+/// itself cannot carry (it's `#[serde(untagged)]`, so the JSON value is the bare
+/// scalar) and that a formatter needs to reproduce the original spelling. A
+/// backtick-delimited value is never marked quoted here: its backticks are kept
+/// as part of the stored string (see the `` ` `` branch below), so it already
+/// round-trips without help from this flag.
+fn parse_attr_args_string_with_origin(s: &str) -> Vec<(AttrArgValue, bool)> {
     let mut args = Vec::new();
     let bytes = s.as_bytes();
     let len = bytes.len();
@@ -875,7 +900,10 @@ pub fn parse_attr_args_string(s: &str) -> Vec<AttrArgValue> {
         if bytes[pos] == b'"' {
             let close = find_closing_quote(s, pos);
             if close >= 0 {
-                args.push(AttrArgValue::String(s[pos + 1..close as usize].to_string()));
+                args.push((
+                    AttrArgValue::String(s[pos + 1..close as usize].to_string()),
+                    true,
+                ));
                 pos = close as usize + 1;
             } else {
                 pos += 1;
@@ -884,7 +912,10 @@ pub fn parse_attr_args_string(s: &str) -> Vec<AttrArgValue> {
             let close = find_closing_backtick(s, pos);
             if close >= 0 {
                 // Include backticks as part of the value
-                args.push(AttrArgValue::String(s[pos..=close as usize].to_string()));
+                args.push((
+                    AttrArgValue::String(s[pos..=close as usize].to_string()),
+                    false,
+                ));
                 pos = close as usize + 1;
             } else {
                 pos += 1;
@@ -892,8 +923,9 @@ pub fn parse_attr_args_string(s: &str) -> Vec<AttrArgValue> {
         } else if bytes[pos] == b'\'' {
             // Single-quoted string
             if let Some(close) = s[pos + 1..].find('\'') {
-                args.push(AttrArgValue::String(
-                    s[pos + 1..pos + 1 + close].to_string(),
+                args.push((
+                    AttrArgValue::String(s[pos + 1..pos + 1 + close].to_string()),
+                    true,
                 ));
                 pos = pos + 2 + close;
             } else {
@@ -920,15 +952,15 @@ pub fn parse_attr_args_string(s: &str) -> Vec<AttrArgValue> {
                 if let Some(colon_pos) = token.find(':') {
                     let key = token[..colon_pos].trim();
                     let val = token[colon_pos + 1..].trim().trim_matches('"');
-                    args.push(AttrArgValue::String(format!("{}: {}", key, val)));
+                    args.push((AttrArgValue::String(format!("{}: {}", key, val)), false));
                 } else if token == "true" {
-                    args.push(AttrArgValue::Bool(true));
+                    args.push((AttrArgValue::Bool(true), false));
                 } else if token == "false" {
-                    args.push(AttrArgValue::Bool(false));
+                    args.push((AttrArgValue::Bool(false), false));
                 } else if let Ok(n) = token.parse::<f64>() {
-                    args.push(AttrArgValue::Number(n));
+                    args.push((AttrArgValue::Number(n), false));
                 } else {
-                    args.push(AttrArgValue::String(token.to_string()));
+                    args.push((AttrArgValue::String(token.to_string()), false));
                 }
             }
         }

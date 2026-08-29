@@ -1067,7 +1067,8 @@ fn build_field_node(
     }
 
     // Process default_value
-    let (default_value, default_value_type) = process_default_value(data.default_value.as_deref());
+    let (default_value, default_value_type, default_value_quoted, default_value_backtick) =
+        process_default_value(data.default_value.as_deref());
 
     // Type params
     let params = if data.type_params.is_empty() {
@@ -1096,6 +1097,8 @@ fn build_field_node(
         kind,
         default_value,
         default_value_type,
+        default_value_quoted,
+        default_value_backtick,
         description: data.description.clone(),
         attributes: attrs.clone(),
         framework_attrs,
@@ -1227,19 +1230,39 @@ fn build_field_node(
     field
 }
 
-fn process_default_value(raw: Option<&str>) -> (Option<String>, Option<DefaultValueType>) {
+/// Returns `(value, type, quoted, backtick)`. `quoted` is `Some(true)` only
+/// for a `"..."`-wrapped `Literal` — the flag a formatter needs to tell
+/// `= "active"` apart from the bareword `= active` once both are stored as
+/// the same unwrapped `value`. `backtick` is `Some(true)` only for a
+/// `` `...` ``-wrapped `Expression` — the same problem one level up: a bare
+/// `now()` and a backtick-wrapped `` `price * qty` `` both parse to
+/// `Expression`, but only the latter needs its delimiter restored on format
+/// (without it, re-parsing the un-delimited text can silently truncate at the
+/// first non-word character). Both flags are `None` where they don't apply.
+fn process_default_value(
+    raw: Option<&str>,
+) -> (
+    Option<String>,
+    Option<DefaultValueType>,
+    Option<bool>,
+    Option<bool>,
+) {
     match raw {
-        None => (None, None),
+        None => (None, None, None, None),
         Some(v) => {
             if v.starts_with('`') && v.ends_with('`') && v.len() >= 2 {
                 (
                     Some(v[1..v.len() - 1].to_string()),
                     Some(DefaultValueType::Expression),
+                    None,
+                    Some(true),
                 )
             } else if v.starts_with('"') && v.ends_with('"') && v.len() >= 2 {
                 (
                     Some(v[1..v.len() - 1].to_string()),
                     Some(DefaultValueType::Literal),
+                    Some(true),
+                    None,
                 )
             } else {
                 let dvt = if v.contains('(') {
@@ -1247,7 +1270,7 @@ fn process_default_value(raw: Option<&str>) -> (Option<String>, Option<DefaultVa
                 } else {
                     DefaultValueType::Literal
                 };
-                (Some(v.to_string()), Some(dvt))
+                (Some(v.to_string()), Some(dvt), None, None)
             }
         }
     }
@@ -1293,6 +1316,11 @@ fn parse_raw_attributes(raw_attrs: &[RawAttribute]) -> Vec<FieldAttribute> {
             } else {
                 Some(a.args.clone())
             };
+            let args_quoted = if a.args_quoted.iter().any(|q| *q) {
+                Some(a.args_quoted.clone())
+            } else {
+                None
+            };
             let is_standard = if STANDARD_ATTRIBUTES.contains(a.name.as_str()) {
                 Some(true)
             } else {
@@ -1301,6 +1329,7 @@ fn parse_raw_attributes(raw_attrs: &[RawAttribute]) -> Vec<FieldAttribute> {
             FieldAttribute {
                 name: a.name.clone(),
                 args,
+                args_quoted,
                 cascade: a.cascade.clone(),
                 is_standard,
                 is_registered: None,
@@ -1554,6 +1583,7 @@ fn apply_extended_attribute(field: &mut FieldNode, key: &str, value: &str) {
             field.attributes.push(FieldAttribute {
                 name: "reference".to_string(),
                 args: Some(vec![AttrArgValue::String(value.to_string())]),
+                args_quoted: None,
                 cascade: None,
                 is_standard: Some(true),
                 is_registered: None,
@@ -1563,6 +1593,7 @@ fn apply_extended_attribute(field: &mut FieldNode, key: &str, value: &str) {
             field.attributes.push(FieldAttribute {
                 name: "on_delete".to_string(),
                 args: Some(vec![AttrArgValue::String(value.to_string())]),
+                args_quoted: None,
                 cascade: None,
                 is_standard: Some(true),
                 is_registered: None,
@@ -1573,6 +1604,7 @@ fn apply_extended_attribute(field: &mut FieldNode, key: &str, value: &str) {
             field.attributes.push(FieldAttribute {
                 name: key.to_string(),
                 args: Some(vec![parsed_val]),
+                args_quoted: None,
                 cascade: None,
                 is_standard: if STANDARD_ATTRIBUTES.contains(key) {
                     Some(true)

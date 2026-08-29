@@ -99,6 +99,11 @@ pub struct CodeBlock {
 pub struct RawAttribute {
     pub name: String,
     pub args: Vec<AttrArgValue>,
+    /// Parallel to `args` — whether the source wrapped that argument in
+    /// `"..."`/`'...'` quotes. Same length as `args`; a backtick-delimited
+    /// argument is always `false` here since its backticks are already part
+    /// of the stored string.
+    pub args_quoted: Vec<bool>,
     pub cascade: Option<String>,
 }
 
@@ -138,6 +143,14 @@ pub struct FieldAttribute {
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub args: Option<Vec<AttrArgValue>>,
+    /// Parallel to `args` — whether the source wrapped each argument in
+    /// `"..."`/`'...'` quotes. `AttrArgValue` is `#[serde(untagged)]` (a bare
+    /// scalar in JSON), so it has no room of its own to carry this; a
+    /// formatter needs it to reproduce `@reference("User")` vs `@reference(User)`
+    /// instead of collapsing both to the unquoted form.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "argsQuoted")]
+    pub args_quoted: Option<Vec<bool>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cascade: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -241,6 +254,19 @@ pub struct FieldNode {
     pub default_value: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub default_value_type: Option<DefaultValueType>,
+    /// Whether the source wrapped a `Literal` default in `"..."` quotes
+    /// (`= "active"` vs the bareword `= active`) — `None`/absent for an
+    /// `Expression` default, where quoting doesn't apply.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "defaultValueQuoted")]
+    pub default_value_quoted: Option<bool>,
+    /// Whether an `Expression` default came from `` `...` `` backtick source
+    /// (`= \`price * qty\`` vs the bareword-with-parens `= now()`) — both
+    /// parse to `Expression`, but only the backtick form needs its delimiter
+    /// restored on format. `None`/absent for a `Literal` default.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "defaultValueBacktick")]
+    pub default_value_backtick: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     pub attributes: Vec<FieldAttribute>,

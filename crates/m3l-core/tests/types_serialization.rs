@@ -299,7 +299,8 @@ fn catalogs_content() {
     assert!(STANDARD_ATTRIBUTES.contains("ledger")); // table-level append-only
     assert!(STANDARD_ATTRIBUTES.contains("check")); // CHECK constraint
     assert!(!STANDARD_ATTRIBUTES.contains("custom_attr"));
-    assert_eq!(STANDARD_ATTRIBUTES.len(), 36);
+    assert!(!STANDARD_ATTRIBUTES.contains("visibility")); // removed, spec §10.8.3 — superseded by @public/@private
+    assert_eq!(STANDARD_ATTRIBUTES.len(), 35);
 
     // Kind sections
     assert!(KIND_SECTIONS.contains("Lookup"));

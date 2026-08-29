@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- **`@visibility(level)` removed from the standard attribute catalog.** §10.8.3, §2.2.4, and
+  §2.5.4's example gave it three mutually contradictory definitions (target, value domain, and
+  spelling all disagreed) and no real `.m3l.md` document in this workspace ever used it —
+  `@public`/`@private` (model-level, already documented in §2.2.4) are the only visibility
+  attributes M3L defines. `@visibility(...)` still parses as a custom/extension attribute; it
+  just no longer reports `is_standard: true` in the AST. §10.8.3 now also lists `@public`/
+  `@private` directly, closing a separate gap where the catalog omitted them entirely.
+
 ### Fixed
 - **`m3l format` no longer mispositions or drops an array's nullable markers.** `Type?[]?` has
   two independent markers — a leading `?` for item-nullable, a trailing `?` (after `[]`) for

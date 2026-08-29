@@ -1756,6 +1756,25 @@ mod tests {
     }
 
     #[test]
+    fn model_visibility_attribute_is_not_standard() {
+        // `@visibility(level)` was removed from the standard catalog (spec §10.8.3,
+        // §2.2.4) — `@public`/`@private` are the only visibility attributes M3L
+        // defines. A model using `@visibility` still parses (custom/extension
+        // attribute), it just no longer reports `is_standard: Some(true)`.
+        let result = parse_string(
+            "## Product @visibility(internal)\n- id: identifier",
+            "t.m3l.md",
+        );
+        let m = &result.models[0];
+        let visibility = m
+            .attributes
+            .iter()
+            .find(|a| a.name == "visibility")
+            .expect("visibility model attribute");
+        assert_eq!(visibility.is_standard, None);
+    }
+
+    #[test]
     fn parse_enum() {
         let input = "## Status ::enum\n- Active \"Active status\"\n- Inactive";
         let result = parse_string(input, "test.m3l.md");

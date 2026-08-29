@@ -55,7 +55,6 @@ pub static STANDARD_ATTRIBUTES: LazyLock<HashSet<&'static str>> = LazyLock::new(
     // Search / display
     s.insert("searchable");
     s.insert("description");
-    s.insert("visibility");
     // Validation
     s.insert("min");
     s.insert("max");

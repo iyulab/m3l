@@ -362,6 +362,11 @@ Model visibility can be defined:
 ## SystemSettings @private
 ```
 
+`@public`/`@private` are the only visibility attributes M3L defines. An earlier draft of §10.8.3
+also catalogued a separate `@visibility(level)` attribute; it was never given a consistent target
+or value domain across the specification and has been removed — `@public`/`@private` are not
+aliases for it, they are the sole mechanism.
+
 #### 2.2.5 Model Separation
 
 Models are primarily separated by `##` headers. For documents with complex or lengthy models, horizontal rules (`---`) may be used between models to provide additional visual separation:
@@ -593,10 +598,10 @@ When attributes might conflict, the precedence order is:
 
 ```markdown
 ## ModelWithDefaults
-- @default_attribute(visibility, hidden)
+- @default_attribute(description, "No description provided")
 
-- field1: string  # Gets default visibility: hidden
-- field2: string @visibility(visible)  # Overrides default
+- field1: string  # Gets default description: "No description provided"
+- field2: string @description("Overrides the model-level default")
 ```
 
 ### 2.5.5 Advanced Default Value Expressions
@@ -2799,7 +2804,8 @@ The following catalog lists all standard `@` attributes defined by M3L. Parsers 
 | Attribute | Arguments | Target | Description |
 |---|---|---|---|
 | `@searchable` | — | field | Full-text search target |
-| `@visibility` | `(level)` | model | Model visibility (public/private/internal) |
+| `@public` | — | model | Model visibility: public (see §2.2.4) |
+| `@private` | — | model | Model visibility: private (see §2.2.4) |
 
 #### 10.8.4 Validation Attributes
 

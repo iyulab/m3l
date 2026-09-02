@@ -16,7 +16,13 @@ static RE_TRAILING_ATTRS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\s*@\w
 static RE_CUSTOM_ATTR: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^([A-Za-z_][\w.]*)(?:\((.+)\))?$").unwrap());
 static RE_AGG: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(\w+)(?:\((\w+)\))?$").unwrap());
-static RE_WHERE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"^where:\s*"(.*)"$"#).unwrap());
+// The `where:` value has already had a single pair of enclosing double quotes
+// stripped by the generic attribute-argument tokenizer by the time it reaches
+// here (`args_str` is rebuilt from already-tokenized `AttrArgValue::String`s,
+// see the call site) — so the quotes in this pattern are optional, not
+// required. Requiring them unconditionally silently dropped every `where:`
+// clause a rollup ever declared.
+static RE_WHERE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"^where:\s*"?(.*?)"?$"#).unwrap());
 static RE_PLATFORM: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r#"platform\s*:\s*["']?([^"'\s]+)["']?"#).unwrap());
 
@@ -1773,6 +1779,71 @@ mod tests {
             .find(|a| a.name == "ledger")
             .expect("ledger attribute parsed from backtick form");
         assert_eq!(ledger.is_standard, Some(true));
+    }
+
+    #[test]
+    fn rollup_where_clause_is_captured() {
+        // Regression: §4.6.5's documented Conditional Rollup (`where: "..."`) parsed
+        // without error but `RollupDef.where_clause` stayed None — the generic
+        // attribute tokenizer already strips the arg's enclosing quotes before
+        // `parse_rollup_args` ever sees it, so the old quote-requiring `RE_WHERE`
+        // never matched.
+        let input = "## Customer\n- id: identifier @pk\n\n### Rollup\n\
+                     - active_orders: integer @rollup(Order.customer_id, count, where: \"status != 'cancelled'\")\n\n\
+                     ## Order\n- id: identifier @pk\n- customer_id: identifier @reference(Customer)\n- status: string(20)";
+        let result = parse_string(input, "t.m3l.md");
+        let customer = result
+            .models
+            .iter()
+            .find(|m| m.name == "Customer")
+            .expect("Customer model");
+        let field = customer
+            .fields
+            .iter()
+            .find(|f| f.name == "active_orders")
+            .expect("active_orders field");
+        let rollup = field.rollup.as_ref().expect("parsed RollupDef");
+        assert_eq!(rollup.target, "Order");
+        assert_eq!(rollup.fk, "customer_id");
+        assert_eq!(rollup.aggregate, "count");
+        assert_eq!(rollup.where_clause.as_deref(), Some("status != 'cancelled'"));
+    }
+
+    #[test]
+    fn rollup_where_clause_with_in_list_keeps_internal_commas_and_quotes() {
+        let input = "## Order\n- id: identifier @pk\n\n### Rollup\n\
+                     - item_count: integer @rollup(OrderItem.order_id, count, where: \"row_type IN ('product', 'print_order')\")\n\n\
+                     ## OrderItem\n- id: identifier @pk\n- order_id: identifier @reference(Order)\n- row_type: string(20)";
+        let result = parse_string(input, "t.m3l.md");
+        let order = result
+            .models
+            .iter()
+            .find(|m| m.name == "Order")
+            .expect("Order model");
+        let field = order
+            .fields
+            .iter()
+            .find(|f| f.name == "item_count")
+            .expect("item_count field");
+        let rollup = field.rollup.as_ref().expect("parsed RollupDef");
+        assert_eq!(
+            rollup.where_clause.as_deref(),
+            Some("row_type IN ('product', 'print_order')")
+        );
+    }
+
+    #[test]
+    fn rollup_without_where_still_parses_with_no_where_clause() {
+        // The optional-quote regex change must not start inventing a where clause
+        // for the plain, unfiltered form.
+        let input = "## Foo\n- id: identifier @pk\n\n### Rollup\n\
+                     - cnt: integer @rollup(Bar.foo_id, count)\n\n\
+                     ## Bar\n- id: identifier @pk\n- foo_id: identifier @reference(Foo)";
+        let result = parse_string(input, "t.m3l.md");
+        let foo = &result.models[0];
+        let field = &foo.fields[1];
+        let rollup = field.rollup.as_ref().expect("parsed RollupDef");
+        assert_eq!(rollup.where_clause, None);
     }
 
     #[test]

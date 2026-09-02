@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- **`@rollup`'s documented `where:` clause (§4.6.5, Conditional Rollup) is now actually captured.**
+  The generic attribute-argument tokenizer already strips a string argument's enclosing quotes
+  before `RollupDef` gets built from it, but the `where:` extractor's regex still required them —
+  so `where_clause` silently stayed `None` for every rollup filter ever written, regardless of
+  syntax. `m3l parse`/`validate` accepted the documented syntax without error the whole time,
+  which is what made this easy to miss downstream.
+
 ## [0.7.0] - 2026-08-31
 
 ### Changed

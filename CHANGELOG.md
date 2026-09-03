@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-09-03
+
 ### Fixed
 - **`@rollup`'s documented `where:` clause (§4.6.5, Conditional Rollup) is now actually captured.**
   The generic attribute-argument tokenizer already strips a string argument's enclosing quotes
@@ -192,7 +194,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Initial C# parser (`M3LParser`)
 - Basic lexer/parser/resolver pipeline
 
-[Unreleased]: https://github.com/iyulab/m3l/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/iyulab/m3l/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/iyulab/m3l/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/iyulab/m3l/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/iyulab/m3l/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/iyulab/m3l/compare/v0.5.1...v0.6.0

@@ -1806,7 +1806,10 @@ mod tests {
         assert_eq!(rollup.target, "Order");
         assert_eq!(rollup.fk, "customer_id");
         assert_eq!(rollup.aggregate, "count");
-        assert_eq!(rollup.where_clause.as_deref(), Some("status != 'cancelled'"));
+        assert_eq!(
+            rollup.where_clause.as_deref(),
+            Some("status != 'cancelled'")
+        );
     }
 
     #[test]

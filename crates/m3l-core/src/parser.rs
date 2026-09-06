@@ -1158,9 +1158,7 @@ fn build_field_node(
     if let Some(ca) = computed_attr {
         if let Some(arg) = ca.args.as_ref().and_then(|a| a.first()) {
             if let AttrArgValue::String(expr) = arg {
-                let cleaned = expr
-                    .trim_start_matches(['"', '\'', '`'])
-                    .trim_end_matches(['"', '\'', '`']);
+                let cleaned = unwrap_delimiters(expr, &['"', '\'', '`']);
                 field.computed = Some(ComputedDef {
                     expression: cleaned.to_string(),
                     platform: None,
@@ -1174,10 +1172,7 @@ fn build_field_node(
         if let Some(args) = cra.args.as_ref() {
             if let Some(AttrArgValue::String(expr_raw)) = args.first() {
                 let parts = split_computed_raw_args(expr_raw);
-                let cleaned = parts
-                    .0
-                    .trim_start_matches(['"', '\'', '`'])
-                    .trim_end_matches(['"', '\'', '`']);
+                let cleaned = unwrap_delimiters(&parts.0, &['"', '\'', '`']);
                 let mut platform = parts.1;
                 // If platform not found in the first arg, check remaining args
                 if platform.is_none() {
@@ -1509,12 +1504,25 @@ fn parse_array_value(value: &str) -> Vec<String> {
         .collect()
 }
 
+/// Removes the one pair of delimiters wrapping a value, and nothing else.
+///
+/// A quote character can also belong to the value — SQL string literals end in
+/// one routinely (`metadata->>'category'`) — and trimming by character set eats
+/// it, because the set matches again as soon as the outer delimiter is gone.
+/// Only a delimiter that is matched at both ends is one; anything else is text.
+fn unwrap_delimiters<'a>(value: &'a str, delimiters: &[char]) -> &'a str {
+    let mut chars = value.chars();
+    match (chars.next(), chars.next_back()) {
+        (Some(open), Some(close)) if open == close && delimiters.contains(&open) => {
+            &value[open.len_utf8()..value.len() - close.len_utf8()]
+        }
+        _ => value,
+    }
+}
+
 fn parse_metadata_value(value: &str) -> serde_json::Value {
-    let was_quoted = (value.starts_with('"') && value.ends_with('"'))
-        || (value.starts_with('\'') && value.ends_with('\''));
-    let unquoted = value
-        .trim_start_matches(['"', '\''])
-        .trim_end_matches(['"', '\'']);
+    let unquoted = unwrap_delimiters(value, &['"', '\'']);
+    let was_quoted = unquoted.len() != value.len();
 
     if was_quoted {
         return serde_json::Value::String(unquoted.to_string());
@@ -1559,9 +1567,7 @@ fn parse_nested_value(value: &str) -> serde_json::Value {
         }
         return serde_json::json!(n);
     }
-    let unquoted = s
-        .trim_start_matches(['"', '\''])
-        .trim_end_matches(['"', '\'']);
+    let unquoted = unwrap_delimiters(s, &['"', '\'']);
     serde_json::Value::String(unquoted.to_string())
 }
 
@@ -1580,9 +1586,7 @@ fn apply_extended_attribute(field: &mut FieldNode, key: &str, value: &str) {
             field.field_type = Some(t);
         }
         "description" => {
-            let parsed = value
-                .trim_start_matches(['"', '\''])
-                .trim_end_matches(['"', '\'']);
+            let parsed = unwrap_delimiters(value, &['"', '\'']);
             field.description = Some(parsed.to_string());
         }
         "reference" => {

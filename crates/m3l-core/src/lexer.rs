@@ -948,12 +948,13 @@ fn parse_attr_args_string_with_origin(s: &str) -> Vec<(AttrArgValue, bool)> {
             }
             let token = s[start..pos].trim();
             if !token.is_empty() {
-                // Check for key: value patterns (e.g., "platform: postgresql")
-                if let Some(colon_pos) = token.find(':') {
-                    let key = token[..colon_pos].trim();
-                    let val = token[colon_pos + 1..].trim().trim_matches('"');
-                    args.push((AttrArgValue::String(format!("{}: {}", key, val)), false));
-                } else if token == "true" {
+                // An unquoted token is stored as written. A colon inside it is
+                // part of the value -- `external://x` is a URI, `23:59` a time --
+                // and which colon separates a key from a value is a question
+                // about one attribute's grammar, which the parser answers
+                // (`platform:` reaches it through a tolerant pattern that reads
+                // the raw spelling). Rewriting here would only lose the source.
+                if token == "true" {
                     args.push((AttrArgValue::Bool(true), false));
                 } else if token == "false" {
                     args.push((AttrArgValue::Bool(false), false));
@@ -1232,5 +1233,39 @@ mod tests {
         assert_eq!(args[0], AttrArgValue::String("hello".into()));
         assert_eq!(args[1], AttrArgValue::Number(42.0));
         assert_eq!(args[2], AttrArgValue::Bool(true));
+    }
+
+    /// An unquoted argument is stored exactly as it was written. The scheme
+    /// separator of a URI is part of the value, not a key/value delimiter --
+    /// specification section 5.2 spells its own example this way.
+    #[test]
+    fn unquoted_uri_argument_keeps_its_scheme_separator() {
+        let args = parse_attr_args_string("external://taxonomy.Category");
+        assert_eq!(args.len(), 1);
+        assert_eq!(
+            args[0],
+            AttrArgValue::String("external://taxonomy.Category".into())
+        );
+    }
+
+    /// The lexer does not reformat an unquoted argument that happens to hold a
+    /// colon. Whatever separates key from value is the parser's reading, so the
+    /// spacing and quoting of the source survive to it untouched.
+    #[test]
+    fn unquoted_argument_with_a_colon_is_not_rewritten() {
+        let args = parse_attr_args_string("platform: \"postgresql\"");
+        assert_eq!(args.len(), 1);
+        assert_eq!(
+            args[0],
+            AttrArgValue::String("platform: \"postgresql\"".into())
+        );
+    }
+
+    /// A time-like literal is one value, not a key and a value.
+    #[test]
+    fn unquoted_argument_that_looks_like_a_clock_time_is_one_value() {
+        let args = parse_attr_args_string("23:59:59");
+        assert_eq!(args.len(), 1);
+        assert_eq!(args[0], AttrArgValue::String("23:59:59".into()));
     }
 }

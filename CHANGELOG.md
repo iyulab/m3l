@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- **An unquoted attribute argument containing a colon is no longer rewritten.** The tokenizer
+  treated any such argument as a `key: value` pair and rebuilt it as `"{key}: {value}"`, so a URI
+  scheme lost its separator — §5.2's own example, `@reference(external://taxonomy.Category)`,
+  reached the AST as `external: //taxonomy.Category`, and a clock time like `23:59:59` came out as
+  `23: 59:59`. The value now arrives spelled the way the document spelled it. Reading a
+  `key: value` shape out of an argument belongs to whichever attribute defines one, and the only
+  attribute that does — `@computed_raw`'s `platform:` — already reads the raw spelling through a
+  pattern that tolerates any spacing or quoting, so it is unaffected. Quoting the argument was a
+  workaround; it is no longer needed, and both spellings now yield the same value.
+- **Unwrapping a quoted value no longer eats quote characters that belong to it.** Five places
+  stripped the wrapping delimiters by character *set*, so the trim kept going once the outer
+  delimiter was gone: `@computed_raw("metadata->>'category'", platform: "postgresql")` reached the
+  AST as `metadata->>'category` — a SQL expression missing its closing quote — and the same
+  happened to `@computed` expressions, metadata strings, nested values, and extended-format
+  descriptions ending in `'` or `"`. Exactly one matched pair is removed now; a quote character at
+  either end that has no partner is part of the value.
+
 ## [0.7.1] - 2026-09-03
 
 ### Fixed

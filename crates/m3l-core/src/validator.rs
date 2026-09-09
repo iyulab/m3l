@@ -125,6 +125,11 @@ pub fn validate(ast: &M3lAst, options: &ValidateOptions) -> ValidateResult {
         validate_relations_references(model, &mut errors);
     }
 
+    // M3L-W009: Relationship notation written in the field list
+    for model in &all_models {
+        validate_relation_notation_placement(model, &mut warnings);
+    }
+
     // M3L-W005/W006/W007: Attribute registry value validation
     if !ast.attribute_registry.is_empty() {
         let registry_map: HashMap<&str, &AttributeRegistryEntry> = ast
@@ -267,6 +272,45 @@ fn is_known_type(type_name: &str, defined_names: &HashSet<&str>) -> bool {
         }
     }
     false
+}
+
+/// M3L-W009 — 관계 표기(`>x`·`<x`·`<>x`)가 필드 목록에 쓰였다.
+///
+/// 파서는 그것을 필드로 만들지 않고 관계로 구조화한다(§3.2.4). 다만 명세가 정본 위치로
+/// 두는 곳은 `### Relations` 절이므로(§3.2.3), 구조화는 하되 그 사실은 알린다 —
+/// 오류가 아니라 경고인 이유는 **읽어 낸 뜻이 명확하고 빌드를 막을 이유가 없기** 때문이다.
+fn validate_relation_notation_placement(model: &ModelNode, warnings: &mut Vec<Diagnostic>) {
+    for rel in &model.sections.relations {
+        if rel.get("declaredIn").and_then(|v| v.as_str()) != Some("fields") {
+            continue;
+        }
+        let raw = rel.get("raw").and_then(|v| v.as_str()).unwrap_or("");
+        let (file, line, col) = rel
+            .get("loc")
+            .map(|l| {
+                (
+                    l.get("file")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string(),
+                    l.get("line").and_then(|v| v.as_u64()).unwrap_or(0) as usize,
+                    l.get("col").and_then(|v| v.as_u64()).unwrap_or(1) as usize,
+                )
+            })
+            .unwrap_or_default();
+
+        warnings.push(Diagnostic {
+            code: "M3L-W009".to_string(),
+            severity: DiagnosticSeverity::Warning,
+            file,
+            line,
+            col,
+            message: format!(
+                "Relationship notation \"{}\" in model \"{}\" is written among the fields — it is read as a relationship, not a field, but \"### Relations\" is where it belongs",
+                raw, model.name
+            ),
+        });
+    }
 }
 
 fn validate_relations_references(model: &ModelNode, errors: &mut Vec<Diagnostic>) {

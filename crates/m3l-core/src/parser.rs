@@ -410,10 +410,145 @@ fn handle_field(token: &Token, state: &mut ParserState) {
                 return;
             }
 
+            // 🔴 관계 표기는 필드가 아니다. 종전에는 여기까지 흘러와 원문 줄이 «필드 이름»이
+            // 되고 타입이 비었다 — 소비자가 그것을 관계로도 필드로도 다룰 수 없었다.
+            //
+            // ⚠ 「타입을 선언한 줄은 필드로 남긴다」는 가드를 두려다 **실측으로 걷어냈다**:
+            // `>`·`<` 로 시작하는 이름은 식별자가 아니라 렉서가 애초에 타입을 읽지 않는다.
+            // 즉 그 가드는 한 번도 발화하지 않는 죽은 코드이면서 «있지도 않은 보호»를
+            // 암시한다. 그런 줄(`- <weird: string(10)`)은 이 변경 «전»에도 타입 없는 가짜
+            // 필드였고, 지금은 최소한 자기 선두 토큰대로 분류된다.
+            {
+                if let Some(n) = parse_relation_notation(&token.raw) {
+                    let raw = token.raw.trim().trim_start_matches("- ").to_string();
+                    let mut entry = serde_json::Map::new();
+                    entry.insert("raw".into(), serde_json::json!(raw));
+                    entry.insert("direction".into(), serde_json::json!(n.direction));
+                    if let Some(name) = n.name {
+                        entry.insert("name".into(), serde_json::json!(name));
+                    }
+                    if let Some(target) = n.target {
+                        entry.insert("target".into(), serde_json::json!(target));
+                    }
+                    if let Some(c) = n.cardinality {
+                        entry.insert("cardinality".into(), serde_json::json!(c));
+                    }
+                    // 어디에 쓰였는지 남긴다 — 정본 위치는 `### Relations` 이고(§3.2.3),
+                    // 검증기가 이 표시를 보고 그 사실을 경고로 알린다. 구조화는 하되
+                    // 잘못 놓인 것을 조용히 삼키지는 않는다.
+                    entry.insert("declaredIn".into(), serde_json::json!("fields"));
+                    entry.insert(
+                        "loc".into(),
+                        serde_json::json!({ "file": state.file, "line": token.line, "col": 1 }),
+                    );
+                    model
+                        .sections
+                        .relations
+                        .push(serde_json::Value::Object(entry));
+                    state.last_field_idx = Some(usize::MAX);
+                    return;
+                }
+            }
+
             // Regular field
             let field = build_field_node(&token.data, token, &state.file, &state.current_kind);
             model.fields.push(field);
             state.last_field_idx = Some(model.fields.len() - 1);
+        }
+    }
+}
+
+/// 명세 §3.2.2·§3.2.4 의 관계 표기를 분해한 결과.
+///
+/// 종전에는 이 표기가 **원문 문자열로만** 남았다 — `### Relations` 항목은 `raw` 에 통째로,
+/// 필드 목록에 쓰이면 아예 **필드 이름**이 됐다(`name = "<>tags: many-to-many"`, `type` 없음).
+/// 그러면 소비자가 방향·타깃·카디널리티를 알려면 그 문자열을 자기가 다시 파싱해야 한다 —
+/// 이 언어가 스스로 정의한 구문이므로 그것을 구조화해 내주는 것은 파서의 몫이다.
+struct RelationNotation {
+    /// `to`(`>`·`->`) · `from`(`<`·`<-`) · `many-to-many`(`<>`)
+    direction: &'static str,
+    /// 화살표 없는 짧은 형(`>author`)의 토큰 — 그 항목의 이름이다.
+    name: Option<String>,
+    /// 화살표 형(`-> Person`·`<- Comment.post_id`)의 토큰 — 대상이다.
+    target: Option<String>,
+    /// `: one-to-many` 처럼 뒤에 붙는 카디널리티.
+    cardinality: Option<String>,
+}
+
+/// 한 줄에서 관계 표기를 읽는다. 표기가 아니면 `None` — 그때 호출부는 종전 경로를 그대로 간다.
+///
+/// ⚠ **좁게 판정한다.** 화살표/꺾쇠로 «시작»하는 줄만 표기로 본다. 넓히면 `- a < b` 같은
+/// 평범한 텍스트가 관계로 오분류되고, 그 오분류는 필드 하나를 조용히 삼키는 형태라
+/// 지금 고치는 결함보다 나쁘다.
+fn parse_relation_notation(line: &str) -> Option<RelationNotation> {
+    let mut s = line.trim();
+    if let Some(rest) = s.strip_prefix("- ") {
+        s = rest.trim();
+    }
+    // 뒤따르는 설명(`"..."`)은 표기의 일부가 아니다.
+    if let Some(q) = s.find('"') {
+        s = s[..q].trim();
+    }
+
+    // 긴 토큰을 «먼저» 본다 — `<>` 는 `<` 로도, `->` 는 `>` 로도 읽히기 때문이다.
+    // (표는 순서가 곧 규칙이라, 조건 분기보다 이 형태가 그 사실을 드러낸다.)
+    const PREFIXES: [(&str, &str, bool); 5] = [
+        ("<>", "many-to-many", false),
+        ("->", "to", true),
+        ("<-", "from", true),
+        (">", "to", false),
+        ("<", "from", false),
+    ];
+    let (direction, rest, arrow) = PREFIXES
+        .iter()
+        .find_map(|(p, d, arrow)| s.strip_prefix(p).map(|r| (*d, r, *arrow)))?;
+
+    let rest = rest.trim();
+    let (token, cardinality) = match rest.split_once(':') {
+        Some((t, c)) => (
+            t.trim(),
+            Some(c.trim().to_string()).filter(|c| !c.is_empty()),
+        ),
+        None => (rest, None),
+    };
+    if token.is_empty() {
+        return None;
+    }
+
+    // 콜론 뒤 값은 **원문 그대로** 싣는다. 명세 §3.2.4 는 카디널리티 어휘를 닫아 두지 않았고,
+    // 이 리포는 이미 attribute 인자에 대해 같은 태도를 취한다(`attribute_argument_fidelity`:
+    // *「인자가 어디서 끝나는지는 렉서가 정하고, 그 안의 글자가 무슨 뜻인지는 정하지 않는다」*).
+    // 여기서 어휘를 검열하면 명세가 늘어날 때마다 파서가 먼저 거절하게 된다.
+    //
+    // 화살표 형은 명세가 대상(`-> Target`)이라 적고, 짧은 형은 그 항목의 이름(`>author`)이다.
+    // 짧은 형의 토큰이 이름인지 대상인지는 명세가 두 곳에서 다르게 읽히므로 «추측하지 않는다» —
+    // 짧은 형은 `name` 으로만 내고, 대상은 하위 항목 `target:` 이 그대로 채운다.
+    let (name, target) = if arrow {
+        (None, Some(token.to_string()))
+    } else {
+        (Some(token.to_string()), None)
+    };
+
+    Some(RelationNotation {
+        direction,
+        name,
+        target,
+        cardinality,
+    })
+}
+
+/// 분해 결과를 관계 항목 오브젝트에 얹는다.
+fn apply_relation_notation(entry: &mut serde_json::Map<String, serde_json::Value>, raw: &str) {
+    if let Some(n) = parse_relation_notation(raw) {
+        entry.insert("direction".into(), serde_json::json!(n.direction));
+        if let Some(name) = n.name {
+            entry.insert("name".into(), serde_json::json!(name));
+        }
+        if let Some(target) = n.target {
+            entry.insert("target".into(), serde_json::json!(target));
+        }
+        if let Some(c) = n.cardinality {
+            entry.insert("cardinality".into(), serde_json::json!(c));
         }
     }
 }
@@ -593,7 +728,10 @@ fn handle_section_item(
     if section == "Relations" {
         let raw = token.raw.trim().trim_start_matches("- ").to_string();
         let mut entry = serde_json::Map::new();
-        entry.insert("raw".into(), serde_json::json!(raw));
+        entry.insert("raw".into(), serde_json::json!(raw.clone()));
+        // 표기를 분해해 함께 싣는다 — 하위 항목(`- target: …`)은 이 뒤에 파싱되므로
+        // 명시된 값이 있으면 그쪽이 이긴다(명세가 하위 항목을 정본으로 둔다).
+        apply_relation_notation(&mut entry, &raw);
         entry.insert("loc".into(), loc);
         model
             .sections

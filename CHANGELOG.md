@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **Relationship notation is parsed rather than passed on as text.** §3.2.2 and §3.2.4 define
+  `>name`, `<name`, `<>name` and the arrow spellings, with an optional cardinality after a colon.
+  Until now the parser kept the whole line — direction, colon and cardinality included — so every
+  consumer that wanted any part of it had to parse that string again, and one of them did. Each
+  entry of `sections.relations` now carries `direction`, plus `name` (short spellings) or `target`
+  (arrow spellings), plus `cardinality` when a colon supplied one. `raw` is unchanged and still
+  holds the source line, so nothing that reads it has to change at once. What follows the colon is
+  carried through as written — the specification does not close that set, and policing it here
+  would make the parser refuse a value the language later allows.
+
+### Fixed
+- **The notation no longer becomes a field when it is written among a model's fields.** The line
+  arrived as a field whose *name* was the entire source line, with no type and classified as
+  stored — usable neither as a relationship nor as a field. It is now read as a relationship
+  wherever it appears, and reported as `M3L-W009` because `### Relations` is where §3.2.3 places
+  it. A warning rather than an error: the meaning is unambiguous, and refusing the document would
+  buy nothing. Only a line that begins with the notation is affected; the check keys on those
+  leading characters alone, so ordinary field lines are untouched.
+
 ## [0.7.2] - 2026-09-06
 
 ### Fixed

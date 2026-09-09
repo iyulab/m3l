@@ -965,6 +965,24 @@ Cardinality can be specified:
 - <>tags: many-to-many
 ```
 
+**Parsed form.** A parser reads the notation rather than handing the line on as text. Each entry of
+`sections.relations` carries:
+
+| Key | From | Value |
+|---|---|---|
+| `direction` | the leading characters | `to` (`>`, `->`) · `from` (`<`, `<-`) · `many-to-many` (`<>`) |
+| `name` | the short spellings (`>author`) | the token after the arrow — the entry's own name |
+| `target` | the arrow spellings (`-> Person`) | the model named by the arrow |
+| `cardinality` | after the colon | carried through as written; this section does not close the set |
+| `raw` | the whole line | kept, so the source spelling stays available |
+
+A nested item names its key explicitly (`- target: Person`) and wins over anything the notation
+supplied for that key.
+
+**Placement.** `### Relations` is where this notation belongs (§3.2.3). Written among a model's
+fields it is still read as a relationship — never as a field — but a parser reports it
+(`M3L-W009`); the meaning is unambiguous, so it is a warning and not an error.
+
 #### 3.2.5 Relationship Attributes
 
 Relationships can have additional attributes:

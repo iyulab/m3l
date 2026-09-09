@@ -433,6 +433,9 @@ fn handle_field(token: &Token, state: &mut ParserState) {
                     if let Some(c) = n.cardinality {
                         entry.insert("cardinality".into(), serde_json::json!(c));
                     }
+                    if let Some(from) = n.from {
+                        entry.insert("from".into(), serde_json::json!(from));
+                    }
                     // 어디에 쓰였는지 남긴다 — 정본 위치는 `### Relations` 이고(§3.2.3),
                     // 검증기가 이 표시를 보고 그 사실을 경고로 알린다. 구조화는 하되
                     // 잘못 놓인 것을 조용히 삼키지는 않는다.
@@ -473,6 +476,9 @@ struct RelationNotation {
     target: Option<String>,
     /// `: one-to-many` 처럼 뒤에 붙는 카디널리티.
     cardinality: Option<String>,
+    /// 대상 뒤의 `via <field>` — FK 필드 이름. §3.2.3 의 하위 `- from:` 과 같은 사실을
+    /// 한 줄로 준다(§3.2.4).
+    from: Option<String>,
 }
 
 /// 한 줄에서 관계 표기를 읽는다. 표기가 아니면 `None` — 그때 호출부는 종전 경로를 그대로 간다.
@@ -507,10 +513,12 @@ fn parse_relation_notation(line: &str) -> Option<RelationNotation> {
     // entry both a name and a target -- it writes them on two lines where this
     // writes them on one.
     //
-    // 🔴 The specification does not spell this form out: whether 3.2.4 should
-    // document it, or the samples should be rewritten to 3.2.3 form, is a
-    // language decision and not this function's. Recognising it changes no
-    // meaning either way -- it only stops the direction from being lost.
+    // §3.2.4 documents this form now: a generator whose column order is fixed
+    // by something other than declaration order writes relationships this way
+    // structurally, not by accident, so recognising it is not optional for a
+    // consumer of its output. Recognising it here changes no meaning -- it
+    // only stops the direction, and now the `via` clause below, from being
+    // lost.
     let mut named: Option<&str> = None;
     if !PREFIXES.iter().any(|(p, _, _)| s.starts_with(p)) {
         let (key, value) = s.split_once(':')?;
@@ -533,7 +541,7 @@ fn parse_relation_notation(line: &str) -> Option<RelationNotation> {
         .find_map(|(p, d, arrow)| s.strip_prefix(p).map(|r| (*d, r, *arrow)))?;
 
     let rest = rest.trim();
-    let (token, cardinality) = match rest.split_once(':') {
+    let (token_part, cardinality) = match rest.split_once(':') {
         Some((t, c)) => (
             t.trim(),
             Some(c.trim().to_string()).filter(|c| !c.is_empty()),
@@ -542,10 +550,20 @@ fn parse_relation_notation(line: &str) -> Option<RelationNotation> {
     };
     // The token ends at the first space. `>Supplier via supplier_id (optional)`
     // names `Supplier`; without this the rest of the line rode along inside it.
-    let token = token.split_whitespace().next().unwrap_or("");
+    let mut words = token_part.split_whitespace();
+    let token = words.next().unwrap_or("");
     if token.is_empty() {
         return None;
     }
+    // §3.2.4 (documented alongside this form): `via <field>` names the FK field
+    // the way §3.2.3's nested `- from:` does on its own line -- this is that
+    // same fact on one line instead of two. A nested `- from:` still wins (the
+    // rule the surrounding spec text already states for `target`); this is
+    // only the notation's own contribution before any override is applied.
+    let from = (words.next() == Some("via"))
+        .then(|| words.next())
+        .flatten()
+        .map(|w| w.to_string());
 
     // 콜론 뒤 값은 **원문 그대로** 싣는다. 명세 §3.2.4 는 카디널리티 어휘를 닫아 두지 않았고,
     // 이 리포는 이미 attribute 인자에 대해 같은 태도를 취한다(`attribute_argument_fidelity`:
@@ -568,6 +586,7 @@ fn parse_relation_notation(line: &str) -> Option<RelationNotation> {
         name,
         target,
         cardinality,
+        from,
     })
 }
 
@@ -583,6 +602,11 @@ fn apply_relation_notation(entry: &mut serde_json::Map<String, serde_json::Value
         }
         if let Some(c) = n.cardinality {
             entry.insert("cardinality".into(), serde_json::json!(c));
+        }
+        // A nested `- from:` still wins -- it is applied after this call, the
+        // same override the surrounding spec text already states for `target`.
+        if let Some(from) = n.from {
+            entry.insert("from".into(), serde_json::json!(from));
         }
     }
 }

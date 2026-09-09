@@ -969,19 +969,38 @@ Cardinality can be specified:
 - <>tags: many-to-many
 ```
 
+**A key in front, and `via` after the target.** §3.2.3's nested form gives an entry a name and a
+target on two lines:
+```markdown
+- >category
+  - target: Category
+  - from: category_id
+```
+The same two facts fit on one line — a key before the notation supplies the entry's name (making
+the token after the arrow its target, whichever spelling is used), and `via <field>` after that
+token supplies the FK field the way the nested `- from:` does:
+```markdown
+- category: >Category via category_id
+```
+This is not a separate notation — it is the arrow form with its two companion facts written
+inline instead of nested. A generator whose column order is not declaration order (a derived field
+that always lands last, say) produces relationships this way as a matter of course, not as an
+abbreviation a person chose.
+
 **Parsed form.** A parser reads the notation rather than handing the line on as text. Each entry of
 `sections.relations` carries:
 
 | Key | From | Value |
 |---|---|---|
 | `direction` | the leading characters | `to` (`>`, `->`) · `from` (`<`, `<-`) · `many-to-many` (`<>`) |
-| `name` | the short spellings (`>author`) | the token after the arrow — the entry's own name |
-| `target` | the arrow spellings (`-> Person`) | the model named by the arrow |
+| `name` | the short spellings (`>author`), or a key in front of any spelling | the entry's own name |
+| `target` | the arrow spellings (`-> Person`), or the token after a short spelling with a key in front | the model named by the arrow |
+| `from` | a trailing `via <field>` | the FK field, the same fact `- from:` gives on its own line |
 | `cardinality` | after the colon | carried through as written; this section does not close the set |
 | `raw` | the whole line | kept, so the source spelling stays available |
 
 A nested item names its key explicitly (`- target: Person`) and wins over anything the notation
-supplied for that key.
+supplied for that key — `via` included: a nested `- from:` overrides it the same way.
 
 **Placement.** `### Relations` is where this notation belongs (§3.2.3). Written among a model's
 fields it is still read as a relationship — never as a field — but a parser reports it

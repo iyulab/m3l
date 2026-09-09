@@ -247,6 +247,56 @@ fn a_key_in_front_supplies_the_name_and_the_notation_the_target() {
         Some("Category"),
         "the target ends at the first space -- `via category_id` is not part of it"
     );
+    assert_eq!(
+        get(&rels[0], "from"),
+        Some("category_id"),
+        "`via` names the FK field the same way 3.2.3's nested `- from:` does on its own line (3.2.4)"
+    );
+}
+
+/// A nested `- from:` still wins over what `via` supplied -- the same override
+/// rule the spec already states for `target` (3.2.3's `- target:` beats an
+/// arrow spelling). `via` only ever fills a default.
+#[test]
+fn a_nested_from_overrides_the_via_clause() {
+    let input = r#"
+# Namespace: probe
+
+## Post
+- id: identifier @primary
+- category_id: identifier
+- owner_id: identifier
+
+### Relations
+- category: >Category via category_id
+  - from: owner_id
+"#;
+    let rels = relations(input);
+    assert_eq!(rels.len(), 1);
+    assert_eq!(get(&rels[0], "from"), Some("owner_id"));
+}
+
+/// `via` with no key in front -- the short form without a leading key names
+/// the *entry* (per the spec text above: a short spelling's token is its own
+/// name, never a target), but `via` still reads the FK field regardless of
+/// which of `name`/`target` the token became.
+#[test]
+fn via_without_a_leading_key_still_names_the_fk_field() {
+    let input = r#"
+# Namespace: probe
+
+## Post
+- id: identifier @primary
+- category_id: identifier
+
+### Relations
+- >Category via category_id
+"#;
+    let rels = relations(input);
+    assert_eq!(rels.len(), 1);
+    assert_eq!(get(&rels[0], "name"), Some("Category"));
+    assert_eq!(get(&rels[0], "target"), None);
+    assert_eq!(get(&rels[0], "from"), Some("category_id"));
 }
 
 /// The key has to look like a name and the value has to start with the

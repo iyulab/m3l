@@ -1,16 +1,10 @@
 use std::collections::{HashMap, HashSet};
-use std::sync::LazyLock;
-
-use regex::Regex;
 
 use crate::catalogs::TYPE_CATALOG;
 use crate::types::*;
 
 /// Deprecated cascade attribute names (spec §3.2.1.1)
 static DEPRECATED_CASCADE_ATTRS: &[&str] = &["cascade", "no_action", "set_null", "restrict"];
-
-/// Regex for extracting FK field from "via <field>" pattern in relations
-static RE_VIA: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\bvia\s+(\w+)").unwrap());
 
 /// Validate a resolved M3L AST for semantic errors and style warnings.
 pub fn validate(ast: &M3lAst, options: &ValidateOptions) -> ValidateResult {
@@ -335,20 +329,11 @@ fn validate_relations_references(model: &ModelNode, errors: &mut Vec<Diagnostic>
             continue;
         }
 
-        let raw = match rel.get("raw").and_then(|v| v.as_str()) {
-            Some(r) => r,
-            None => continue,
-        };
-
-        // Extract FK field name from "via <field>" pattern
-        let from_field = rel
-            .get("from")
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string())
-            .or_else(|| RE_VIA.captures(raw).map(|c| c[1].to_string()));
-
-        let from_field = match from_field {
-            Some(f) => f,
+        // `from` is a parsed fact (specification 3.2.4): a nested `- from:` or a
+        // trailing `via <field>` on the notation itself, whichever the entry
+        // used -- the parser resolves both to this one key.
+        let from_field = match rel.get("from").and_then(|v| v.as_str()) {
+            Some(f) => f.to_string(),
             None => continue,
         };
 

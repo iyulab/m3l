@@ -320,15 +320,25 @@ fn validate_relations_references(model: &ModelNode, errors: &mut Vec<Diagnostic>
             continue;
         }
 
+        // Only outgoing relations put the foreign key on *this* model, so only
+        // they can be checked against its fields. The direction is a parsed fact
+        // (specification 3.2.4) -- looking for a '>' in the source line mistook
+        // `<>` for `>`, and let a '>' anywhere in a description turn an incoming
+        // relation into an outgoing one. Both were reachable, and both reported
+        // M3L-E010 against a model that never owned the key.
+        //
+        // An entry the notation could not classify carries no `direction` at
+        // all -- a `### Relations` item written without one of the leading
+        // spellings. It is left undiagnosed rather than guessed at: the same
+        // stance the parser takes toward what follows a cardinality colon.
+        if rel.get("direction").and_then(|v| v.as_str()) != Some("to") {
+            continue;
+        }
+
         let raw = match rel.get("raw").and_then(|v| v.as_str()) {
             Some(r) => r,
             None => continue,
         };
-
-        // Only check outgoing (>) relations
-        if !raw.contains('>') {
-            continue;
-        }
 
         // Extract FK field name from "via <field>" pattern
         let from_field = rel

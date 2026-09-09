@@ -499,6 +499,35 @@ fn parse_relation_notation(line: &str) -> Option<RelationNotation> {
         (">", "to", false),
         ("<", "from", false),
     ];
+    // `name: >Target …` — the notation sits after a key that names the entry.
+    // The repository's own samples write relationships this way, and the shape
+    // reached the AST as `raw` alone: nothing said which direction it went, so
+    // a consumer had to read the line again. It is the same five prefixes in
+    // the same table, one position further right, and 3.2.3 already gives an
+    // entry both a name and a target -- it writes them on two lines where this
+    // writes them on one.
+    //
+    // 🔴 The specification does not spell this form out: whether 3.2.4 should
+    // document it, or the samples should be rewritten to 3.2.3 form, is a
+    // language decision and not this function's. Recognising it changes no
+    // meaning either way -- it only stops the direction from being lost.
+    let mut named: Option<&str> = None;
+    if !PREFIXES.iter().any(|(p, _, _)| s.starts_with(p)) {
+        let (key, value) = s.split_once(':')?;
+        let key = key.trim();
+        let value = value.trim();
+        if key.is_empty()
+            || !key
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+            || !PREFIXES.iter().any(|(p, _, _)| value.starts_with(p))
+        {
+            return None;
+        }
+        named = Some(key);
+        s = value;
+    }
+
     let (direction, rest, arrow) = PREFIXES
         .iter()
         .find_map(|(p, d, arrow)| s.strip_prefix(p).map(|r| (*d, r, *arrow)))?;
@@ -511,6 +540,9 @@ fn parse_relation_notation(line: &str) -> Option<RelationNotation> {
         ),
         None => (rest, None),
     };
+    // The token ends at the first space. `>Supplier via supplier_id (optional)`
+    // names `Supplier`; without this the rest of the line rode along inside it.
+    let token = token.split_whitespace().next().unwrap_or("");
     if token.is_empty() {
         return None;
     }
@@ -523,10 +555,12 @@ fn parse_relation_notation(line: &str) -> Option<RelationNotation> {
     // 화살표 형은 명세가 대상(`-> Target`)이라 적고, 짧은 형은 그 항목의 이름(`>author`)이다.
     // 짧은 형의 토큰이 이름인지 대상인지는 명세가 두 곳에서 다르게 읽히므로 «추측하지 않는다» —
     // 짧은 형은 `name` 으로만 내고, 대상은 하위 항목 `target:` 이 그대로 채운다.
-    let (name, target) = if arrow {
-        (None, Some(token.to_string()))
-    } else {
-        (Some(token.to_string()), None)
+    // A key in front supplied the name, so the token after the notation is the
+    // target whichever spelling was used -- `category: >Category` says both.
+    let (name, target) = match (named, arrow) {
+        (Some(n), _) => (Some(n.to_string()), Some(token.to_string())),
+        (None, true) => (None, Some(token.to_string())),
+        (None, false) => (Some(token.to_string()), None),
     };
 
     Some(RelationNotation {

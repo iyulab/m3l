@@ -7,6 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **A relationship written as `name: >Target` is parsed too.** The notation may follow a key that
+  names the entry, and that spelling reached the AST as `raw` alone — direction present in the text
+  and absent from the parsed form. It now fills `direction`, `name` (the key) and `target` (the
+  token after the arrow), which ends at the first space so trailing prose does not ride along
+  inside it. The key must look like a name and the value must begin with the notation; a line
+  failing either is still a field, because reading one as a relationship would remove it from the
+  field list silently.
+
 - **Relationship notation is parsed rather than passed on as text.** §3.2.2 and §3.2.4 define
   `>name`, `<name`, `<>name` and the arrow spellings, with an optional cardinality after a colon.
   Until now the parser kept the whole line — direction, colon and cardinality included — so every
@@ -18,6 +26,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   would make the parser refuse a value the language later allows.
 
 ### Fixed
+- **`M3L-E010` no longer fires for relationships that do not own the key.** Only a "to"
+  relationship puts the foreign key on the model that declares it, so only there can the key be
+  checked against that model's own fields. The check decided this by looking for a `>` anywhere in
+  the source line, which is true of two things that are not an outgoing relationship: the
+  many-to-many spelling `<>`, and any description containing the character. Both reported a
+  missing `@reference` against a model that never held the key. The check now reads the parsed
+  `direction`. An entry the notation cannot classify carries no direction and is left
+  undiagnosed — a direction that is unknown cannot establish ownership either.
+
 - **The notation no longer becomes a field when it is written among a model's fields.** The line
   arrived as a field whose *name* was the entire source line, with no type and classified as
   stored — usable neither as a relationship nor as a field. It is now read as a relationship

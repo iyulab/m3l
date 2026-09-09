@@ -955,8 +955,12 @@ When no explicit symbol is provided, CASCADE behavior is determined by field nul
 #### 3.2.4 Relationship Types
 
 Relationship Notation:
-- `>target` or `-> Target`: "To" relationship (this model references Target)
-- `<target` or `<- Target`: "From" relationship (Target references this model)
+- `>name` or `-> Target`: "To" relationship (this model references Target)
+- `<name` or `<- Target`: "From" relationship (Target references this model)
+
+The two spellings do not name the same thing. An arrow names the **target** model; a short
+spelling names the **entry**, and its target comes from a nested `target:` (3.2.3 writes
+`- >author` above `- target: Person`). The table below says which key each fills.
 
 Cardinality can be specified:
 ```markdown

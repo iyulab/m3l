@@ -1226,7 +1226,7 @@ fn finalize_attr_def(state: &mut ParserState) {
         .trim_end_matches(']')
         .split(',')
         .map(|s| s.trim().to_string())
-        .filter(|s| s == "field" || s == "model")
+        .filter(|s| s == "field" || s == "model" || s == "value")
         .collect();
 
     let range = attr_def.fields.get("range").and_then(|r| {
@@ -2346,6 +2346,14 @@ mod tests {
         assert_eq!(entry.attr_type, "boolean");
         assert!(!entry.required);
         assert_eq!(entry.default_value, Some(AttrArgValue::Bool(true)));
+    }
+
+    #[test]
+    fn parse_attribute_def_target_value() {
+        let input = "## help ::attribute\n> Tooltip text for an enum value\n- target: [value]\n- type: string";
+        let result = parse_string(input, "test.m3l.md");
+        assert_eq!(result.attribute_registry.len(), 1);
+        assert_eq!(result.attribute_registry[0].target, vec!["value"]);
     }
 
     #[test]

@@ -2783,8 +2783,9 @@ Conforming parsers should use these error codes for consistent diagnostics.
 | `M3L-W004` | Lookup chain `{path}` exceeds 3 hops | Strict mode: `@lookup` path traverses too many relations |
 | `M3L-W005` | Attribute `@{attr}` expects `{type}` argument but got `{type}` | Custom registry attribute (§10.8.7) used with an argument of the wrong type |
 | `M3L-W006` | Attribute `@{attr}` argument `{value}` is outside range `[{min}, {max}]` | Custom registry attribute usage violates its declared `range` |
-| `M3L-W007` | Attribute `@{attr}` is declared for target `[{target}]` but used on `{subject}` | Custom registry attribute used on a field when its `target` is `model` only, or vice versa |
+| `M3L-W007` | Attribute `@{attr}` is declared for target `[{target}]` but used on `{subject}` | Custom registry attribute used on a field, model, or enum value that its declared `target` does not list |
 | `M3L-W008` | Attribute `@{attr}` is required but used without an explicit argument on `{subject}` | Custom registry attribute declared `required: true` was used bare (no argument) |
+| `M3L-W009` | Relationship notation `{notation}` in model `{model}` is written among the fields — it is read as a relationship, not a field, but `### Relations` is where it belongs | `>name`/`<name`/`<>name` (or an arrow spelling) written in the field list (§3.2.4) instead of `### Relations` (§3.2.3) — parsed either way, but flagged since the section is the documented home |
 
 ### 10.6 Import Resolution
 
@@ -2920,14 +2921,30 @@ a nested field list:
 
 | Field | Values | Meaning |
 |---|---|---|
-| `target` | `field`, `model`, or `[field, model]` | Where the attribute may be used. Defaults to `field` if omitted. |
+| `target` | `field`, `model`, `value`, or a bracketed combination (e.g. `[field, model]`) | Where the attribute may be used — `value` means an enum value (§3.1.8). Defaults to `field` if omitted. |
 | `type` | `string`, `number`, or `boolean` | Expected argument type. Defaults to `boolean` if omitted. |
 | `range` | `{min}..{max}` or `{min}, {max}` | For `type: number` only — inclusive bounds an argument value must fall within. |
 | `required` | `true`/`false` | When `true`, using `@{name}` without an explicit argument is a validator warning (M3L-W008) — see below. Does **not** mean every matching field/model must carry the attribute; a `required` attribute that is never used is not flagged. |
 | `default` | any value matching `type` | The value assumed when a **non-required** attribute is present with no argument. For a `required` attribute, an explicit argument is mandatory instead — `default` is not a silent stand-in for it. |
 
 Once declared, `@{name}(...)` can be used on any field or model header like a standard attribute
-(`## Task\n- level: integer @priority(5)`, or `## Task @priority(5)` for a model-level usage).
-`type`, `range`, `target`, and `required` are all validated (M3L-W005/W006/W007/W008 below);
-`default` is parsed and carried into the AST's `attribute_registry` but is not itself applied by
+(`## Task\n- level: integer @priority(5)`, or `## Task @priority(5)` for a model-level usage), or
+on an enum value when `target` includes `value`:
+
+```markdown
+## help ::attribute
+> Tooltip text for an enum value
+- target: [value]
+- type: string
+
+## AddressRole ::enum
+- print: "Print" @help("Shown on the printed slip")
+```
+
+An enum value attribute that is never registered stays exactly as unchecked as before — §3.1.8's
+open vocabulary is unaffected; registering a name here is what turns it into a checked one.
+
+`type`, `range`, `target`, and `required` are all validated (M3L-W005/W006/W007/W008 below) for
+field, model, and enum-value usages alike; `default` is parsed and carried into the AST's
+`attribute_registry` but is not itself applied by
 the reference validator — value substitution is left to downstream tooling.

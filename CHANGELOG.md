@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.10.0] - 2026-09-13
+
+### Added
+- **A custom `::attribute` registry entry (§10.8.7) may now declare `target: [value]`, making it
+  usable on an enum value** (`- active: "Active" @help("...")`, §3.1.8). Registering a name this
+  way is what turns it into a checked one — `type`, `range`, `target`, and `required` are now
+  validated on enum-value usages exactly as they already are for fields and models (M3L-W005
+  through M3L-W008). An enum value attribute that is never registered is unaffected: M3L still
+  assigns it no meaning, unchanged from before.
+
+### Fixed
+- **An attribute usage on an enum value was never checked against the registry, even when the
+  name was registered.** A typo'd argument, a wrong type, or a `target`-mismatched usage on an
+  enum value produced no diagnostic at all — field and model usages of the same registered
+  attribute were already checked; enum values were the one place the check never ran.
+
 ## [0.9.0] - 2026-09-13
 
 ### Added

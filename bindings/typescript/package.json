@@ -1,6 +1,6 @@
 {
   "name": "@iyulab/m3l",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "M3L parser — Markdown-based schema definition language (.m3l.md → JSON AST)",
   "license": "MIT",
   "main": "index.js",

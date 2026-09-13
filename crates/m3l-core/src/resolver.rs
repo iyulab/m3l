@@ -311,6 +311,17 @@ pub fn resolve_with(
                 }
             }
         }
+        // Enum value attributes (`- print: "…" @help`) are a registrable
+        // target too (`target: [value]`, docket iyulab/m3l#274) — without
+        // this loop they'd stay untagged even when correctly registered,
+        // the same asymmetry the validator gap below fixes.
+        for en in all_enums.iter_mut() {
+            for v in en.values.iter_mut() {
+                if let Some(attrs) = v.attributes.as_mut() {
+                    tag_attrs(attrs);
+                }
+            }
+        }
     }
 
     // Detect circular imports (E003)
@@ -692,6 +703,21 @@ mod tests {
         let cf_attr = id_field.attributes.iter().find(|a| a.name == "custom_flag");
         assert!(cf_attr.is_some());
         assert_eq!(cf_attr.unwrap().is_registered, Some(true));
+    }
+
+    #[test]
+    fn resolve_attribute_registry_tagging_enum_value() {
+        let input = "## help ::attribute\n- target: [value]\n- type: string\n\n## Status ::enum\n- active: \"Active\" @help(\"Currently in use\")";
+        let parsed = parse_string(input, "test.m3l.md");
+        let ast = resolve(&[parsed], None);
+        assert_eq!(ast.attribute_registry.len(), 1);
+        let value = &ast.enums[0].values[0];
+        let help_attr = value
+            .attributes
+            .as_ref()
+            .and_then(|attrs| attrs.iter().find(|a| a.name == "help"));
+        assert!(help_attr.is_some());
+        assert_eq!(help_attr.unwrap().is_registered, Some(true));
     }
 
     #[test]

@@ -25,6 +25,9 @@ static RE_AGG: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(\w+)(?:\((\w+)\
 static RE_WHERE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"^where:\s*"?(.*?)"?$"#).unwrap());
 static RE_PLATFORM: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r#"platform\s*:\s*["']?([^"'\s]+)["']?"#).unwrap());
+// Same optional-quote shape as `RE_WHERE`, same reason: by the time this sees the
+// arg, the generic tokenizer has already stripped one enclosing quote pair.
+static RE_NULLS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"^nulls:\s*"?(.*?)"?$"#).unwrap());
 
 // --- Parser state ---
 
@@ -611,6 +614,28 @@ fn apply_relation_notation(entry: &mut serde_json::Map<String, serde_json::Value
     }
 }
 
+/// Splits a `@unique(...)` arg list into its column names and an optional trailing
+/// `nulls: "not_distinct"` policy kwarg — same trailing-`key: value` shape `where:`
+/// already uses on `@rollup` (`RE_WHERE`). The policy arg is not a column name, so
+/// leaving it in `args` would make a consumer that reads `args` as a column list
+/// (e.g. mdd-booster's `SectionIndexParser`) treat it as one.
+fn split_unique_nulls_policy(args: &[AttrArgValue]) -> (Vec<AttrArgValue>, Option<String>) {
+    let mut nulls_policy = None;
+    let mut columns = Vec::with_capacity(args.len());
+    for a in args {
+        if nulls_policy.is_none() {
+            if let AttrArgValue::String(s) = a {
+                if let Some(caps) = RE_NULLS.captures(s.trim()) {
+                    nulls_policy = Some(caps[1].to_string());
+                    continue;
+                }
+            }
+        }
+        columns.push(a.clone());
+    }
+    (columns, nulls_policy)
+}
+
 fn handle_directive(data: &TokenData, model: &mut ModelNode, token: &Token, file: &str) {
     if data.attributes.is_empty() {
         return;
@@ -634,7 +659,15 @@ fn handle_directive(data: &TokenData, model: &mut ModelNode, token: &Token, file
         let mut entry = serde_json::Map::new();
         entry.insert("type".into(), serde_json::json!("directive"));
         entry.insert("raw".into(), serde_json::json!(raw_content));
-        if let Some(ref a) = args_val {
+        if attr.name == "unique" {
+            let (columns, nulls) = split_unique_nulls_policy(&attr.args);
+            if !columns.is_empty() {
+                entry.insert("args".into(), attr_args_to_json(&columns));
+            }
+            if let Some(n) = nulls {
+                entry.insert("nulls".into(), serde_json::json!(n));
+            }
+        } else if let Some(ref a) = args_val {
             entry.insert("args".into(), a.clone());
         }
         entry.insert("unique".into(), serde_json::json!(attr.name == "unique"));
@@ -768,7 +801,15 @@ fn handle_section_item(
             entry.insert("type".into(), serde_json::json!("indexed"));
             entry.insert("attr".into(), serde_json::json!(attr.name.clone()));
             entry.insert("unique".into(), serde_json::json!(attr.name == "unique"));
-            if !attr.args.is_empty() {
+            if attr.name == "unique" {
+                let (columns, nulls) = split_unique_nulls_policy(&attr.args);
+                if !columns.is_empty() {
+                    entry.insert("args".into(), attr_args_to_json(&columns));
+                }
+                if let Some(n) = nulls {
+                    entry.insert("nulls".into(), serde_json::json!(n));
+                }
+            } else if !attr.args.is_empty() {
                 entry.insert("args".into(), attr_args_to_json(&attr.args));
             }
         }
@@ -2193,6 +2234,82 @@ mod tests {
         assert_eq!(args2.len(), 2);
         assert_eq!(args2[0].as_str(), Some("email"));
         assert_eq!(args2[1].as_str(), Some("account_id"));
+    }
+
+    /// `@unique(..., nulls: "not_distinct")` — trailing kwarg is a NULL policy, not a
+    /// column, so it must not end up in `args` (a consumer reading `args` as a column
+    /// list would otherwise treat it as one) and must surface as its own `nulls` field.
+    #[test]
+    fn parse_unique_nulls_not_distinct_directive() {
+        let input = "## EnterpriseChannelDefault\n- enterprise_id: identifier?\n- channel: string?\n- part: string\n- @unique(enterprise_id, channel, part, nulls: \"not_distinct\")";
+        let result = parse_string(input, "test.m3l.md");
+        let indexes = &result.models[0].sections.indexes;
+        assert_eq!(indexes.len(), 1);
+        let entry = &indexes[0];
+        assert_eq!(entry.get("unique").and_then(|v| v.as_bool()), Some(true));
+        assert_eq!(
+            entry.get("nulls").and_then(|v| v.as_str()),
+            Some("not_distinct")
+        );
+        let args = entry.get("args").expect("args 필수").as_array().unwrap();
+        assert_eq!(args.len(), 3, "nulls kwarg must not be counted as a column");
+        assert_eq!(
+            args.iter().map(|v| v.as_str().unwrap()).collect::<Vec<_>>(),
+            vec!["enterprise_id", "channel", "part"]
+        );
+    }
+
+    /// Same kwarg, labeled form (`idx_x: @unique(...)`) — the two forms are documented
+    /// as structurally equivalent (see `parse_section_indexes_labeled_preserves_attribute`).
+    #[test]
+    fn parse_unique_nulls_not_distinct_labeled() {
+        let input = "## EnterpriseChannelDefault\n- enterprise_id: identifier?\n- channel: string?\n- part: string\n### Indexes\n- ux_scope: @unique(enterprise_id, channel, part, nulls: \"not_distinct\")";
+        let result = parse_string(input, "test.m3l.md");
+        let entry = &result.models[0].sections.indexes[0];
+        assert_eq!(
+            entry.get("nulls").and_then(|v| v.as_str()),
+            Some("not_distinct")
+        );
+        let args = entry.get("args").expect("args 필수").as_array().unwrap();
+        assert_eq!(args.len(), 3);
+    }
+
+    /// No `nulls:` kwarg → no `nulls` field at all, not a default-value string. Consumers
+    /// treat absence as "distinct" (current behavior); this guards against a regression
+    /// that would start emitting an always-present field with a default value baked in.
+    #[test]
+    fn parse_unique_without_nulls_kwarg_omits_field() {
+        let input = "## Order\n- id: identifier\n- @unique(part, season)";
+        let result = parse_string(input, "test.m3l.md");
+        let entry = &result.models[0].sections.indexes[0];
+        assert!(entry.get("nulls").is_none());
+        let args = entry.get("args").unwrap().as_array().unwrap();
+        assert_eq!(args.len(), 2);
+    }
+
+    /// `@index` (non-unique) has no NULL-policy concept — a `nulls:`-shaped token there
+    /// is just an ordinary arg, unaffected by the `@unique`-only split.
+    #[test]
+    fn parse_index_unaffected_by_nulls_split() {
+        let input = "## Order\n- id: identifier\n- customer_id: identifier\n- @index(customer_id)";
+        let result = parse_string(input, "test.m3l.md");
+        let entry = &result.models[0].sections.indexes[0];
+        assert_eq!(entry.get("unique").and_then(|v| v.as_bool()), Some(false));
+        assert!(entry.get("nulls").is_none());
+    }
+
+    /// Unquoted value + no spaces after the colon — same tolerance `where:` already has
+    /// (`RE_WHERE`), reused here (`RE_NULLS`) so the two kwargs behave consistently.
+    #[test]
+    fn parse_unique_nulls_kwarg_tolerates_no_surrounding_quotes_or_space() {
+        let input =
+            "## Order\n- id: identifier\n- part: string?\n- @unique(part, nulls:not_distinct)";
+        let result = parse_string(input, "test.m3l.md");
+        let entry = &result.models[0].sections.indexes[0];
+        assert_eq!(
+            entry.get("nulls").and_then(|v| v.as_str()),
+            Some("not_distinct")
+        );
     }
 
     /// 0.5.5 — directive args는 인자 수와 무관하게 항상 array.

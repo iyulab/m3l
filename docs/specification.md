@@ -1109,6 +1109,30 @@ For example:
 - @unique(tenant_id, username) "Ensures username uniqueness within each tenant"
 ```
 
+#### 3.3.4.3 NULL Handling in Multi-Column Unique Constraints
+
+By default, a `NULL` in any column of a multi-column `@unique` constraint excludes that row from
+uniqueness enforcement — two rows that agree on every other column may both carry `NULL` in the
+same nullable column. This matches SQL Server's native `UNIQUE` semantics for nullable columns
+and is the correct model for "a value here is unique, `NULL` means not set."
+
+Some multi-column constraints mean the opposite: a fallback/override table (organization → channel
+→ part, with a `NULL` column standing for "applies to the whole range") needs `NULL` to be **a
+distinct value that itself participates in uniqueness**, so that only one fallback row can exist
+per remaining scope. Declare that with the `nulls` kwarg, following SQL:2023's own vocabulary
+(`UNIQUE NULLS [NOT] DISTINCT`):
+
+```markdown
+- @unique(enterprise_id, channel, part, nulls: "not_distinct")
+```
+
+The default, unchanged, is `"distinct"` (the behavior above) — this kwarg only needs writing when
+a `NULL` should count as one more value competing for uniqueness rather than opting a row out.
+Implementations map the declared intent to whatever the target dialect calls it — a plain,
+unfiltered `UNIQUE` constraint or index on SQL Server, `UNIQUE NULLS NOT DISTINCT` on PostgreSQL —
+the same way `@rollup`'s `where:` (§4.6.5) declares an intent that the implementation layer
+expresses in its own expression syntax.
+
 ### 3.4 Inheritance and Interfaces
 > **Status: Implemented** — Fully supported in `m3l-core` parser and resolver.
 

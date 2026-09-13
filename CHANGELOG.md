@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.0] - 2026-09-13
+
+### Added
+- **`@unique(..., nulls: "not_distinct")` declares SQL:2023 `UNIQUE NULLS NOT DISTINCT` semantics
+  for a multi-column uniqueness constraint.** By default a `NULL` in any column of a composite
+  `@unique` excludes that row from uniqueness enforcement (SQL Server's own native behavior for
+  nullable columns) — correct for "a value here is unique, `NULL` means not set", but wrong for a
+  fallback/override table where `NULL` means "applies to the whole remaining range" and must
+  itself compete for uniqueness. The trailing `nulls: "..."` kwarg follows the same shape
+  `@rollup`'s `where:` already uses (§4.6.5) — declaring intent, not a target-specific expression.
+  Omitting it keeps the current default (`"distinct"`); this is additive, not a behavior change.
+  Both the directive (`- @unique(...)`) and labeled (`idx_x: @unique(...)`) forms of the
+  `### Indexes` section carry it. See specification §3.3.4.3.
+
 ## [0.8.0] - 2026-09-09
 
 ### Added

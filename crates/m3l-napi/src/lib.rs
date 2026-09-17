@@ -6,7 +6,7 @@
 #[macro_use]
 extern crate napi_derive;
 
-use m3l_core::{parse_multi_to_json, parse_to_json, validate_to_json};
+use m3l_core::{parse_multi_to_json, parse_to_json, validate_multi_to_json, validate_to_json};
 use m3l_lint::lint_to_json;
 
 /// Parse a single M3L file and return the AST as JSON.
@@ -36,6 +36,20 @@ pub fn parse_multi(files_json: String) -> String {
 #[napi]
 pub fn validate(content: String, options_json: String) -> String {
     validate_to_json(&content, &options_json)
+}
+
+/// Validate a multi-file M3L model and return diagnostics as JSON.
+///
+/// The validation counterpart of `parseMulti`: cross-file constructs (inheritance, interface
+/// references, a custom `::attribute` registered in another file) only resolve when the whole
+/// file set is validated as one unit. Each diagnostic carries its own `file`.
+///
+/// @param files_json - JSON array of `{ content: string, filename: string }` objects
+/// @param options_json - JSON options `{ strict?: boolean }`
+/// @returns JSON string with `{ success: boolean, data?: ValidateResult, error?: string }`
+#[napi(js_name = "validateMulti")]
+pub fn validate_multi(files_json: String, options_json: String) -> String {
+    validate_multi_to_json(&files_json, &options_json)
 }
 
 /// Lint M3L content and return diagnostics as JSON.

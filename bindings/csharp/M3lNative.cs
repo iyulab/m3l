@@ -27,6 +27,11 @@ public static class M3lNative
         [MarshalAs(UnmanagedType.LPUTF8Str)] string optionsJson);
 
     [DllImport(LibName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+    private static extern IntPtr m3l_validate_multi(
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string filesJson,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string optionsJson);
+
+    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
     private static extern IntPtr m3l_lint(
         [MarshalAs(UnmanagedType.LPUTF8Str)] string content,
         [MarshalAs(UnmanagedType.LPUTF8Str)] string configJson);
@@ -86,6 +91,25 @@ public static class M3lNative
     }
 
     /// <summary>
+    /// Validate a multi-file M3L model and return diagnostics as JSON.
+    /// </summary>
+    /// <remarks>
+    /// The validation counterpart of <see cref="ParseMulti"/>. Cross-file constructs -
+    /// inheritance, interface references, a custom <c>::attribute</c> registered in one file and
+    /// used in another - only resolve when the whole file set is one resolve unit, so validating
+    /// each file on its own reports what is missing from that file rather than from the model.
+    /// Each diagnostic carries its own <c>file</c>.
+    /// </remarks>
+    /// <param name="filesJson">JSON array of { content, filename } objects</param>
+    /// <param name="optionsJson">JSON options { strict? }</param>
+    /// <returns>JSON string with { success, data?, error? }</returns>
+    public static string ValidateMulti(string filesJson, string optionsJson = "{}")
+    {
+        var ptr = m3l_validate_multi(filesJson, optionsJson);
+        return CallNative(ptr);
+    }
+
+    /// <summary>
     /// Parse and return a strongly-typed result with raw JsonElement data.
     /// </summary>
     public static M3lResult<JsonElement>? ParseTyped(string content, string filename)
@@ -127,6 +151,24 @@ public static class M3lNative
     public static M3lResult<ValidateResult>? ValidateToResult(string content, string optionsJson = "{}")
     {
         var json = Validate(content, optionsJson);
+        return JsonSerializer.Deserialize<M3lResult<ValidateResult>>(json, AstJsonOptions);
+    }
+
+    /// <summary>
+    /// Validate a multi-file model and return a strongly-typed result.
+    /// </summary>
+    public static M3lResult<ValidateResultData>? ValidateMultiTyped(string filesJson, string optionsJson = "{}")
+    {
+        var json = ValidateMulti(filesJson, optionsJson);
+        return JsonSerializer.Deserialize<M3lResult<ValidateResultData>>(json);
+    }
+
+    /// <summary>
+    /// Validate a multi-file model and return a strongly-typed result with Diagnostic objects.
+    /// </summary>
+    public static M3lResult<ValidateResult>? ValidateMultiToResult(string filesJson, string optionsJson = "{}")
+    {
+        var json = ValidateMulti(filesJson, optionsJson);
         return JsonSerializer.Deserialize<M3lResult<ValidateResult>>(json, AstJsonOptions);
     }
 

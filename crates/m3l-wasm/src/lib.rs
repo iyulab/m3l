@@ -3,7 +3,7 @@
 //! Provides JavaScript-callable functions via wasm-bindgen.
 //! All functions take string inputs and return JSON strings.
 
-use m3l_core::{parse_multi_to_json, parse_to_json, validate_to_json};
+use m3l_core::{parse_multi_to_json, parse_to_json, validate_multi_to_json, validate_to_json};
 use m3l_lint::lint_to_json;
 use wasm_bindgen::prelude::*;
 
@@ -34,6 +34,20 @@ pub fn wasm_parse_multi(files_json: &str) -> String {
 #[wasm_bindgen(js_name = "validate")]
 pub fn wasm_validate(content: &str, options_json: &str) -> String {
     validate_to_json(content, options_json)
+}
+
+/// Validate a multi-file M3L model and return diagnostics as JSON.
+///
+/// The validation counterpart of `parseMulti`: cross-file constructs (inheritance, interface
+/// references, a custom `::attribute` registered in another file) only resolve when the whole
+/// file set is validated as one unit. Each diagnostic carries its own `file`.
+///
+/// @param files_json - JSON array of `{ content: string, filename: string }` objects
+/// @param options_json - JSON options `{ strict?: boolean }`
+/// @returns JSON string with `{ success: boolean, data?: ValidateResult, error?: string }`
+#[wasm_bindgen(js_name = "validateMulti")]
+pub fn wasm_validate_multi(files_json: &str, options_json: &str) -> String {
+    validate_multi_to_json(files_json, options_json)
 }
 
 /// Lint M3L content and return diagnostics as JSON.

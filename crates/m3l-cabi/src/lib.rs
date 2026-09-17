@@ -9,7 +9,7 @@
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 
-use m3l_core::{parse_multi_to_json, parse_to_json, validate_to_json};
+use m3l_core::{parse_multi_to_json, parse_to_json, validate_multi_to_json, validate_to_json};
 use m3l_lint::lint_to_json;
 
 /// Parse a single M3L file and return the AST as JSON.
@@ -83,6 +83,38 @@ pub unsafe extern "C" fn m3l_validate(
     to_c_string(&result)
 }
 
+/// Validate a multi-file M3L model and return diagnostics as JSON.
+///
+/// The validation counterpart of `m3l_parse_multi`: cross-file constructs only resolve when the
+/// whole file set is validated as one unit.
+///
+/// # Safety
+/// - `files_json` must be a valid null-terminated UTF-8 JSON string.
+/// - `options_json` must be a valid null-terminated UTF-8 JSON string.
+/// - The returned pointer must be freed with `m3l_free_string`.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn m3l_validate_multi(
+    files_json: *const c_char,
+    options_json: *const c_char,
+) -> *mut c_char {
+    let files_json = unsafe { CStr::from_ptr(files_json) };
+    let options_json = unsafe { CStr::from_ptr(options_json) };
+
+    let files_str = match files_json.to_str() {
+        Ok(s) => s,
+        Err(_) => return to_c_string(r#"{"success":false,"error":"Invalid UTF-8 in files_json"}"#),
+    };
+    let options_str = match options_json.to_str() {
+        Ok(s) => s,
+        Err(_) => {
+            return to_c_string(r#"{"success":false,"error":"Invalid UTF-8 in options_json"}"#)
+        }
+    };
+
+    let result = validate_multi_to_json(files_str, options_str);
+    to_c_string(&result)
+}
+
 /// Lint M3L content and return diagnostics as JSON.
 ///
 /// # Safety
@@ -112,7 +144,8 @@ pub unsafe extern "C" fn m3l_lint(
     to_c_string(&result)
 }
 
-/// Free a string previously returned by m3l_parse, m3l_parse_multi, m3l_validate, or m3l_lint.
+/// Free a string previously returned by m3l_parse, m3l_parse_multi, m3l_validate,
+/// m3l_validate_multi, or m3l_lint.
 ///
 /// # Safety
 /// - `ptr` must be a pointer previously returned by one of the m3l_* functions,

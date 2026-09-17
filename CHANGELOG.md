@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **A multi-file model can now be validated as one resolve unit** — `validate_multi_to_json` in the
+  core API, `m3l_validate_multi` over the C ABI, `validateMulti` in the Node and WASM bindings, and
+  `ValidateMulti` / `ValidateMultiTyped` / `ValidateMultiToResult` in the .NET binding. This is the
+  validation counterpart of the existing multi-file parse entry point, and it exists for the same
+  reason: a construct that spans files — an inherited model, an interface reference, a custom
+  `::attribute` registered in one file and used in another — is only resolvable when the whole set
+  is one unit, so validating file by file reports what is missing from each file rather than what
+  is missing from the model. Each diagnostic already carries its own `file`, so a caller does not
+  have to attribute them by position.
+
 ### Fixed
 - **The npm packages carried a stale native dependency.** `@iyulab/m3l` pinned `@iyulab/m3l-napi`,
   and that package pinned its four platform binaries, to an older version than the release they

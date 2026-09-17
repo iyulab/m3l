@@ -11,8 +11,16 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  verify:
+    name: Verify version sync
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/verify-version-sync
+
   build:
     name: Build (${{ matrix.target }})
+    needs: verify
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -57,8 +65,8 @@ jobs:
         run: |
           src="target/${{ matrix.target }}/release"
           cp "$src/libm3l_napi.so" "${{ matrix.node_file }}" 2>/dev/null \
-            || cp "$src/libm3l_napi.dylib" "${{ matrix.node_file }}" 2>/dev/null \
-            || true
+            || cp "$src/libm3l_napi.dylib" "${{ matrix.node_file }}" \
+            || { echo "no native artifact built in $src:"; ls -l "$src"; exit 1; }
 
       - name: Copy .node artifact (Windows)
         if: runner.os == 'Windows'
@@ -99,47 +107,39 @@ jobs:
       - name: Prepare & publish win32-x64-msvc
         run: |
           cp artifacts/napi-win32-x64-msvc/m3l-napi.win32-x64-msvc.node crates/m3l-napi/npm/win32-x64-msvc/
-          cd crates/m3l-napi/npm/win32-x64-msvc
-          npm publish --access public || true
+          .github/scripts/npm-publish.sh crates/m3l-napi/npm/win32-x64-msvc
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Prepare & publish linux-x64-gnu
         run: |
           cp artifacts/napi-linux-x64-gnu/m3l-napi.linux-x64-gnu.node crates/m3l-napi/npm/linux-x64-gnu/
-          cd crates/m3l-napi/npm/linux-x64-gnu
-          npm publish --access public || true
+          .github/scripts/npm-publish.sh crates/m3l-napi/npm/linux-x64-gnu
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Prepare & publish darwin-x64
         run: |
           cp artifacts/napi-darwin-x64/m3l-napi.darwin-x64.node crates/m3l-napi/npm/darwin-x64/
-          cd crates/m3l-napi/npm/darwin-x64
-          npm publish --access public || true
+          .github/scripts/npm-publish.sh crates/m3l-napi/npm/darwin-x64
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Prepare & publish darwin-arm64
         run: |
           cp artifacts/napi-darwin-arm64/m3l-napi.darwin-arm64.node crates/m3l-napi/npm/darwin-arm64/
-          cd crates/m3l-napi/npm/darwin-arm64
-          npm publish --access public || true
+          .github/scripts/npm-publish.sh crates/m3l-napi/npm/darwin-arm64
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       # Publish main NAPI package
       - name: Publish @iyulab/m3l-napi
-        run: |
-          cd crates/m3l-napi
-          npm publish --access public || true
+        run: .github/scripts/npm-publish.sh crates/m3l-napi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       # Publish TS wrapper package
       - name: Publish @iyulab/m3l
-        run: |
-          cd bindings/typescript
-          npm publish --access public || true
+        run: .github/scripts/npm-publish.sh bindings/typescript
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

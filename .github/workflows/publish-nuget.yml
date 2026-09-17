@@ -11,8 +11,16 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  verify:
+    name: Verify version sync
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/verify-version-sync
+
   build-native:
     name: Build native (${{ matrix.target }})
+    needs: verify
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false

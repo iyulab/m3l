@@ -1,0 +1,12 @@
+name: Verify version sync
+description: >-
+  Fails when a manifest has drifted from the VERSION file. Publish workflows gate on this:
+  a release built from a drifted tree ships manifests that point at the previous version's
+  artifacts, and no consumer can tell from the outside.
+
+runs:
+  using: composite
+  steps:
+    - name: update-version.ps1 check
+      shell: pwsh
+      run: ./update-version.ps1 check

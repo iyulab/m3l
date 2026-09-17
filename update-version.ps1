@@ -10,11 +10,17 @@
     - bindings/typescript/package.json         ("version": "x.y.z")
     - bindings/typescript/package.json         ("@iyulab/m3l-napi": "x.y.z")
     - crates/m3l-napi/package.json            (version + optionalDependencies)
-    - crates/m3l-napi/npm/*/package.json      (5 platform stub versions)
-    - pkg/wasm/package.json                   ("version": "x.y.z")
+    - crates/m3l-napi/npm/*/package.json      (4 platform stub versions)
 
 .PARAMETER DryRun
-    Show what would change without modifying files.
+    Show what would change without modifying files. Informational: exit code stays 0.
+
+.NOTES
+    `check` is the assertion form of -DryRun: it exits non-zero when a manifest has drifted
+    from VERSION, when a file this script keeps in sync is missing, or when one of its
+    patterns no longer matches. That is what CI gates on — a release published from a
+    drifted tree ships manifests pointing at the previous version's artifacts, and nothing
+    downstream can tell.
 
 .EXAMPLE
     .\update-version.ps1
@@ -27,8 +33,9 @@ param(
     [string]$Command
 )
 
-# Support positional "check" command as alias for -DryRun
-if ($Command -eq 'check') {
+# Support positional "check" command: -DryRun plus assertion semantics (see .NOTES).
+$assert = ($Command -eq 'check')
+if ($assert) {
     $DryRun = $true
 }
 
@@ -52,6 +59,8 @@ Write-Host "Version: $version" -ForegroundColor Cyan
 Write-Host ""
 
 $updated = 0
+$missing = 0
+$unmatched = 0
 
 function Update-File {
     param(
@@ -67,6 +76,7 @@ function Update-File {
     $relativePath = $Path.Replace($root, '').TrimStart('\', '/')
     if (-not (Test-Path $Path)) {
         Write-Host "  SKIP  $relativePath (not found)" -ForegroundColor Yellow
+        $script:missing++
         return
     }
 
@@ -92,6 +102,7 @@ function Update-File {
         # Nothing to do: this file legitimately has no such version to carry.
     } else {
         Write-Host "  WARN  $relativePath (pattern not found: $Label)" -ForegroundColor Red
+        $script:unmatched++
     }
 }
 
@@ -188,20 +199,30 @@ foreach ($dir in $platformDirs) {
 
 Write-Host ""
 
-# --- WASM package ---
-Write-Host "[WASM package]" -ForegroundColor White
-
-Update-File `
-    -Path (Join-Path $root 'pkg/wasm/package.json') `
-    -Pattern '"version":\s*"[\d.]+"' `
-    -Replacement "`"version`": `"$version`"" `
-    -Label 'wasm version'
-
-Write-Host ""
+# The WASM package manifest is NOT maintained here: publish-wasm.yml runs `wasm-pack
+# build`, which regenerates package.json on every publish and takes its version from
+# crates/m3l-wasm/Cargo.toml (version.workspace = true — already covered above). The
+# generated directory is untracked.
 
 # --- Summary ---
 if ($DryRun) {
     Write-Host "$updated file(s) would be updated." -ForegroundColor Yellow
+
+    if ($assert) {
+        $problems = @()
+        if ($updated -gt 0)   { $problems += "$updated manifest(s) drifted from VERSION ($version)" }
+        if ($missing -gt 0)   { $problems += "$missing manifest(s) missing" }
+        if ($unmatched -gt 0) { $problems += "$unmatched pattern(s) no longer match — this script has stopped guarding them" }
+
+        if ($problems.Count -gt 0) {
+            Write-Host ""
+            Write-Host "VERSION SYNC FAILED: $($problems -join '; ')." -ForegroundColor Red
+            Write-Host "Run ./update-version.ps1 (without -DryRun) and commit the result." -ForegroundColor Red
+            exit 1
+        }
+
+        Write-Host "Version sync OK - every manifest is at $version." -ForegroundColor Green
+    }
 } elseif ($updated -eq 0) {
     Write-Host "All files already at version $version." -ForegroundColor Green
 } else {

@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Fixed
+- **The npm packages carried a stale native dependency.** `@iyulab/m3l` pinned `@iyulab/m3l-napi`,
+  and that package pinned its four platform binaries, to an older version than the release they
+  shipped alongside — so installing the newest npm package still ran a previous release's parser,
+  with no sign that anything was wrong. Those pins now follow the release version. The other
+  channels were never affected: crates.io builds from the workspace manifest and the NuGet package
+  takes its version from `VERSION` directly.
+
+### Changed
+- **Release workflows now verify that every manifest matches `VERSION` before anything is
+  published**, so a drifted tree fails instead of shipping manifests that point at the previous
+  release's artifacts.
+- **A failed publish no longer passes silently.** Publishing to npm and crates.io skips only a
+  version that is already on the registry, and fails the workflow on anything else — including a
+  registry lookup that does not answer, which previously could be mistaken for "not published yet".
+
 ## [0.10.1] - 2026-09-17
 
 ### Fixed

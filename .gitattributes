@@ -1,0 +1,4 @@
+# Shell scripts run on Linux runners: a CRLF checkin makes the shebang line unparseable
+# there, and the failure ("bad interpreter") points at the file rather than at the commit
+# that changed its line endings.
+*.sh text eol=lf

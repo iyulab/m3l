@@ -11,8 +11,16 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  verify:
+    name: Verify version sync
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/verify-version-sync
+
   publish:
     name: Build & Publish to npm
+    needs: verify
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -48,8 +56,6 @@ jobs:
           "
 
       - name: Publish @iyulab/m3l-wasm
-        run: |
-          cd crates/m3l-wasm/pkg
-          npm publish --access public || true
+        run: .github/scripts/npm-publish.sh crates/m3l-wasm/pkg
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

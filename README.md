@@ -126,6 +126,29 @@ var result = M3lNative.ParseTyped("## User\n- name: string", "user.m3l.md");
 Console.WriteLine(result?.Success); // True
 ```
 
+### Multiple files
+
+A model split across files is parsed **and validated** as one unit. Inheritance, interface
+references, and a custom `::attribute` registered in one file and used in another only resolve
+that way — validating file by file reports what is missing from each file rather than from the
+model.
+
+```javascript
+const { parseMulti, validateMulti } = require('@iyulab/m3l');
+
+const files = JSON.stringify([
+  { content: '## help ::attribute\n- type: string\n- target: [value]\n', filename: 'registry.m3l.md' },
+  { content: '## Status ::enum\n- active: "Active" @help(5)\n', filename: 'status.m3l.md' },
+]);
+
+const diag = JSON.parse(validateMulti(files, '{}'));
+console.log(diag.data.warnings[0].file); // "status.m3l.md" — each diagnostic names its own file
+```
+
+```csharp
+var result = M3lNative.ValidateMultiToResult(filesJson); // same JSON array shape
+```
+
 ## Documentation
 
 - [M3L Specification](docs/specification.md) — full language spec (syntax, types, grammar)

@@ -1127,19 +1127,9 @@ fn handle_blockquote(token: &Token, state: &mut ParserState) {
             }
         }
         CurrentElement::Model(ref mut model) => {
-            // Field-level blockquote
-            if let Some(idx) = state.last_field_idx {
-                if idx < model.fields.len() {
-                    if let Some(ref mut desc) = model.fields[idx].description {
-                        desc.push('\n');
-                        desc.push_str(&text);
-                    } else {
-                        model.fields[idx].description = Some(text);
-                    }
-                    return;
-                }
-            }
-            // Model-level blockquote
+            // Only a non-indented blockquote reaches here — the lexer already attached every
+            // indented one to its field (§4.2.6). Non-indented means model-level, wherever it
+            // sits relative to the field list.
             if let Some(ref mut desc) = model.description {
                 desc.push('\n');
                 desc.push_str(&text);
@@ -2396,6 +2386,38 @@ mod tests {
             result.models[0].description.as_deref(),
             Some("User account model")
         );
+    }
+
+    #[test]
+    fn non_indented_blockquote_after_field_stays_model_level() {
+        // §4.2.6: only an indented blockquote belongs to the preceding field.
+        let input = "## Order\n- payor: string \"Payor type\"\n> Line one\n> Line two\n- date: date \"Order date\"";
+        let result = parse_string(input, "test.m3l.md");
+        let model = &result.models[0];
+        assert_eq!(model.fields[0].description.as_deref(), Some("Payor type"));
+        assert_eq!(model.description.as_deref(), Some("Line one\nLine two"));
+    }
+
+    #[test]
+    fn non_indented_blockquote_after_field_without_description_stays_model_level() {
+        let input = "## Order\n> Model note\n- payor: string\n> Later note";
+        let result = parse_string(input, "test.m3l.md");
+        let model = &result.models[0];
+        assert_eq!(model.fields[0].description, None);
+        assert_eq!(model.description.as_deref(), Some("Model note\nLater note"));
+    }
+
+    #[test]
+    fn indented_blockquote_replaces_inline_field_description() {
+        // §4.2.6: when both are present, the blockquote takes precedence — it is not appended.
+        let input = "## Order\n- payor: string \"Payor type\"\n  > Line one\n  > Line two";
+        let result = parse_string(input, "test.m3l.md");
+        let model = &result.models[0];
+        assert_eq!(
+            model.fields[0].description.as_deref(),
+            Some("Line one\nLine two")
+        );
+        assert_eq!(model.description, None);
     }
 
     #[test]

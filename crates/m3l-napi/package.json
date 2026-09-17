@@ -1,6 +1,6 @@
 {
   "name": "@iyulab/m3l-napi",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "description": "M3L parser Node.js native addon via napi-rs",
   "license": "MIT",
   "main": "index.js",

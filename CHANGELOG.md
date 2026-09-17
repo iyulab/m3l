@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.10.1] - 2026-09-17
+
+### Fixed
+- **A non-indented blockquote placed after a field was attached to that field instead of the
+  model, and appended to its inline description.** §4.2.6 reserves the field for an indented
+  blockquote (2+ spaces) and keeps a non-indented one model-level; when both an inline
+  `"description"` and a blockquote belong to the same field, the blockquote replaces it rather than
+  being joined to it. A non-indented blockquote anywhere in a model's body now becomes part of the
+  model description, so the field keeps its own inline description unchanged. Consumers that used
+  the field description as a display label no longer see the note merged into it.
+
 ## [0.10.0] - 2026-09-13
 
 ### Added

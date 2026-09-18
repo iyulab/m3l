@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Fixed
+- **The npm packages exported fewer functions than the native addon they ship.** Both the addon
+  loader and the wrapper package listed the exported names by hand, and the lists fell behind:
+  `lint` was never reachable from npm at all, and `validateMulti` shipped inside the binary in
+  0.11.0 with no way to call it. Both files now re-export the addon wholesale, so the binary's
+  export table is the contract. Other channels were unaffected — the C ABI and the .NET binding
+  bind to the exported symbols directly.
+
 ## [0.11.0] - 2026-09-18
 
 ### Added

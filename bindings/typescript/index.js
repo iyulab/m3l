@@ -5,9 +5,9 @@
  * All parsing is performed by the Rust m3l-core library.
  */
 
-const { parse, parseMulti, validate, lint } = require('@iyulab/m3l-napi');
-
-module.exports.parse = parse;
-module.exports.parseMulti = parseMulti;
-module.exports.validate = validate;
-module.exports.lint = lint;
+// Re-exported wholesale rather than named one by one. The enumerated form shipped a
+// release where the native addon exported a function this file did not, so the package
+// installed cleanly and the function was simply absent — the addon's export set is the
+// contract, and restating it here was only a way to fall behind it. index.d.ts still
+// declares the surface by hand, because types have no runtime to read them from.
+module.exports = require('@iyulab/m3l-napi');

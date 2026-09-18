@@ -313,6 +313,23 @@ export function parseMulti(filesJson: string): string;
 export function validate(content: string, optionsJson: string): string;
 
 /**
+ * Validate a multi-file M3L model and return diagnostics as JSON.
+ *
+ * The validation counterpart of `parseMulti`: a construct that spans files — an inherited
+ * model, an interface reference, a custom `::attribute` registered in one file and used in
+ * another — only resolves when the whole set is one unit, so validating file by file reports
+ * what is missing from each file rather than from the model. Each diagnostic carries its own
+ * `file`.
+ *
+ * The returned JSON string deserializes to `M3lResult<ValidateResult>`.
+ *
+ * @param filesJson - JSON array of `FileInput` objects
+ * @param optionsJson - JSON options (`ValidateOptions`)
+ * @returns JSON string with `{ success: boolean, data?: ValidateResult, error?: string }`
+ */
+export function validateMulti(filesJson: string, optionsJson: string): string;
+
+/**
  * Lint M3L content and return diagnostics as JSON.
  *
  * The returned JSON string deserializes to `M3lResult<LintResult>`.

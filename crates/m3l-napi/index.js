@@ -116,8 +116,9 @@ if (!nativeBinding) {
   throw new Error('Failed to load native binding');
 }
 
-const { parse, parseMulti, validate } = nativeBinding;
-
-module.exports.parse = parse;
-module.exports.parseMulti = parseMulti;
-module.exports.validate = validate;
+// Re-exported wholesale rather than named one by one. This file says it is generated, but it
+// is checked in and maintained by hand, and the enumerated tail fell behind the addon twice:
+// `lint` was never reachable from npm at all, and `validateMulti` shipped in the binary with
+// no way to call it. The binary's export table is the contract; restating it here could only
+// ever lose entries, never gain them.
+module.exports = nativeBinding;

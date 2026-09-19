@@ -294,7 +294,7 @@ fn catalogs_content() {
     assert!(TYPE_CATALOG.contains("string"));
     assert!(TYPE_CATALOG.contains("datetime")); // deprecated but still accepted
     assert!(!TYPE_CATALOG.contains("unknown_type"));
-    assert_eq!(TYPE_CATALOG.len(), 22);
+    assert_eq!(TYPE_CATALOG.len(), 25);
 
     // Standard attributes
     assert!(STANDARD_ATTRIBUTES.contains("primary"));

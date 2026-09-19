@@ -739,6 +739,18 @@ mod tests {
     }
 
     #[test]
+    fn validate_e009_numeric_width_types_are_catalog_types() {
+        let result = parse_and_validate(
+            "## Reading\n- id: identifier @pk\n- level: byte\n- count: short\n- ratio: float\n- value: double",
+        );
+        assert!(
+            !result.errors.iter().any(|e| e.code == "M3L-E009"),
+            "byte, short, float and double are catalog types, not references: {:?}",
+            result.errors
+        );
+    }
+
+    #[test]
     fn validate_e009_defined_model_ref() {
         let result = parse_and_validate("## Address\n- city: string\n\n## User\n- addr: Address");
         assert!(

@@ -8,10 +8,13 @@ pub static TYPE_CATALOG: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
     // Primitive types (§10.4.1)
     s.insert("string");
     s.insert("text");
+    s.insert("byte");
+    s.insert("short");
     s.insert("integer");
     s.insert("long");
     s.insert("decimal");
     s.insert("float");
+    s.insert("double");
     s.insert("boolean");
     s.insert("date");
     s.insert("time");

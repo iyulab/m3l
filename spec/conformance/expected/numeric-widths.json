@@ -1,0 +1,174 @@
+{
+  "parserVersion": "0.11.0",
+  "astVersion": "1.0",
+  "project": {
+    "name": "sample.numeric"
+  },
+  "sources": [
+    "spec/conformance/inputs/numeric-widths.m3l.md"
+  ],
+  "models": [
+    {
+      "name": "Reading",
+      "type": "model",
+      "source": "spec/conformance/inputs/numeric-widths.m3l.md",
+      "namespace": "sample.numeric",
+      "line": 3,
+      "inherits": [],
+      "description": "Every width on the integer and floating-point ladders.",
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/numeric-widths.m3l.md",
+            "line": 7,
+            "col": 1
+          }
+        },
+        {
+          "name": "level",
+          "type": "byte",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/numeric-widths.m3l.md",
+            "line": 8,
+            "col": 1
+          }
+        },
+        {
+          "name": "count",
+          "type": "short",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/numeric-widths.m3l.md",
+            "line": 9,
+            "col": 1
+          }
+        },
+        {
+          "name": "total",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/numeric-widths.m3l.md",
+            "line": 10,
+            "col": 1
+          }
+        },
+        {
+          "name": "serial",
+          "type": "long",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/numeric-widths.m3l.md",
+            "line": 11,
+            "col": 1
+          }
+        },
+        {
+          "name": "ratio",
+          "type": "float",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "1.0",
+          "default_value_type": "literal",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/numeric-widths.m3l.md",
+            "line": 12,
+            "col": 1
+          }
+        },
+        {
+          "name": "value",
+          "type": "double",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/numeric-widths.m3l.md",
+            "line": 13,
+            "col": 1
+          }
+        },
+        {
+          "name": "samples",
+          "type": "double",
+          "nullable": false,
+          "array": true,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/numeric-widths.m3l.md",
+            "line": 14,
+            "col": 1
+          }
+        },
+        {
+          "name": "offset",
+          "type": "short",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/numeric-widths.m3l.md",
+            "line": 15,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/numeric-widths.m3l.md",
+        "line": 3,
+        "col": 1
+      }
+    }
+  ],
+  "enums": [],
+  "interfaces": [],
+  "views": [],
+  "flows": [],
+  "attributeRegistry": [],
+  "errors": [],
+  "warnings": []
+}

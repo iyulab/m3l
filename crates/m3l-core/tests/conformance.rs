@@ -525,6 +525,47 @@ fn conformance_enum_with_labels() {
 }
 
 #[test]
+fn conformance_numeric_widths() {
+    let input = include_str!("../../../spec/conformance/inputs/numeric-widths.m3l.md");
+    let parsed = parse_string(input, "numeric-widths.m3l.md");
+    let ast = resolve(&[parsed], None);
+    let result = validate(&ast, &ValidateOptions { strict: false });
+
+    // Every width on both ladders is a catalog type — none is read as a model reference.
+    assert!(
+        result.errors.iter().all(|e| e.code != "M3L-E009"),
+        "numeric width types must not be undefined-type errors: {:?}",
+        result.errors
+    );
+
+    let reading = &ast.models[0];
+    let types: Vec<(&str, &str)> = reading
+        .fields
+        .iter()
+        .map(|f| (f.name.as_str(), f.field_type.as_deref().unwrap_or("")))
+        .collect();
+    assert_eq!(
+        types,
+        vec![
+            ("id", "identifier"),
+            ("level", "byte"),
+            ("count", "short"),
+            ("total", "integer"),
+            ("serial", "long"),
+            ("ratio", "float"),
+            ("value", "double"),
+            ("samples", "double"),
+            ("offset", "short"),
+        ]
+    );
+
+    let samples = reading.fields.iter().find(|f| f.name == "samples").unwrap();
+    assert!(samples.array);
+    let offset = reading.fields.iter().find(|f| f.name == "offset").unwrap();
+    assert!(offset.nullable);
+}
+
+#[test]
 fn conformance_multi_namespace() {
     let input = include_str!("../../../spec/conformance/inputs/multi-namespace.m3l.md");
     let ast = full_pipeline(input, "multi-namespace.m3l.md");

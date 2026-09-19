@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **`byte`, `short` and `double` in the type catalog** (RFC-0003). The catalog already states
+  integer widths (`integer` 32-bit, `long` 64-bit) but the ladder started at 32 bits, and there was no
+  way at all to say "64-bit floating point". The integer ladder is now `byte` (8-bit, **unsigned**,
+  0–255) → `short` (16) → `integer` (32) → `long` (64), and the floating-point ladder `float` (32) →
+  `double` (64). A model that used any of the three names was reported as `M3L-E009` (undefined
+  type) and no longer is; the AST those models produce is unchanged. `byte` is a number — a byte
+  array is still `binary`.
+
+### Changed
+- **`float` is now specified as 32-bit** (IEEE 754 binary32). Its width was previously unstated, so
+  a consumer could read it either way. This narrows the meaning rather than the syntax — parser
+  output is unchanged — but a model that meant a 64-bit value should now say `double`.
+
 ### Fixed
 - **The npm packages exported fewer functions than the native addon they ship.** Both the addon
   loader and the wrapper package listed the exported names by hand, and the lists fell behind:

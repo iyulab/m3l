@@ -2607,7 +2607,7 @@ FieldName      ← Identifier ('(' Label ')')?
 TypeExpr       ← BaseType TypeParams? Nullable? Array?
 BaseType       ← 'string' / 'integer' / 'decimal' / 'boolean' / 'text' / 'timestamp'
                / 'date' / 'time' / 'identifier' / 'enum' / 'object' / 'json' / 'binary'
-               / 'long' / 'float' / 'email' / 'phone' / 'url' / 'money' / 'percentage'
+               / 'long' / 'short' / 'byte' / 'float' / 'double' / 'email' / 'phone' / 'url' / 'money' / 'percentage'
                / 'map' '<' TypeExpr ',' _ TypeExpr '>'
                / Identifier
 TypeParams     ← '(' Number (',' _ Number)* ')'
@@ -2678,16 +2678,29 @@ The following table defines all official M3L types. Types not listed here are tr
 |---|---|---|---|
 | `string` | `(maxLength)` | Length-limited string | `string(200)` |
 | `text` | — | Unlimited-length string | `text` |
+| `byte` | — | 8-bit unsigned integer (0–255) — a number, not a byte array (see `binary`) | `byte` |
+| `short` | — | 16-bit integer | `short` |
 | `integer` | — | 32-bit integer | `integer` |
 | `long` | — | 64-bit integer | `long` |
 | `decimal` | `(precision, scale)` | Fixed-point number | `decimal(10,2)` |
-| `float` | — | Floating-point number | `float` |
+| `float` | — | 32-bit floating-point number (IEEE 754 binary32) | `float` |
+| `double` | — | 64-bit floating-point number (IEEE 754 binary64) | `double` |
 | `boolean` | — | True/false | `boolean` |
 | `date` | — | Date without time | `date` |
 | `time` | — | Time without date | `time` |
 | `timestamp` | — | Date + time + timezone | `timestamp` |
 | `identifier` | — | Unique ID (UUID or platform-specific) | `identifier` |
 | `binary` | `(maxSize)?` | Binary data | `binary(1048576)` |
+
+**Numeric widths.** Every integer and floating-point type states its width, so each maps to one
+native type without the consumer having to guess. The integer ladder is `byte` (8, unsigned) →
+`short` (16) → `integer` (32) → `long` (64); the floating-point ladder is `float` (32) → `double`
+(64). Use `decimal` wherever exact fractional values matter (money, quantities) — both
+floating-point types are approximate.
+
+> `float` carried no stated width before `short`, `byte` and `double` were added, and consumers
+> were free to read it as either width. It is now 32-bit. A model that meant a 64-bit value
+> should say `double`.
 
 #### 10.4.2 Semantic Types (Shorthands)
 

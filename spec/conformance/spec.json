@@ -63,6 +63,12 @@
       "category": "unit"
     },
     {
+      "name": "numeric-widths",
+      "input": "inputs/numeric-widths.m3l.md",
+      "expected": "expected/numeric-widths.json",
+      "category": "unit"
+    },
+    {
       "name": "01-ecommerce",
       "input": "inputs/01-ecommerce.m3l.md",
       "expected": "expected/01-ecommerce.json",

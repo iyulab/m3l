@@ -334,7 +334,7 @@ pub fn resolve_with(
             }
         }
         // Enum value attributes (`- print: "…" @help`) are a registrable
-        // target too (`target: [value]`, docket iyulab/m3l#274) — without
+        // target too (`target: [value]`) — without
         // this loop they'd stay untagged even when correctly registered,
         // the same asymmetry the validator gap below fixes.
         for en in all_enums.iter_mut() {

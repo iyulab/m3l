@@ -533,8 +533,8 @@ fn validate_model_registry_attrs(
 /// `target` can also name `value` (`m3l-core/src/parser.rs::finalize_attr_def`),
 /// but enum values were never visited by any registry check before this —
 /// unlike field/model attributes, an unregistered *or* misused value
-/// attribute passed through with no diagnostic at all (docket
-/// iyulab/m3l#274). `EnumValue` carries no per-value `SourceLocation`, so
+/// attribute passed through with no diagnostic at all.
+/// `EnumValue` carries no per-value `SourceLocation`, so
 /// diagnostics anchor on the enum header's `loc` — the same precision
 /// `validate_model_registry_attrs` already accepts for model-level usages.
 fn validate_enum_value_registry_attrs(
@@ -959,7 +959,7 @@ mod tests {
     #[test]
     fn validate_w005_enum_value_type_mismatch() {
         // Registry attribute usages on an enum value (`- name: "…" @attr`, §3.1.8)
-        // previously went entirely unchecked — docket iyulab/m3l#274.
+        // previously went entirely unchecked.
         let input = "## help ::attribute\n- type: string\n- target: value\n\n## Status ::enum\n- active: \"Active\" @help(5)";
         let result = parse_and_validate(input);
         assert!(
@@ -992,7 +992,7 @@ mod tests {
     fn validate_no_warning_for_unregistered_enum_value_attribute() {
         // §3.1.8: M3L assigns no meaning to enum value attributes that are never
         // registered via ::attribute — an open vocabulary is the documented design,
-        // not a gap (see docket iyulab/m3l#274 triage: this stays a no-op by design).
+        // not a gap: this stays a no-op by design.
         let input = "## Status ::enum\n- active: \"Active\" @system";
         let result = parse_and_validate(input);
         assert!(

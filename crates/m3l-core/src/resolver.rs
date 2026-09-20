@@ -55,6 +55,8 @@ pub fn resolve_with(
     let mut all_attr_registry: Vec<AttributeRegistryEntry> = Vec::new();
     let mut sources: Vec<String> = Vec::new();
 
+    check_prefix_headers(files, &mut errors);
+
     for file in files {
         sources.push(file.source.clone());
         all_models.extend(file.models.iter().cloned());
@@ -375,6 +377,41 @@ pub fn resolve_with(
         attribute_registry: all_attr_registry,
         errors,
         warnings,
+    }
+}
+
+/// `M3L-E019`: a `# Prefix:` header that is malformed, repeated, or declared after the
+/// file's first declaration. Purely per-file — it reads the raw headers the parser
+/// recorded, not the merged model set, so it runs independent of `merge_extends` (and
+/// of `inline_inherited`): a file's headers are what they are regardless of how the
+/// rest of the project resolves.
+fn check_prefix_headers(files: &[ParsedFile], errors: &mut Vec<Diagnostic>) {
+    for file in files {
+        for (idx, header) in file.prefix_headers.iter().enumerate() {
+            let message = if !crate::parser::is_valid_prefix_word(&header.value) {
+                format!(
+                    "\"{}\" is not a valid prefix — Prefix must match [a-z][a-z0-9]*",
+                    header.value
+                )
+            } else if idx > 0 {
+                "A file may declare only one \"# Prefix:\" header — a later one is ignored"
+                    .to_string()
+            } else if !header.before_first_declaration {
+                "\"# Prefix:\" after the file's first declaration is ignored — move it \
+                 above the first model, enum, interface, view, or extend block"
+                    .to_string()
+            } else {
+                continue;
+            };
+            errors.push(Diagnostic {
+                code: "M3L-E019".to_string(),
+                severity: DiagnosticSeverity::Error,
+                file: file.source.clone(),
+                line: header.line,
+                col: 1,
+                message,
+            });
+        }
     }
 }
 

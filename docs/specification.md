@@ -1194,6 +1194,11 @@ view and extend block defined in the file, as `prefix`. Files without the header
 owner: no prefix. M3L records ownership; it does not enforce a naming policy for how a
 `prefix` relates to the model and field names built on it — that is a generator concern.
 
+The `Prefix:` keyword is matched case-insensitively; the value after it is not — it must
+still match `[a-z][a-z0-9]*`. A value that does not match, a second `# Prefix:` header in
+the same file, or a header that appears after the file's first declaration is reported as
+`M3L-E019` rather than silently ignored.
+
 ```markdown
 # Namespace: example.inspection
 # Prefix: insp
@@ -1213,6 +1218,10 @@ alike).
 - insp_grade: string(20)?
 - insp_last_checked_at: timestamp?
 ```
+
+Extension is not inherited: a model that inherits `Target` does not receive `Target`'s
+extension fields — inheritance is resolved before extend blocks are merged, and an extend
+block targets the one model it names, not its descendants.
 
 Not to be confused with §8 Extensions, which is about Markdown-level extensibility, nor with
 the generic `extensions` map that unrecognized `::kind` words land in.
@@ -2614,7 +2623,7 @@ This section defines the normative grammar for M3L using PEG (Parsing Expression
 #### 10.3.1 Document Structure
 
 ```peg
-Document       ← Namespace? PrefixDecl? (Import / HRule / ModelDef / EnumDef / InterfaceDef / ViewDef / ExtendDef / BasedModel)*
+Document       ← (Namespace / PrefixDecl)* (Import / HRule / ModelDef / EnumDef / InterfaceDef / ViewDef / ExtendDef / BasedModel)*
 Namespace      ← '# Namespace:' _ QualifiedName NL
                 / '#' _ FreeText NL
 Import         ← '@import' _ QuotedString (_ 'as' _ Identifier)? NL
@@ -2628,7 +2637,7 @@ ModelDef       ← '## ' ModelName Inheritance? ModelAttrs? NL
                   Description? (FieldDef / SectionDef / RelationLine / IndexLine / MetaLine)*
 PrefixDecl     ← '# Prefix:' _ [a-z] [a-z0-9]* NL
 ExtendDef      ← '## ' Identifier _ '::extend' NL
-                  FieldDef+
+                  FieldDef*
 BasedModel     ← '## ' Identifier _ '::' ('aspect' / 'subtype') '(' Identifier ')' Inheritance? NL
                   Description? (FieldDef / SectionDef / RelationLine / IndexLine / MetaLine)*
 EnumDef        ← '## ' Identifier ('(' Label ')')? _ '::enum' Inheritance? NL
@@ -2843,6 +2852,7 @@ Conforming parsers should use these error codes for consistent diagnostics.
 | `M3L-E016` | `::{kind}` requires a base model argument | `::aspect` and `::subtype` must name a base model: `::{kind}(Base)` |
 | `M3L-E017` | Base model `{model}` not found | `::aspect(Base)`/`::subtype(Base)` references a model that is not defined |
 | `M3L-E018` | Base model `{model}` is itself an aspect | `::aspect`/`::subtype` bases must not themselves be `::aspect` models |
+| `M3L-E019` | `{value}` is not a valid prefix, or the header is repeated/late | `# Prefix:` value does not match `[a-z][a-z0-9]*`, a second header appears in the same file, or a header appears after the file's first declaration |
 
 #### 10.5.2 Warnings
 

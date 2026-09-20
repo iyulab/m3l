@@ -33,6 +33,8 @@ Adds the block's fields to the end of `Target`'s field list, after inherited and
 in source-file order. Each added field carries `origin { prefix, namespace, source }`, and
 `Target` carries `extended_by[]`. The block is not a model: it has no name of its own, no
 parents, no sections, no model-level directives — fields only (stored and derived kinds alike).
+Extension is not inherited — merging happens after inheritance is resolved, so a model that
+inherits `Target` does not receive `Target`'s extension fields.
 
 ### 3.3 `## Name ::aspect(Base)` and `## Name ::subtype(Base)`
 Ordinary models that additionally name one base model: `base { kind, model }`. `aspect` says
@@ -45,7 +47,8 @@ How a generator stores either is not part of the language. A parent list may fol
 E011 extend target not found · E012 extend field name collides · E013 attribute not allowed
 in an extend block (`@pk`, `@primary`, `@override`) · E014 extend block declares parents ·
 E015 extend block declares something other than fields · E016 `::aspect`/`::subtype` without
-a base argument · E017 base model not found · E018 base model is itself an aspect.
+a base argument · E017 base model not found · E018 base model is itself an aspect · E019 a
+`# Prefix:` header is malformed, repeated, or declared after the file's first declaration.
 
 ## 5. Compatibility
 `extend`, `aspect` and `subtype` were previously accepted as generic kinds and landed in the

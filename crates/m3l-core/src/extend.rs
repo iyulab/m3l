@@ -7,6 +7,25 @@ use crate::types::{Diagnostic, DiagnosticSeverity, ExtendedBy, FieldOrigin, Mode
 
 const NOT_ALLOWED_IN_EXTEND: [&str; 3] = ["pk", "primary", "override"];
 
+/// Names the first non-field construct an extend block declares, for the `M3L-E015`
+/// message — a model attribute (`## Target ::extend @attr`) or a section (`### Indexes`,
+/// `### Relations`, `### Behaviors`, `### Metadata`, or a composite `@unique`/`@index`
+/// directive, which lands in the same `sections.indexes` bucket as a declared one).
+fn non_field_construct(block: &ModelNode) -> Option<&'static str> {
+    if !block.attributes.is_empty() {
+        return Some("a model attribute");
+    }
+    if !block.sections.indexes.is_empty()
+        || !block.sections.relations.is_empty()
+        || !block.sections.behaviors.is_empty()
+        || !block.sections.metadata.is_empty()
+        || !block.sections.custom.is_empty()
+    {
+        return Some("a section");
+    }
+    None
+}
+
 fn error(code: &str, file: &str, line: usize, message: String) -> Diagnostic {
     Diagnostic {
         code: code.to_string(),
@@ -57,18 +76,15 @@ pub(crate) fn merge_extend_blocks(
             ));
             block_ok = false;
         }
-        let has_non_field_content = !block.attributes.is_empty()
-            || !block.sections.indexes.is_empty()
-            || !block.sections.relations.is_empty()
-            || !block.sections.behaviors.is_empty()
-            || !block.sections.metadata.is_empty()
-            || !block.sections.custom.is_empty();
-        if has_non_field_content {
+        if let Some(construct) = non_field_construct(&block) {
             errors.push(error(
                 "M3L-E015",
                 &block.source,
                 block.line,
-                format!("Extend block \"{}\" may declare fields only", block.name),
+                format!(
+                    "Extend block \"{}\" declares {construct} — extend blocks may declare fields only",
+                    block.name
+                ),
             ));
             block_ok = false;
         }

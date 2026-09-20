@@ -42,8 +42,13 @@ static RE_NAME_LABEL: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^([\w][\w.]*)\(([^)]*)\)$").unwrap());
 static RE_NAMESPACE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^Namespace:\s*(.+)$").unwrap());
+// Lenient on purpose, the same way `::aspect`/`::subtype` are lenient about a missing
+// base argument: the keyword is matched case-insensitively and the value is captured
+// as written, valid or not. A malformed value, a second header, or a header after the
+// file's first declaration is diagnosed by the resolver (`M3L-E019`) rather than being
+// silently dropped here.
 static RE_PREFIX: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^Prefix:\s*([a-z][a-z0-9]*)\s*$").unwrap());
+    LazyLock::new(|| Regex::new(r"^(?i:prefix):\s*(.*?)\s*$").unwrap());
 static RE_IMPORT: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r#"^@import\s+["'](.+?)["']\s*$"#).unwrap());
 static RE_ENUM_VALUE: LazyLock<Regex> =
@@ -451,8 +456,9 @@ fn parse_name_label(s: &str) -> (String, Option<String>) {
 }
 
 fn parse_namespace(content: &str) -> Option<TokenData> {
-    // Only `# Namespace: ...` produces a token; other H1 lines are
-    // document titles and silently ignored (Design Principle §3, §5).
+    // Recognizes only `# Namespace: ...`. The caller falls back to `# Prefix: ...`
+    // when this returns `None`, and anything else is a document title, silently
+    // ignored (Design Principle §3, §5).
     RE_NAMESPACE.captures(content).map(|caps| TokenData {
         name: Some(caps[1].trim().to_string()),
         is_directive: true,
@@ -1297,9 +1303,27 @@ mod tests {
     }
 
     #[test]
-    fn lex_prefix_rejects_non_lowercase_word() {
+    fn lex_prefix_captures_malformed_value_leniently() {
+        // The lexer no longer rejects an invalid value outright — it captures it as
+        // written (same pattern as a base-less `::aspect`) so the resolver can
+        // diagnose it with file + line (`M3L-E019`) instead of the header
+        // vanishing without a trace.
         let tokens = lex("# Prefix: Insp-X\n", "t.m3l.md");
-        assert!(tokens.iter().all(|t| t.token_type != TokenType::Prefix));
+        let p = tokens
+            .iter()
+            .find(|t| t.token_type == TokenType::Prefix)
+            .expect("prefix token");
+        assert_eq!(p.data.name.as_deref(), Some("Insp-X"));
+    }
+
+    #[test]
+    fn lex_prefix_keyword_is_case_insensitive() {
+        let tokens = lex("# prefix: insp\n", "t.m3l.md");
+        let p = tokens
+            .iter()
+            .find(|t| t.token_type == TokenType::Prefix)
+            .expect("prefix token");
+        assert_eq!(p.data.name.as_deref(), Some("insp"));
     }
 
     #[test]

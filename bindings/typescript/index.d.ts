@@ -62,6 +62,29 @@ export interface CustomAttribute {
   parsed?: CustomAttributeParsed;
 }
 
+// --- Extension / base-kind types ---
+
+/** Where a field came from — set on a field an `::extend` block added to its target. */
+export interface FieldOrigin {
+  prefix?: string;
+  namespace?: string;
+  source: string;
+}
+
+/** The base model named by `::aspect(Base)` / `::subtype(Base)`. */
+export interface ModelBase {
+  kind: "aspect" | "subtype";
+  model: string;
+}
+
+/** One `::extend` block merged into a model, in merge order. */
+export interface ExtendedBy {
+  prefix?: string;
+  namespace?: string;
+  source: string;
+  fields: number;
+}
+
 // --- Enum types ---
 
 export interface EnumValue {
@@ -112,6 +135,8 @@ export interface FieldNode {
   computed?: ComputedDef;
   enum_values?: EnumValue[];
   fields?: FieldNode[];
+  /** Set on a field that an `::extend` block added to this model. */
+  origin?: FieldOrigin;
   loc: SourceLocation;
 }
 
@@ -157,6 +182,12 @@ export interface ModelNode {
   source: string;
   /** Namespace of the source file (`# Namespace: ...`), if any. */
   namespace?: string;
+  /** Owner declared by the source file's `# Prefix:` header, if any. */
+  prefix?: string;
+  /** Base model named by `::aspect(Base)` / `::subtype(Base)`. */
+  base?: ModelBase;
+  /** One entry per `::extend` block merged into this model, in merge order. */
+  extended_by?: ExtendedBy[];
   line: number;
   inherits: string[];
   description?: string;
@@ -178,6 +209,8 @@ export interface EnumNode {
   source: string;
   /** Namespace of the source file (`# Namespace: ...`), if any. */
   namespace?: string;
+  /** Owner declared by the source file's `# Prefix:` header, if any. See `ModelNode.prefix`. */
+  prefix?: string;
   line: number;
   inherits: string[];
   description?: string;

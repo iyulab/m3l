@@ -47,6 +47,7 @@ struct ParserState {
     file: String,
     namespace: Option<String>,
     prefix: Option<String>,
+    prefix_headers: Vec<PrefixHeader>,
     current_element: CurrentElement,
     current_section: Option<String>,
     current_kind: FieldKind,
@@ -75,6 +76,7 @@ pub fn parse_tokens(tokens: &[Token], file: &str) -> ParsedFile {
         file: file.to_string(),
         namespace: None,
         prefix: None,
+        prefix_headers: Vec::new(),
         current_element: CurrentElement::None,
         current_section: None,
         current_kind: FieldKind::Stored,
@@ -109,6 +111,7 @@ pub fn parse_tokens(tokens: &[Token], file: &str) -> ParsedFile {
         extensions: state.extensions,
         attribute_registry: state.attribute_registry,
         imports: state.imports,
+        prefix_headers: state.prefix_headers,
     }
 }
 
@@ -142,11 +145,36 @@ fn handle_namespace(token: &Token, state: &mut ParserState) {
     }
 }
 
+/// A word matches the language of the `[a-z][a-z0-9]*` production — the only shape a
+/// `# Prefix:` value may stamp. Anything else is recorded (see [`PrefixHeader`]) but
+/// left for the resolver to diagnose as `M3L-E019`.
+pub(crate) fn is_valid_prefix_word(value: &str) -> bool {
+    let mut chars = value.chars();
+    match chars.next() {
+        Some(c) if c.is_ascii_lowercase() => {}
+        _ => return false,
+    }
+    chars.all(|c| c.is_ascii_lowercase() || c.is_ascii_digit())
+}
+
 fn handle_prefix(token: &Token, state: &mut ParserState) {
-    // Same rule as the namespace header: it describes the file, so it only
-    // counts before the first declaration.
-    if matches!(state.current_element, CurrentElement::None) {
-        state.prefix = token.data.name.clone();
+    let value = token.data.name.clone().unwrap_or_default();
+    let before_first_declaration = matches!(state.current_element, CurrentElement::None);
+    let is_first_header = state.prefix_headers.is_empty();
+
+    state.prefix_headers.push(PrefixHeader {
+        value: value.clone(),
+        line: token.line,
+        before_first_declaration,
+    });
+
+    // Same rule as the namespace header: it describes the file, so it only counts
+    // before the first declaration. Among headers that qualify, only the very first
+    // one in the file can stamp, and only with a valid value — a malformed value
+    // does not fall through to a later header (that header is reported on its own,
+    // M3L-E019, not silently promoted).
+    if is_first_header && before_first_declaration && is_valid_prefix_word(&value) {
+        state.prefix = Some(value);
     }
 }
 

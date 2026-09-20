@@ -8,14 +8,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 - **`# Prefix:` file header** — declares the owner of everything a file declares; stamped on
-  models, enums and extend blocks as `prefix`.
+  models, enums, interfaces, views and extend blocks as `prefix`. The keyword is matched
+  case-insensitively; a value that does not match `[a-z][a-z0-9]*`, a second header in the
+  same file, or a header declared after the file's first declaration is reported as
+  `M3L-E019` rather than silently dropped.
 - **`## Target ::extend`** — adds fields to a model declared elsewhere. The resolver merges them
   after inherited and own fields; each carries `origin`, and the target carries `extended_by`.
-  New diagnostics `M3L-E011`–`M3L-E015`.
+  New diagnostics `M3L-E011`–`M3L-E015`. Extension is not inherited: a model that inherits an
+  extended model does not receive that model's extension fields.
 - **`## Name ::aspect(Base)` / `::subtype(Base)`** — ordinary models that name a base (`base`).
   New diagnostics `M3L-E016`–`M3L-E018`.
 - `ResolveOptions.merge_extends` (default on; the formatter turns it off).
 - C# binding: `FieldNode.Origin`, `ModelNode.Prefix` / `Base` / `ExtendedBy`, `EnumNode.Prefix`.
+- TypeScript binding: `FieldOrigin`, `ModelBase`, `ExtendedBy` types; `FieldNode.origin`,
+  `ModelNode.prefix` / `base` / `extended_by`, `EnumNode.prefix`.
 
 ### Changed
 - `extend`, `aspect` and `subtype` are no longer generic kinds: they used to land in the
@@ -24,7 +30,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 - `m3l format` no longer needs to drop what it cannot express for these constructs — the owner
-  header, extend blocks and base kinds survive a round-trip.
+  header, extend blocks and base kinds survive a round-trip. The owner-header scan itself was
+  incomplete: a file that declared only interfaces or only views lost its `# Prefix:` header on
+  format, since the scan chained models, extend blocks and enums but not those two kinds.
 
 ## [0.12.0] - 2026-09-19
 

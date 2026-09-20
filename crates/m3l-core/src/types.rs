@@ -501,11 +501,28 @@ pub struct AttributeRegistryEntry {
     pub default_value: Option<AttrArgValue>,
 }
 
+/// One `# Prefix:` header seen while lexing a file, valid or not. The parser records
+/// every occurrence (not only the one it stamps) so the resolver can diagnose a
+/// malformed value, a repeated header, or a header that arrived after the file's
+/// first declaration (`M3L-E019`).
+#[derive(Debug, Clone)]
+pub struct PrefixHeader {
+    /// The raw text after `Prefix:`, before validity is checked.
+    pub value: String,
+    pub line: usize,
+    /// True when this header appeared before any model, enum, interface, view, flow,
+    /// or extend block in the file — only such a header is eligible to be stamped.
+    pub before_first_declaration: bool,
+}
+
 /// Intermediate result from parsing a single file (not directly serialized as final output).
 #[derive(Debug, Clone)]
 pub struct ParsedFile {
     pub source: String,
     pub namespace: Option<String>,
+    /// The value stamped on this file's declarations — only a valid value from the
+    /// first `# Prefix:` header that precedes the file's first declaration. See
+    /// [`PrefixHeader`] for every header the file actually contained.
     pub prefix: Option<String>,
     pub models: Vec<ModelNode>,
     pub enums: Vec<EnumNode>,
@@ -516,6 +533,8 @@ pub struct ParsedFile {
     pub attribute_registry: Vec<AttributeRegistryEntry>,
     /// Import paths found in this file (for circular import detection).
     pub imports: Vec<String>,
+    /// Every `# Prefix:` header the lexer found in this file, in source order.
+    pub prefix_headers: Vec<PrefixHeader>,
 }
 
 /// Final AST — top-level JSON output.

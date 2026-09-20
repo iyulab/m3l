@@ -26,7 +26,10 @@ fn format_ast(ast: &m3l_core::M3lAst) -> String {
         lines.push(String::new());
     }
 
-    // Owner prefix — a file-level fact; every declaration of the file carries the same value.
+    // Owner prefix — a file-level fact; every declaration of the file carries the same
+    // value, so any one of them (model, enum, interface, view, flow, or extend block)
+    // is enough to recover it. A file that declares only interfaces or only views
+    // dropped the header before every declaration kind was chained here.
     let prefix = ast
         .models
         .iter()
@@ -38,6 +41,9 @@ fn format_ast(ast: &m3l_core::M3lAst) -> String {
                 .filter_map(|m| m.prefix.as_deref()),
         )
         .chain(ast.enums.iter().filter_map(|e| e.prefix.as_deref()))
+        .chain(ast.interfaces.iter().filter_map(|m| m.prefix.as_deref()))
+        .chain(ast.views.iter().filter_map(|m| m.prefix.as_deref()))
+        .chain(ast.flows.iter().filter_map(|m| m.prefix.as_deref()))
         .next();
     if let Some(p) = prefix {
         // keep it directly under the namespace line, before the blank separator
@@ -318,8 +324,14 @@ mod tests {
     /// blocks — only exist once `run_format` reads from a path, so the
     /// in-memory `format_ast(&resolve(...))` shortcut the other tests use
     /// can't exercise them.
+    ///
+    /// The path must be unique per call: `cargo test` runs these in parallel
+    /// threads, and a shared filename let two calls race on the same file —
+    /// one test's `format_source` could read back another's fixture.
     fn format_source(src: &str) -> String {
-        let path = std::env::temp_dir().join("m3l-cli-format-unit-test.m3l.md");
+        static COUNTER: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+        let id = COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let path = std::env::temp_dir().join(format!("m3l-cli-format-unit-test-{id}.m3l.md"));
         std::fs::write(&path, src).expect("write test fixture");
         let result = run_format(&path).expect("run_format");
         std::fs::remove_file(&path).ok();
@@ -343,6 +355,37 @@ mod tests {
             out.contains("## Asset ::extend\n- insp_grade: string(20)?"),
             "{out}"
         );
+        assert_eq!(format_source(&out), out, "formatting must be idempotent");
+    }
+
+    /// A file that declares only an interface still owns a `# Prefix:` header — the
+    /// scan that recovers it for re-emission used to chain models, extend blocks and
+    /// enums only, so an interface-only file lost the header on format.
+    #[test]
+    fn format_keeps_prefix_on_an_interface_only_file() {
+        let src = "# Namespace: ex.insp\n# Prefix: insp\n\n## Timestampable ::interface\n- created_at: timestamp = now()\n";
+        let out = format_source(src);
+        assert!(out.contains("# Prefix: insp"), "{out}");
+        assert_eq!(format_source(&out), out, "formatting must be idempotent");
+    }
+
+    /// Same gap, for a view-only file.
+    #[test]
+    fn format_keeps_prefix_on_a_view_only_file() {
+        let src = "# Namespace: ex.insp\n# Prefix: insp\n\n## ActiveAssets ::view\n### Source\n- from: Asset\n- name_label: string @from(Asset.name)\n";
+        let out = format_source(src);
+        assert!(out.contains("# Prefix: insp"), "{out}");
+        assert_eq!(format_source(&out), out, "formatting must be idempotent");
+    }
+
+    /// A prefixed file with no `# Namespace:` line exercises the insert-at-0 branch —
+    /// the header must land as the very first line, not after a namespace that isn't
+    /// there.
+    #[test]
+    fn format_keeps_prefix_with_no_namespace_line() {
+        let src = "# Prefix: insp\n\n## InspRecord\n- id: identifier @pk\n";
+        let out = format_source(src);
+        assert!(out.starts_with("# Prefix: insp"), "{out}");
         assert_eq!(format_source(&out), out, "formatting must be idempotent");
     }
 

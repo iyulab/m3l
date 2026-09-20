@@ -24,6 +24,44 @@ fn prefix_after_first_model_is_ignored() {
 }
 
 #[test]
+fn e019_lowercase_keyword_is_accepted_and_stamped() {
+    let f = parse_string("# prefix: insp\n\n## A\n- id: identifier @pk\n", "a.m3l.md");
+    assert_eq!(f.prefix.as_deref(), Some("insp"));
+    assert!(resolve(&[f], None).errors.is_empty());
+}
+
+#[test]
+fn e019_malformed_value_is_rejected_and_not_stamped() {
+    let f = parse_string("# Prefix: Insp\n\n## A\n- id: identifier @pk\n", "a.m3l.md");
+    assert_eq!(f.prefix, None);
+    assert_eq!(codes(&resolve(&[f], None)), ["M3L-E019"]);
+}
+
+#[test]
+fn e019_hyphenated_value_is_rejected() {
+    let f = parse_string("# Prefix: a-b\n\n## A\n- id: identifier @pk\n", "a.m3l.md");
+    assert_eq!(f.prefix, None);
+    assert_eq!(codes(&resolve(&[f], None)), ["M3L-E019"]);
+}
+
+#[test]
+fn e019_second_header_is_flagged_but_the_first_still_stamps() {
+    let f = parse_string(
+        "# Prefix: insp\n# Prefix: acme\n\n## A\n- id: identifier @pk\n",
+        "a.m3l.md",
+    );
+    assert_eq!(f.prefix.as_deref(), Some("insp"));
+    assert_eq!(codes(&resolve(&[f], None)), ["M3L-E019"]);
+}
+
+#[test]
+fn e019_header_after_first_declaration_is_flagged() {
+    let f = parse_string("## A\n- id: identifier @pk\n\n# Prefix: late\n", "a.m3l.md");
+    assert_eq!(f.prefix, None);
+    assert_eq!(codes(&resolve(&[f], None)), ["M3L-E019"]);
+}
+
+#[test]
 fn aspect_is_a_model_with_a_base() {
     let f = parse_string(
         "## AssetProfile ::aspect(Asset) : Timestampable\n- level: integer?\n",
@@ -92,6 +130,22 @@ fn extend_fields_are_appended_after_inherited_and_own_fields() {
     assert_eq!(asset.extended_by.len(), 1);
     assert_eq!(asset.extended_by[0].fields, 1);
     assert!(!ast.extensions.contains_key("extend"));
+}
+
+#[test]
+fn inheriting_an_extended_model_does_not_receive_its_extension_fields() {
+    // Extension is not inherited: inheritance is resolved before extend blocks are
+    // merged, and an extend block targets the one model it names, not its
+    // descendants — `Vehicle : Asset` must not pick up `Asset`'s extension field.
+    let src = format!(
+        "{BASE}\n## Vehicle : Asset\n- plate_no: string(20)\n\n## Asset ::extend\n- insp_grade: string(20)?\n"
+    );
+    let ast = resolve(&[parse_string(&src, "c.m3l.md")], None);
+    assert!(ast.errors.is_empty(), "{:?}", ast.errors);
+    let vehicle = ast.models.iter().find(|m| m.name == "Vehicle").unwrap();
+    assert!(!vehicle.fields.iter().any(|f| f.name == "insp_grade"));
+    let asset = ast.models.iter().find(|m| m.name == "Asset").unwrap();
+    assert!(asset.fields.iter().any(|f| f.name == "insp_grade"));
 }
 
 #[test]
@@ -183,9 +237,13 @@ fn e015_anything_but_fields() {
     ] {
         let base = parse_string(BASE, "base.m3l.md");
         let ext = parse_string(&format!("## Asset ::extend\n{body}"), "e.m3l.md");
+        let ast = resolve(&[base, ext], None);
+        assert!(codes(&ast).contains(&"M3L-E015"), "{body}");
+        let e015 = ast.errors.iter().find(|e| e.code == "M3L-E015").unwrap();
         assert!(
-            codes(&resolve(&[base, ext], None)).contains(&"M3L-E015"),
-            "{body}"
+            e015.message.contains("a section"),
+            "expected the construct to be named: {}",
+            e015.message
         );
     }
 }

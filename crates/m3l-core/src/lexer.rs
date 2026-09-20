@@ -15,8 +15,9 @@ static RE_LIST_ITEM: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(\s*)- (.+
 static RE_BLANK: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\s*$").unwrap());
 
 // H2 sub-patterns
-static RE_TYPE_INDICATOR: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^(@?[\w][\w.]*(?:\([^)]*\))?)\s*::(\w+)(.*)$").unwrap());
+static RE_TYPE_INDICATOR: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"^(@?[\w][\w.]*(?:\([^)]*\))?)\s*::(\w+)(?:\(([^)]*)\))?(.*)$").unwrap()
+});
 static RE_MODEL_DEF: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"^([\w][\w.]*(?:\([^)]*\))?)\s*(?::\s*(.+?))?(\s+@.+)?$").unwrap()
 });
@@ -41,6 +42,8 @@ static RE_NAME_LABEL: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^([\w][\w.]*)\(([^)]*)\)$").unwrap());
 static RE_NAMESPACE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^Namespace:\s*(.+)$").unwrap());
+static RE_PREFIX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^Prefix:\s*([a-z][a-z0-9]*)\s*$").unwrap());
 static RE_IMPORT: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r#"^@import\s+["'](.+?)["']\s*$"#).unwrap());
 static RE_ENUM_VALUE: LazyLock<Regex> =
@@ -180,10 +183,10 @@ pub fn lex(content: &str, _file: &str) -> Vec<Token> {
             continue;
         }
 
-        // H1 — Namespace (only if `# Namespace: ...` pattern)
-        // Non-namespace H1 lines (e.g. `# My Data Model`) are treated as
-        // document titles and silently ignored — M3L preserves Markdown
-        // heading semantics (Design Principle §3, §5).
+        // H1 — Namespace or Prefix directive (`# Namespace: ...` / `# Prefix: ...`)
+        // Any other H1 line (e.g. `# My Data Model`) is treated as a document
+        // title and silently ignored — M3L preserves Markdown heading semantics
+        // (Design Principle §3, §5).
         if let Some(caps) = RE_H1.captures(raw) {
             let h1_content = caps[1].trim();
             if let Some(data) = parse_namespace(h1_content) {
@@ -193,6 +196,18 @@ pub fn lex(content: &str, _file: &str) -> Vec<Token> {
                     line: line_num,
                     indent: 0,
                     data,
+                });
+            } else if let Some(caps) = RE_PREFIX.captures(h1_content) {
+                tokens.push(Token {
+                    token_type: TokenType::Prefix,
+                    raw: raw.to_string(),
+                    line: line_num,
+                    indent: 0,
+                    data: TokenData {
+                        name: Some(caps[1].to_string()),
+                        is_directive: true,
+                        ..TokenData::default()
+                    },
                 });
             }
             i += 1;
@@ -316,12 +331,14 @@ fn tokenize_h2(content: &str, raw: &str, line: usize) -> Token {
     if let Some(caps) = RE_TYPE_INDICATOR.captures(content) {
         let namepart = &caps[1];
         let type_indicator = &caps[2];
-        let rest = caps.get(3).map(|m| m.as_str().trim()).unwrap_or("");
+        let kind_arg = caps.get(3).map(|m| m.as_str().trim().to_string());
+        let rest = caps.get(4).map(|m| m.as_str().trim()).unwrap_or("");
 
         let (name, label) = parse_name_label(namepart);
         let mut data = TokenData::default();
         data.name = Some(name);
         data.label = label;
+        data.kind_arg = kind_arg;
 
         // Parse inheritance
         if let Some(inherit_caps) = RE_H2_INHERIT.captures(rest) {
@@ -1267,5 +1284,41 @@ mod tests {
         let args = parse_attr_args_string("23:59:59");
         assert_eq!(args.len(), 1);
         assert_eq!(args[0], AttrArgValue::String("23:59:59".into()));
+    }
+
+    #[test]
+    fn lex_prefix_header() {
+        let tokens = lex("# Namespace: a.b\n# Prefix: insp\n", "t.m3l.md");
+        let p = tokens
+            .iter()
+            .find(|t| t.token_type == TokenType::Prefix)
+            .expect("prefix token");
+        assert_eq!(p.data.name.as_deref(), Some("insp"));
+    }
+
+    #[test]
+    fn lex_prefix_rejects_non_lowercase_word() {
+        let tokens = lex("# Prefix: Insp-X\n", "t.m3l.md");
+        assert!(tokens.iter().all(|t| t.token_type != TokenType::Prefix));
+    }
+
+    #[test]
+    fn lex_kind_with_argument_and_parents() {
+        let tokens = lex(
+            "## AssetProfile ::aspect(Asset) : Timestampable\n",
+            "t.m3l.md",
+        );
+        let t = &tokens[0];
+        assert_eq!(t.token_type, TokenType::Extension("aspect".into()));
+        assert_eq!(t.data.name.as_deref(), Some("AssetProfile"));
+        assert_eq!(t.data.kind_arg.as_deref(), Some("Asset"));
+        assert_eq!(t.data.inherits, vec!["Timestampable".to_string()]);
+    }
+
+    #[test]
+    fn lex_kind_without_argument_keeps_parents() {
+        let tokens = lex("## UserStatus ::enum : BasicStatus\n", "t.m3l.md");
+        assert_eq!(tokens[0].data.kind_arg, None);
+        assert_eq!(tokens[0].data.inherits, vec!["BasicStatus".to_string()]);
     }
 }

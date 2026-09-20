@@ -19,6 +19,7 @@ pub struct SourceLocation {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TokenType {
     Namespace,
+    Prefix,
     Model,
     Enum,
     Interface,
@@ -57,6 +58,8 @@ pub struct TokenData {
     pub inherits: Vec<String>,
     pub attributes: Vec<RawAttribute>,
     pub materialized: Option<bool>,
+    /// Argument of a `::kind(arg)` header — `Asset` in `::aspect(Asset)`.
+    pub kind_arg: Option<String>,
 
     // Field / Nested item
     pub type_name: Option<String>,

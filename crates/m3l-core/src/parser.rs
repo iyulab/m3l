@@ -112,6 +112,7 @@ pub fn parse_tokens(tokens: &[Token], file: &str) -> ParsedFile {
 fn process_token(token: &Token, state: &mut ParserState) {
     match &token.token_type {
         TokenType::Namespace => handle_namespace(token, state),
+        TokenType::Prefix => {}
         TokenType::Model | TokenType::Interface => handle_model_start(token, state),
         TokenType::Enum => handle_enum_start(token, state),
         TokenType::View => handle_view_start(token, state),

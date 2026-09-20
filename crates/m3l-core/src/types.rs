@@ -287,6 +287,9 @@ pub struct FieldNode {
     pub enum_values: Option<Vec<EnumValue>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub fields: Option<Vec<FieldNode>>,
+    /// Set on a field that an `::extend` block added to this model.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub origin: Option<FieldOrigin>,
     pub loc: SourceLocation,
 }
 
@@ -372,6 +375,31 @@ pub struct Sections {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ModelBase {
+    pub kind: String,
+    pub model: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FieldOrigin {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub prefix: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub namespace: Option<String>,
+    pub source: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ExtendedBy {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub prefix: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub namespace: Option<String>,
+    pub source: String,
+    pub fields: usize,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ModelNode {
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -385,6 +413,15 @@ pub struct ModelNode {
     /// the file→namespace mapping.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub namespace: Option<String>,
+    /// Owner declared by the source file's `# Prefix:` header, if any.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prefix: Option<String>,
+    /// Base model named by `::aspect(Base)` / `::subtype(Base)`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub base: Option<ModelBase>,
+    /// One entry per `::extend` block merged into this model, in merge order.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub extended_by: Vec<ExtendedBy>,
     pub line: usize,
     pub inherits: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -412,6 +449,9 @@ pub struct EnumNode {
     /// Namespace of the source file (`# Namespace: ...`), if any. See `ModelNode::namespace`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub namespace: Option<String>,
+    /// Owner declared by the source file's `# Prefix:` header, if any. See `ModelNode::prefix`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prefix: Option<String>,
     pub line: usize,
     pub inherits: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -466,6 +506,7 @@ pub struct AttributeRegistryEntry {
 pub struct ParsedFile {
     pub source: String,
     pub namespace: Option<String>,
+    pub prefix: Option<String>,
     pub models: Vec<ModelNode>,
     pub enums: Vec<EnumNode>,
     pub interfaces: Vec<ModelNode>,

@@ -46,6 +46,7 @@ struct AttrDef {
 struct ParserState {
     file: String,
     namespace: Option<String>,
+    prefix: Option<String>,
     current_element: CurrentElement,
     current_section: Option<String>,
     current_kind: FieldKind,
@@ -73,6 +74,7 @@ pub fn parse_tokens(tokens: &[Token], file: &str) -> ParsedFile {
     let mut state = ParserState {
         file: file.to_string(),
         namespace: None,
+        prefix: None,
         current_element: CurrentElement::None,
         current_section: None,
         current_kind: FieldKind::Stored,
@@ -98,6 +100,7 @@ pub fn parse_tokens(tokens: &[Token], file: &str) -> ParsedFile {
     ParsedFile {
         source: file.to_string(),
         namespace: state.namespace,
+        prefix: state.prefix,
         models: state.models,
         enums: state.enums,
         interfaces: state.interfaces,
@@ -112,11 +115,16 @@ pub fn parse_tokens(tokens: &[Token], file: &str) -> ParsedFile {
 fn process_token(token: &Token, state: &mut ParserState) {
     match &token.token_type {
         TokenType::Namespace => handle_namespace(token, state),
-        TokenType::Prefix => {}
+        TokenType::Prefix => handle_prefix(token, state),
         TokenType::Model | TokenType::Interface => handle_model_start(token, state),
         TokenType::Enum => handle_enum_start(token, state),
         TokenType::View => handle_view_start(token, state),
         TokenType::Flow => handle_flow_start(token, state),
+        TokenType::Extension(ext_type)
+            if ext_type.as_str() == "aspect" || ext_type.as_str() == "subtype" =>
+        {
+            handle_based_model_start(token, ext_type, state)
+        }
         TokenType::Extension(ext_type) => handle_extension_start(token, ext_type, state),
         TokenType::AttributeDef => handle_attribute_def_start(token, state),
         TokenType::Section => handle_section(token, state),
@@ -131,6 +139,14 @@ fn process_token(token: &Token, state: &mut ParserState) {
 fn handle_namespace(token: &Token, state: &mut ParserState) {
     if matches!(state.current_element, CurrentElement::None) {
         state.namespace = token.data.name.clone();
+    }
+}
+
+fn handle_prefix(token: &Token, state: &mut ParserState) {
+    // Same rule as the namespace header: it describes the file, so it only
+    // counts before the first declaration.
+    if matches!(state.current_element, CurrentElement::None) {
+        state.prefix = token.data.name.clone();
     }
 }
 
@@ -150,6 +166,9 @@ fn handle_model_start(token: &Token, state: &mut ParserState) {
         model_type,
         source: state.file.clone(),
         namespace: state.namespace.clone(),
+        prefix: state.prefix.clone(),
+        base: None,
+        extended_by: Vec::new(),
         line: token.line,
         inherits: token.data.inherits.clone(),
         description: None,
@@ -173,6 +192,17 @@ fn handle_model_start(token: &Token, state: &mut ParserState) {
     state.source_directives_done = false;
 }
 
+/// `## Name ::aspect(Base)` / `::subtype(Base)` — an ordinary model that names a base.
+fn handle_based_model_start(token: &Token, kind: &str, state: &mut ParserState) {
+    handle_model_start(token, state);
+    if let CurrentElement::Model(ref mut model) = state.current_element {
+        model.base = Some(ModelBase {
+            kind: kind.to_string(),
+            model: token.data.kind_arg.clone().unwrap_or_default(),
+        });
+    }
+}
+
 fn handle_enum_start(token: &Token, state: &mut ParserState) {
     finalize_element(state);
 
@@ -182,6 +212,7 @@ fn handle_enum_start(token: &Token, state: &mut ParserState) {
         enum_type: ModelType::Enum,
         source: state.file.clone(),
         namespace: state.namespace.clone(),
+        prefix: state.prefix.clone(),
         line: token.line,
         inherits: token.data.inherits.clone(),
         description: token.data.description.clone(),
@@ -209,6 +240,9 @@ fn handle_view_start(token: &Token, state: &mut ParserState) {
         model_type: ModelType::View,
         source: state.file.clone(),
         namespace: state.namespace.clone(),
+        prefix: state.prefix.clone(),
+        base: None,
+        extended_by: Vec::new(),
         line: token.line,
         inherits: Vec::new(),
         description: None,
@@ -241,6 +275,9 @@ fn handle_flow_start(token: &Token, state: &mut ParserState) {
         model_type: ModelType::Flow,
         source: state.file.clone(),
         namespace: state.namespace.clone(),
+        prefix: state.prefix.clone(),
+        base: None,
+        extended_by: Vec::new(),
         line: token.line,
         inherits: Vec::new(),
         description: None,
@@ -273,8 +310,11 @@ fn handle_extension_start(token: &Token, ext_type: &str, state: &mut ParserState
         model_type: ModelType::Extension(ext_type.to_string()),
         source: state.file.clone(),
         namespace: state.namespace.clone(),
+        prefix: state.prefix.clone(),
+        base: None,
+        extended_by: Vec::new(),
         line: token.line,
-        inherits: Vec::new(),
+        inherits: token.data.inherits.clone(),
         description: None,
         attributes: parse_raw_attributes(&token.data.attributes),
         fields: Vec::new(),
@@ -1349,6 +1389,7 @@ fn build_field_node(
         },
         enum_values: None,
         fields: None,
+        origin: None,
         loc: SourceLocation {
             file: file.to_string(),
             line: token.line,

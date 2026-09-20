@@ -11,6 +11,7 @@ pub fn run_format(input_path: &Path) -> Result<String, String> {
         input_path,
         m3l_core::ResolveOptions {
             inline_inherited: false,
+            merge_extends: false,
         },
     )?;
     Ok(format_ast(&ast))

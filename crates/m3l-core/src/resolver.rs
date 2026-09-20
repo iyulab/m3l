@@ -17,12 +17,18 @@ pub struct ResolveOptions {
     /// re-emitted them *and* the `: Parent` header, duplicating the fields on
     /// every round-trip.
     pub inline_inherited: bool,
+    /// Merge `::extend` blocks into the models they target. On by default.
+    /// Off for consumers that reproduce the source document (the formatter):
+    /// a merged field is indistinguishable from the model's own, so the block
+    /// would be lost and its fields written into the base file.
+    pub merge_extends: bool,
 }
 
 impl Default for ResolveOptions {
     fn default() -> Self {
         Self {
             inline_inherited: true,
+            merge_extends: true,
         }
     }
 }
@@ -64,6 +70,14 @@ pub fn resolve_with(
         }
         all_attr_registry.extend(file.attribute_registry.iter().cloned());
     }
+
+    // `::extend` blocks are named after their *target*, so they must not take part in
+    // the duplicate-name pass — two blocks for one model are the normal case.
+    let extend_blocks: Vec<ModelNode> = if options.merge_extends {
+        all_extensions.remove("extend").unwrap_or_default()
+    } else {
+        Vec::new()
+    };
 
     // Build source → namespace map for E008 ambiguity detection
     let source_ns: HashMap<&str, Option<&str>> = files
@@ -186,7 +200,10 @@ pub fn resolve_with(
         ));
     }
 
-    for ext_nodes in all_extensions.values() {
+    for (kind, ext_nodes) in &all_extensions {
+        if kind == "extend" {
+            continue;
+        }
         for ext in ext_nodes {
             check_duplicate(
                 &ext.name,
@@ -257,6 +274,9 @@ pub fn resolve_with(
             );
         }
     }
+
+    crate::extend::merge_extend_blocks(&mut all_models, extend_blocks, &mut errors);
+    crate::extend::check_model_bases(&all_models, &mut errors);
 
     // Check duplicate field names
     for model in all_models

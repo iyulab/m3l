@@ -1,4 +1,5 @@
 pub mod catalogs;
+mod extend;
 pub mod ffi;
 pub mod lexer;
 pub mod parser;

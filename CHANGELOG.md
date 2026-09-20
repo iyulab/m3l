@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.13.0] - 2026-09-20
+
+### Added
+- **`# Prefix:` file header** — declares the owner of everything a file declares; stamped on
+  models, enums and extend blocks as `prefix`.
+- **`## Target ::extend`** — adds fields to a model declared elsewhere. The resolver merges them
+  after inherited and own fields; each carries `origin`, and the target carries `extended_by`.
+  New diagnostics `M3L-E011`–`M3L-E015`.
+- **`## Name ::aspect(Base)` / `::subtype(Base)`** — ordinary models that name a base (`base`).
+  New diagnostics `M3L-E016`–`M3L-E018`.
+- `ResolveOptions.merge_extends` (default on; the formatter turns it off).
+- C# binding: `FieldNode.Origin`, `ModelNode.Prefix` / `Base` / `ExtendedBy`, `EnumNode.Prefix`.
+
+### Changed
+- `extend`, `aspect` and `subtype` are no longer generic kinds: they used to land in the
+  untyped `extensions` map. A document using those words as custom kinds changes meaning.
+- A generic `::kind` header now keeps its parent list (`inherits`) instead of dropping it.
+
+### Fixed
+- `m3l format` no longer needs to drop what it cannot express for these constructs — the owner
+  header, extend blocks and base kinds survive a round-trip.
+
 ## [0.12.0] - 2026-09-19
 
 ### Added

@@ -310,6 +310,9 @@ public class FieldNode
     [JsonPropertyName("fields")]
     public List<FieldNode>? Fields { get; set; }
 
+    [JsonPropertyName("origin")]
+    public FieldOrigin? Origin { get; set; }
+
     [JsonPropertyName("loc")]
     public SourceLocation Loc { get; set; } = new();
 }
@@ -399,6 +402,46 @@ public class Sections
 // Top-level node types
 // ---------------------------------------------------------------------------
 
+/// <summary>Where a field came from when an <c>::extend</c> block added it to a model.</summary>
+public class FieldOrigin
+{
+    [JsonPropertyName("prefix")]
+    public string? Prefix { get; set; }
+
+    [JsonPropertyName("namespace")]
+    public string? Namespace { get; set; }
+
+    [JsonPropertyName("source")]
+    public string Source { get; set; } = "";
+}
+
+/// <summary>The base model named by <c>::aspect(Base)</c> or <c>::subtype(Base)</c>.</summary>
+public class ModelBase
+{
+    /// <summary><c>aspect</c> or <c>subtype</c>.</summary>
+    [JsonPropertyName("kind")]
+    public string Kind { get; set; } = "";
+
+    [JsonPropertyName("model")]
+    public string Model { get; set; } = "";
+}
+
+/// <summary>One <c>::extend</c> block merged into a model.</summary>
+public class ExtendedBy
+{
+    [JsonPropertyName("prefix")]
+    public string? Prefix { get; set; }
+
+    [JsonPropertyName("namespace")]
+    public string? Namespace { get; set; }
+
+    [JsonPropertyName("source")]
+    public string Source { get; set; } = "";
+
+    [JsonPropertyName("fields")]
+    public int Fields { get; set; }
+}
+
 /// <summary>
 /// A model node in the AST.
 /// </summary>
@@ -419,6 +462,16 @@ public class ModelNode
     /// <summary>Namespace of the source file (<c># Namespace: ...</c>), if any.</summary>
     [JsonPropertyName("namespace")]
     public string? Namespace { get; set; }
+
+    /// <summary>Owner declared by the source file's <c># Prefix:</c> header, if any.</summary>
+    [JsonPropertyName("prefix")]
+    public string? Prefix { get; set; }
+
+    [JsonPropertyName("base")]
+    public ModelBase? Base { get; set; }
+
+    [JsonPropertyName("extended_by")]
+    public List<ExtendedBy> ExtendedBy { get; set; } = [];
 
     [JsonPropertyName("line")]
     public int Line { get; set; }
@@ -471,6 +524,10 @@ public class EnumNode
     /// <summary>Namespace of the source file (<c># Namespace: ...</c>), if any.</summary>
     [JsonPropertyName("namespace")]
     public string? Namespace { get; set; }
+
+    /// <summary>Owner declared by the source file's <c># Prefix:</c> header, if any.</summary>
+    [JsonPropertyName("prefix")]
+    public string? Prefix { get; set; }
 
     [JsonPropertyName("line")]
     public int Line { get; set; }

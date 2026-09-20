@@ -1186,7 +1186,7 @@ When inheriting conflicting fields:
 ```
 
 #### 3.4.6 File Owner (# Prefix:)
-> **Status: Planned** — Not yet implemented in parser.
+> **Status: Implemented** — Fully supported in `m3l-core` parser and resolver.
 
 A file header, sibling of `# Namespace:`, that declares the owner of everything the file
 declares. `<word>` matches `[a-z][a-z0-9]*`. It is stamped on every model, enum, interface,
@@ -1200,7 +1200,7 @@ owner: no prefix. M3L records ownership; it does not enforce a naming policy for
 ```
 
 #### 3.4.7 Extending a Model (::extend)
-> **Status: Planned** — Not yet implemented in parser.
+> **Status: Implemented** — Fully supported in `m3l-core` parser and resolver.
 
 Adds the block's fields to the end of `Target`'s field list, after inherited and own fields,
 in source-file order. Each added field carries `origin { prefix, namespace, source }`, and
@@ -1218,7 +1218,7 @@ Not to be confused with §8 Extensions, which is about Markdown-level extensibil
 the generic `extensions` map that unrecognized `::kind` words land in.
 
 #### 3.4.8 Models with a Base (::aspect, ::subtype)
-> **Status: Planned** — Not yet implemented in parser.
+> **Status: Implemented** — Fully supported in `m3l-core` parser and resolver.
 
 Ordinary models that additionally name one base model: `base { kind, model }`. `aspect` says
 "an optional companion of one Base row, existing or not as a unit"; `subtype` says "a kind of

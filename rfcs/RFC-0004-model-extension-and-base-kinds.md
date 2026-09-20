@@ -1,6 +1,6 @@
 # M3L RFC-0004: Model Extension and Base Kinds
 
-> **RFC Status**: Draft
+> **RFC Status**: Accepted (implemented in 0.13.0)
 > **Author**: UJ (iyulab)
 > **Date**: 2026-09-20
 > **M3L Version Target**: 0.13.0

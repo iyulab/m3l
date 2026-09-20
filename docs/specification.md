@@ -1185,6 +1185,51 @@ When inheriting conflicting fields:
 - updated_at: timestamp @override  # Explicitly overrides the field from base
 ```
 
+#### 3.4.6 File Owner (# Prefix:)
+> **Status: Planned** — Not yet implemented in parser.
+
+A file header, sibling of `# Namespace:`, that declares the owner of everything the file
+declares. `<word>` matches `[a-z][a-z0-9]*`. It is stamped on every model, enum, interface,
+view and extend block defined in the file, as `prefix`. Files without the header share one
+owner: no prefix. M3L records ownership; it does not enforce a naming policy for how a
+`prefix` relates to the model and field names built on it — that is a generator concern.
+
+```markdown
+# Namespace: example.inspection
+# Prefix: insp
+```
+
+#### 3.4.7 Extending a Model (::extend)
+> **Status: Planned** — Not yet implemented in parser.
+
+Adds the block's fields to the end of `Target`'s field list, after inherited and own fields,
+in source-file order. Each added field carries `origin { prefix, namespace, source }`, and
+`Target` carries `extended_by[]`. The block is not a model: it has no name of its own, no
+parents, no sections, no model-level directives — fields only (stored and derived kinds
+alike).
+
+```markdown
+## Asset ::extend
+- insp_grade: string(20)?
+- insp_last_checked_at: timestamp?
+```
+
+Not to be confused with §8 Extensions, which is about Markdown-level extensibility, nor with
+the generic `extensions` map that unrecognized `::kind` words land in.
+
+#### 3.4.8 Models with a Base (::aspect, ::subtype)
+> **Status: Planned** — Not yet implemented in parser.
+
+Ordinary models that additionally name one base model: `base { kind, model }`. `aspect` says
+"an optional companion of one Base row, existing or not as a unit"; `subtype` says "a kind of
+Base". M3L records the declaration and checks that the base model exists and is not itself
+an aspect. How a generator stores either is not part of the language. A parent list may
+follow the base argument.
+
+```markdown
+## AssetMaintenanceProfile ::aspect(Asset) : Timestampable
+```
+
 ### 3.5 Metadata Definition
 > **Status: Implemented** — Fully supported in `m3l-core` parser.
 
@@ -2569,7 +2614,7 @@ This section defines the normative grammar for M3L using PEG (Parsing Expression
 #### 10.3.1 Document Structure
 
 ```peg
-Document       ← Namespace? (Import / HRule / ModelDef / EnumDef / InterfaceDef / ViewDef)*
+Document       ← Namespace? PrefixDecl? (Import / HRule / ModelDef / EnumDef / InterfaceDef / ViewDef / ExtendDef / BasedModel)*
 Namespace      ← '# Namespace:' _ QualifiedName NL
                 / '#' _ FreeText NL
 Import         ← '@import' _ QuotedString (_ 'as' _ Identifier)? NL
@@ -2580,6 +2625,11 @@ HRule          ← '---' '-'* NL
 
 ```peg
 ModelDef       ← '## ' ModelName Inheritance? ModelAttrs? NL
+                  Description? (FieldDef / SectionDef / RelationLine / IndexLine / MetaLine)*
+PrefixDecl     ← '# Prefix:' _ [a-z] [a-z0-9]* NL
+ExtendDef      ← '## ' Identifier _ '::extend' NL
+                  FieldDef+
+BasedModel     ← '## ' Identifier _ '::' ('aspect' / 'subtype') '(' Identifier ')' Inheritance? NL
                   Description? (FieldDef / SectionDef / RelationLine / IndexLine / MetaLine)*
 EnumDef        ← '## ' Identifier ('(' Label ')')? _ '::enum' Inheritance? NL
                   Description? EnumValue+
@@ -2785,6 +2835,14 @@ Conforming parsers should use these error codes for consistent diagnostics.
 | `M3L-E008` | Ambiguous model reference `{name}` in namespaces {ns1}, {ns2} | Short name exists in multiple namespaces |
 | `M3L-E009` | Undefined type `{type}` | Type not in catalog and not a known model/enum |
 | `M3L-E010` | Relations entry without matching `@reference` | `### Relations` defines relationship with no FK `@reference` |
+| `M3L-E011` | Extend target `{model}` not found | `## {model} ::extend` references a model that is not defined |
+| `M3L-E012` | Extend field `{field}` collides with an existing field in `{model}` | An extend block adds a field name already present on the target — its own, inherited, or added by another extend block |
+| `M3L-E013` | Attribute `@{attr}` not allowed in an extend block | `@pk`, `@primary`, and `@override` are reserved for the base model and cannot appear in an extend block |
+| `M3L-E014` | Extend block declares parents | `## {model} ::extend : {parent}` — extend blocks cannot declare inheritance |
+| `M3L-E015` | Extend block declares `{construct}` | Extend blocks may declare fields only — no sections, model attributes, or composite `@unique`/`@index` |
+| `M3L-E016` | `::{kind}` requires a base model argument | `::aspect` and `::subtype` must name a base model: `::{kind}(Base)` |
+| `M3L-E017` | Base model `{model}` not found | `::aspect(Base)`/`::subtype(Base)` references a model that is not defined |
+| `M3L-E018` | Base model `{model}` is itself an aspect | `::aspect`/`::subtype` bases must not themselves be `::aspect` models |
 
 #### 10.5.2 Warnings
 

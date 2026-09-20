@@ -26,6 +26,28 @@ fn format_ast(ast: &m3l_core::M3lAst) -> String {
         lines.push(String::new());
     }
 
+    // Owner prefix — a file-level fact; every declaration of the file carries the same value.
+    let prefix = ast
+        .models
+        .iter()
+        .filter_map(|m| m.prefix.as_deref())
+        .chain(
+            ast.extensions
+                .values()
+                .flatten()
+                .filter_map(|m| m.prefix.as_deref()),
+        )
+        .chain(ast.enums.iter().filter_map(|e| e.prefix.as_deref()))
+        .next();
+    if let Some(p) = prefix {
+        // keep it directly under the namespace line, before the blank separator
+        let at = if ast.project.name.is_some() { 1 } else { 0 };
+        lines.insert(at, format!("# Prefix: {p}"));
+        if at == 0 {
+            lines.insert(1, String::new());
+        }
+    }
+
     // Models
     for model in &ast.models {
         format_model(&mut lines, model);
@@ -52,6 +74,15 @@ fn format_ast(ast: &m3l_core::M3lAst) -> String {
         lines.push(String::new());
     }
 
+    // Extend blocks — kept as blocks: the formatter resolves with `merge_extends: false`.
+    if let Some(blocks) = ast.extensions.get("extend") {
+        for block in blocks {
+            lines.push(format!("## {} ::extend", block.name));
+            format_model_body(&mut lines, block);
+            lines.push(String::new());
+        }
+    }
+
     // Remove trailing empty lines
     while lines.last().is_some_and(|l| l.is_empty()) {
         lines.pop();
@@ -62,6 +93,9 @@ fn format_ast(ast: &m3l_core::M3lAst) -> String {
 
 fn format_model(lines: &mut Vec<String>, model: &m3l_core::ModelNode) {
     let mut header = format!("## {}", model.name);
+    if let Some(base) = &model.base {
+        header.push_str(&format!(" ::{}({})", base.kind, base.model));
+    }
     if !model.inherits.is_empty() {
         header.push_str(&format!(" : {}", model.inherits.join(", ")));
     }
@@ -277,6 +311,40 @@ fn format_attr_args(attr: &m3l_core::FieldAttribute) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Format a source string through the real `run_format` path (parse from a
+    /// file, resolve with the formatter's `ResolveOptions`, format). A few
+    /// pieces of formatter state — the file-owner prefix, unmerged `::extend`
+    /// blocks — only exist once `run_format` reads from a path, so the
+    /// in-memory `format_ast(&resolve(...))` shortcut the other tests use
+    /// can't exercise them.
+    fn format_source(src: &str) -> String {
+        let path = std::env::temp_dir().join("m3l-cli-format-unit-test.m3l.md");
+        std::fs::write(&path, src).expect("write test fixture");
+        let result = run_format(&path).expect("run_format");
+        std::fs::remove_file(&path).ok();
+        result
+    }
+
+    /// The formatter must reproduce the file-owner `# Prefix:` header, a
+    /// based model's `::aspect(Base)` header, and an unmerged `::extend`
+    /// block — all three were dropped before this fix (`extensions` was
+    /// never printed, so `m3l format` deleted extend blocks from the file).
+    #[test]
+    fn format_keeps_prefix_extend_blocks_and_based_models() {
+        let src = "# Namespace: ex.insp\n# Prefix: insp\n\n## InspProfile ::aspect(Asset) : Timestampable\n- level: integer?\n\n## Asset ::extend\n- insp_grade: string(20)?\n";
+        let out = format_source(src);
+        assert!(out.contains("# Prefix: insp"), "{out}");
+        assert!(
+            out.contains("## InspProfile ::aspect(Asset) : Timestampable"),
+            "{out}"
+        );
+        assert!(
+            out.contains("## Asset ::extend\n- insp_grade: string(20)?"),
+            "{out}"
+        );
+        assert_eq!(format_source(&out), out, "formatting must be idempotent");
+    }
 
     /// Formatting must be information-preserving: parsing the formatted output
     /// has to yield the same enum values as parsing the original. Anything the

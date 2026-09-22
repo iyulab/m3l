@@ -56,6 +56,7 @@ pub fn resolve_with(
     let mut sources: Vec<String> = Vec::new();
 
     check_prefix_headers(files, &mut errors);
+    check_extend_kind_args(files, &mut errors);
 
     for file in files {
         sources.push(file.source.clone());
@@ -396,6 +397,32 @@ pub fn resolve_with(
         attribute_registry: all_attr_registry,
         errors,
         warnings,
+    }
+}
+
+/// `M3L-E021`: a `::extend` header that carried a parenthesised argument.
+///
+/// `::extend` takes its target from the declaration name, so the argument has nowhere to go and
+/// is discarded. Reported because the silence is actively misleading rather than merely lossy: an
+/// author who writes `## Other ::extend(Base)` intending to extend `Base` gets `M3L-E011` naming
+/// *`Other`* — a target they never wrote — and nothing connects that message to the parentheses.
+fn check_extend_kind_args(files: &[ParsedFile], errors: &mut Vec<Diagnostic>) {
+    for file in files {
+        for entry in &file.extend_kind_args {
+            errors.push(Diagnostic {
+                code: "M3L-E021".to_string(),
+                severity: DiagnosticSeverity::Error,
+                file: entry.file.clone(),
+                line: entry.line,
+                col: 1,
+                message: format!(
+                    "\"::extend({})\" takes no argument. An extend block names its target with \
+                     the declaration name, so this block extends \"{}\" — rename the heading if \
+                     that is not the target, and remove the parentheses either way.",
+                    entry.arg, entry.declared_name
+                ),
+            });
+        }
     }
 }
 
@@ -1293,5 +1320,44 @@ mod enum_inheritance_tests {
         );
 
         assert_eq!(values_of(&ast, "Child"), ["own"]);
+    }
+}
+
+#[cfg(test)]
+mod extend_kind_arg_tests {
+    use super::*;
+    use crate::parser::parse_string;
+
+    fn codes(src: &str) -> Vec<String> {
+        let ast = resolve(&[parse_string(src, "t.m3l.md")], None);
+        ast.errors.iter().map(|e| e.code.clone()).collect()
+    }
+
+    /// An argument that names the intended target is refused, because the block does not use it.
+    #[test]
+    fn an_extend_argument_is_refused() {
+        let out =
+            codes("## Base\n- id: identifier @pk\n\n## Other ::extend(Base)\n- extra: string");
+
+        assert!(out.contains(&"M3L-E021".to_string()), "{out:?}");
+    }
+
+    /// Empty parentheses are refused too. They merge correctly today, which is exactly why the
+    /// author never learns that the parentheses mean nothing — until they put a name in them.
+    #[test]
+    fn empty_extend_parentheses_are_refused() {
+        let out = codes("## Base\n- id: identifier @pk\n\n## Base ::extend()\n- extra: string");
+
+        assert!(out.contains(&"M3L-E021".to_string()), "{out:?}");
+    }
+
+    /// The negative control: the ordinary form draws no diagnostic, so the two assertions above
+    /// report the parentheses rather than firing on every extend block.
+    #[test]
+    fn an_extend_without_parentheses_is_not_refused() {
+        let out = codes("## Base\n- id: identifier @pk\n\n## Base ::extend\n- extra: string");
+
+        assert!(!out.contains(&"M3L-E021".to_string()), "{out:?}");
+        assert!(out.is_empty(), "{out:?}");
     }
 }

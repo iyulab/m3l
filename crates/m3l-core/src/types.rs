@@ -515,6 +515,22 @@ pub struct PrefixHeader {
     pub before_first_declaration: bool,
 }
 
+/// A `::extend` header that carried a parenthesised argument.
+///
+/// `::extend` takes its target from the model name, so the argument means nothing and is
+/// discarded. Recorded here rather than reported in the parser for the same reason
+/// [`PrefixHeader`] is: the parser collects no diagnostics, and the resolver is where a file's
+/// findings are turned into errors.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ExtendKindArg {
+    /// The name the block was declared under — the target `::extend` will actually use.
+    pub declared_name: String,
+    /// The text inside the parentheses, empty for `::extend()`.
+    pub arg: String,
+    pub line: usize,
+    pub file: String,
+}
+
 /// Intermediate result from parsing a single file (not directly serialized as final output).
 #[derive(Debug, Clone)]
 pub struct ParsedFile {
@@ -535,6 +551,8 @@ pub struct ParsedFile {
     pub imports: Vec<String>,
     /// Every `# Prefix:` header the lexer found in this file, in source order.
     pub prefix_headers: Vec<PrefixHeader>,
+    /// Every `::extend` header that carried a parenthesised argument, in source order.
+    pub extend_kind_args: Vec<ExtendKindArg>,
 }
 
 /// Final AST — top-level JSON output.

@@ -16,6 +16,12 @@ moment of publishing and not before.</sub>
   grandparents ahead of their children, then the enum's own. A consumer reads the complete list
   off `values` and never walks `inherits` to assemble it, the same way a model's `fields` already
   arrive resolved. `inherits` itself is unchanged, and so is the AST shape: no field was added.
+- **`M3L-E021`** — a `::extend` header with a parenthesised argument. An extend block names its
+  target with the declaration name, so the argument has nowhere to go and was discarded in
+  silence. That silence misled rather than merely losing something: `## Other ::extend(Base)` was
+  read as extending `Other`, and the resulting `M3L-E011` named a target the author never wrote.
+  Empty parentheses are reported too — they merge correctly, which is exactly why the mistake
+  surfaced only once a name was put inside them.
 - **`M3L-E020`** — a value name that appears twice once inheritance is resolved. That covers a
   name declared twice in one block (previously unreported), a name declared by both a parent and
   the enum itself, and a name two parents declare with *different* labels. Two parents declaring

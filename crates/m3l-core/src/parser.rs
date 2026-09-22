@@ -48,6 +48,7 @@ struct ParserState {
     namespace: Option<String>,
     prefix: Option<String>,
     prefix_headers: Vec<PrefixHeader>,
+    extend_kind_args: Vec<ExtendKindArg>,
     current_element: CurrentElement,
     current_section: Option<String>,
     current_kind: FieldKind,
@@ -77,6 +78,7 @@ pub fn parse_tokens(tokens: &[Token], file: &str) -> ParsedFile {
         namespace: None,
         prefix: None,
         prefix_headers: Vec::new(),
+        extend_kind_args: Vec::new(),
         current_element: CurrentElement::None,
         current_section: None,
         current_kind: FieldKind::Stored,
@@ -112,6 +114,7 @@ pub fn parse_tokens(tokens: &[Token], file: &str) -> ParsedFile {
         attribute_registry: state.attribute_registry,
         imports: state.imports,
         prefix_headers: state.prefix_headers,
+        extend_kind_args: state.extend_kind_args,
     }
 }
 
@@ -331,6 +334,20 @@ fn handle_flow_start(token: &Token, state: &mut ParserState) {
 
 fn handle_extension_start(token: &Token, ext_type: &str, state: &mut ParserState) {
     finalize_element(state);
+
+    // `::extend` reads its target from the model name, so a parenthesised argument has nowhere to
+    // go and is dropped. Left unreported, an author who writes `## Other ::extend(Base)` meaning
+    // "extend Base" is told that *Other* is not a model — a name they did not write.
+    if ext_type == "extend" {
+        if let Some(arg) = &token.data.kind_arg {
+            state.extend_kind_args.push(ExtendKindArg {
+                declared_name: token.data.name.clone().unwrap_or_default(),
+                arg: arg.clone(),
+                line: token.line,
+                file: state.file.clone(),
+            });
+        }
+    }
 
     let node = ModelNode {
         name: token.data.name.clone().unwrap_or_default(),

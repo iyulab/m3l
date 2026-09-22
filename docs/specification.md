@@ -2902,6 +2902,7 @@ Conforming parsers should use these error codes for consistent diagnostics.
 | `M3L-E018` | Base model `{model}` is itself an aspect | `::aspect`/`::subtype` bases must not themselves be `::aspect` models |
 | `M3L-E019` | `{value}` is not a valid prefix, or the header is repeated/late | `# Prefix:` value does not match `[a-z][a-z0-9]*`, a second header appears in the same file, or a header appears after the file's first declaration |
 | `M3L-E020` | Duplicate enum value `{value}` in enum `{enum}` | The same value name appears twice after inheritance is resolved — declared twice in one block, declared by both a parent and the enum itself, or declared by two parents with different labels (§3.1.6). Two parents declaring it identically is the diamond case and is not an error |
+| `M3L-E021` | `::extend({arg})` takes no argument | An extend block names its target with the declaration name (`## Target ::extend`), so a parenthesised argument has nowhere to go. Reported rather than ignored because the silence misleads: `## Other ::extend(Base)` is read as extending `Other`, and the resulting `M3L-E011` names a target the author never wrote. Empty parentheses are reported too — they merge correctly, which is why the mistake is only discovered once a name is put inside them |
 
 #### 10.5.2 Warnings
 

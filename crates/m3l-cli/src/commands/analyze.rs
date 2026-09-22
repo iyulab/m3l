@@ -4,8 +4,11 @@ use std::path::Path;
 use crate::build_ast;
 
 pub fn run_analyze(input_path: &Path, format: &str) -> Result<String, String> {
-    let ast = build_ast(input_path)?;
+    analyze_ast(&build_ast(input_path)?, format)
+}
 
+/// The graph itself, split from file loading the way `format_ast` is, so what the command emits can be asserted without a fixture file on disk.
+fn analyze_ast(ast: &m3l_core::M3lAst, format: &str) -> Result<String, String> {
     // Collect all defined model/enum/interface/view names
     let mut defined_names: HashSet<String> = HashSet::new();
     for m in ast
@@ -38,6 +41,18 @@ pub fn run_analyze(input_path: &Path, format: &str) -> Result<String, String> {
 
         // Field type references and attribute references
         collect_field_edges(&m.name, &m.fields, &defined_names, &mut edges);
+    }
+
+    // Enums inherit too (§3.1.6), and an enum is already a node here — only the edge was
+    // missing. While inheritance was recorded and never acted on, a graph without it was merely
+    // incomplete; now that a parent supplies the child's values, a graph that omits the edge
+    // shows the child as a standalone enum with fewer members than it has.
+    for e in &ast.enums {
+        for parent in &e.inherits {
+            if defined_names.contains(parent.as_str()) {
+                edges.push((e.name.clone(), parent.clone(), "inherits".into()));
+            }
+        }
     }
 
     // Deduplicate edges
@@ -167,4 +182,54 @@ fn render_dot(defined_names: &HashSet<String>, edges: &[(String, String, String)
 
     lines.push("}".to_string());
     lines.join("\n")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn graph(src: &str) -> String {
+        let ast = m3l_core::resolve(&[m3l_core::parse_string(src, "t.m3l.md")], None);
+        analyze_ast(&ast, "mermaid").expect("analyze")
+    }
+
+    /// An enum's parent is drawn, the same as a model's.
+    ///
+    /// While inheritance was recorded and never acted on, leaving it out made the graph merely
+    /// incomplete. Now that a parent supplies the child's values, a child drawn with no edge reads
+    /// as a standalone enum holding fewer members than it has.
+    #[test]
+    fn an_enums_parent_is_an_inherits_edge() {
+        let out = graph(
+            r#"## BasicStatus ::enum
+- active: "Active"
+
+## UserStatus ::enum : BasicStatus
+- banned: "Banned"
+"#,
+        );
+
+        assert!(
+            out.contains("UserStatus -->|inherits| BasicStatus"),
+            "graph was:
+{out}"
+        );
+    }
+
+    /// The negative control: an enum with no parent gets no edge, so the assertion above is
+    /// reporting the parent list rather than an edge drawn for every enum.
+    #[test]
+    fn an_enum_without_a_parent_gets_no_inherits_edge() {
+        let out = graph(
+            r#"## Standalone ::enum
+- only: "Only"
+"#,
+        );
+
+        assert!(
+            !out.contains("|inherits|"),
+            "graph was:
+{out}"
+        );
+    }
 }

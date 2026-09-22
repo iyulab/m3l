@@ -216,7 +216,15 @@ fn format_field(lines: &mut Vec<String>, field: &m3l_core::FieldNode, indent: us
 }
 
 fn format_enum(lines: &mut Vec<String>, e: &m3l_core::EnumNode) {
-    lines.push(format!("## {} ::enum", e.name));
+    let mut header = format!("## {} ::enum", e.name);
+    // The parent list, for the same reason `format_model` emits a model's: it is the only place
+    // the inherited values are written down. Dropping it used to cost nothing, because inheritance
+    // was recorded and never acted on; now that it resolves, a format that dropped it would delete
+    // members from the enum and leave a file that still parses.
+    if !e.inherits.is_empty() {
+        header.push_str(&format!(" : {}", e.inherits.join(", ")));
+    }
+    lines.push(header);
     if let Some(ref desc) = e.description {
         push_description(lines, desc, "");
     }
@@ -408,6 +416,71 @@ mod tests {
                 .map(|e| e.values.clone())
                 .unwrap_or_default(),
         )
+    }
+
+    /// The formatter's own options, not the default ones — the round-trip helper above resolves
+    /// with inheritance inlined, which is not what `m3l format` does.
+    fn format_roundtrip_as_the_cli_does(src: &str) -> String {
+        let opts = m3l_core::ResolveOptions {
+            inline_inherited: false,
+            merge_extends: false,
+        };
+        let ast = m3l_core::resolve_with(&[m3l_core::parse_string(src, "t.m3l.md")], None, opts);
+        format_ast(&ast)
+    }
+
+    /// An enum's parent list survives a format.
+    ///
+    /// Until enum inheritance was resolved this was a cosmetic loss — the declaration did nothing,
+    /// so dropping it changed no output. It is not cosmetic any more: the parent list is where the
+    /// inherited values come from, so a formatter that drops it deletes members from every
+    /// consumer of that enum, and the file still parses.
+    #[test]
+    fn format_preserves_an_enums_parent_list() {
+        let formatted = format_roundtrip_as_the_cli_does(
+            r#"## BasicStatus ::enum
+- active: "Active"
+
+## UserStatus ::enum : BasicStatus
+- banned: "Banned""#,
+        );
+
+        assert!(
+            formatted.contains("## UserStatus ::enum : BasicStatus"),
+            "the parent list was dropped; formatted output was:
+{formatted}"
+        );
+
+        // And the values still resolve after the round-trip.
+        let reparsed = m3l_core::resolve(&[m3l_core::parse_string(&formatted, "t.m3l.md")], None);
+        let user = reparsed
+            .enums
+            .iter()
+            .find(|e| e.name == "UserStatus")
+            .expect("UserStatus survived");
+        let names: Vec<&str> = user.values.iter().map(|v| v.name.as_str()).collect();
+        assert_eq!(names, ["active", "banned"]);
+    }
+
+    /// Multiple parents keep their order, the same way a model's do.
+    #[test]
+    fn format_preserves_multiple_enum_parents_in_order() {
+        let formatted = format_roundtrip_as_the_cli_does(
+            r#"## A ::enum
+- a: "A"
+
+## B ::enum
+- b: "B"
+
+## C ::enum : A, B
+- c: "C""#,
+        );
+
+        assert!(
+            formatted.contains("## C ::enum : A, B"),
+            "formatted output was:
+{formatted}"
+        );
     }
 
     #[test]

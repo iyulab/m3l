@@ -1175,7 +1175,10 @@ mod enum_inheritance_tests {
         let ast = resolve(&[parsed], None);
 
         assert!(ast.errors.is_empty(), "unexpected: {:?}", ast.errors);
-        assert_eq!(values_of(&ast, "PostState"), ["draft", "published", "archived"]);
+        assert_eq!(
+            values_of(&ast, "PostState"),
+            ["draft", "published", "archived"]
+        );
     }
 
     /// The diamond: the same value reached by two paths is one value, not a collision.
@@ -1206,7 +1209,11 @@ mod enum_inheritance_tests {
         );
         let ast = resolve(&[parsed], None);
 
-        assert!(codes(&ast).contains(&"M3L-E020".to_string()), "{:?}", ast.errors);
+        assert!(
+            codes(&ast).contains(&"M3L-E020".to_string()),
+            "{:?}",
+            ast.errors
+        );
     }
 
     #[test]
@@ -1218,7 +1225,11 @@ mod enum_inheritance_tests {
         );
         let ast = resolve(&[parsed], None);
 
-        assert!(codes(&ast).contains(&"M3L-E020".to_string()), "{:?}", ast.errors);
+        assert!(
+            codes(&ast).contains(&"M3L-E020".to_string()),
+            "{:?}",
+            ast.errors
+        );
     }
 
     /// Previously unreported: a block that repeats a name on its own.
@@ -1230,7 +1241,11 @@ mod enum_inheritance_tests {
         );
         let ast = resolve(&[parsed], None);
 
-        assert!(codes(&ast).contains(&"M3L-E020".to_string()), "{:?}", ast.errors);
+        assert!(
+            codes(&ast).contains(&"M3L-E020".to_string()),
+            "{:?}",
+            ast.errors
+        );
     }
 
     #[test]
@@ -1238,7 +1253,11 @@ mod enum_inheritance_tests {
         let parsed = parse_string("## Child ::enum : Nowhere\n- own: \"Own\"", "t.m3l.md");
         let ast = resolve(&[parsed], None);
 
-        assert!(codes(&ast).contains(&"M3L-E007".to_string()), "{:?}", ast.errors);
+        assert!(
+            codes(&ast).contains(&"M3L-E007".to_string()),
+            "{:?}",
+            ast.errors
+        );
     }
 
     /// A parent list that loops does not hang the resolver.

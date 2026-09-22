@@ -39,6 +39,16 @@ fn analyze_ast(ast: &m3l_core::M3lAst, format: &str) -> Result<String, String> {
             }
         }
 
+        // `::aspect(Base)` / `::subtype(Base)` — a different relationship from `: Parent`, and
+        // drawn as its own kind rather than folded into inheritance. A model that names a base
+        // shares that base's key; reading it as ordinary inheritance would say the fields were
+        // copied down, which is not what happens.
+        if let Some(base) = &m.base {
+            if defined_names.contains(base.model.as_str()) {
+                edges.push((m.name.clone(), base.model.clone(), "base".into()));
+            }
+        }
+
         // Field type references and attribute references
         collect_field_edges(&m.name, &m.fields, &defined_names, &mut edges);
     }
@@ -134,6 +144,7 @@ fn render_mermaid(defined_names: &HashSet<String>, edges: &[(String, String, Str
     // Edges with labels
     let edge_labels: HashMap<&str, &str> = HashMap::from([
         ("inherits", "inherits"),
+        ("base", "base"),
         ("type_ref", "has"),
         ("reference", "ref"),
         ("fk", "fk"),
@@ -168,6 +179,7 @@ fn render_dot(defined_names: &HashSet<String>, edges: &[(String, String, String)
     // Edges
     let edge_styles: HashMap<&str, &str> = HashMap::from([
         ("inherits", "style=dashed, color=blue"),
+        ("base", "style=bold, color=purple"),
         ("type_ref", "color=black"),
         ("reference", "color=red"),
         ("fk", "color=green"),
@@ -211,6 +223,49 @@ mod tests {
 
         assert!(
             out.contains("UserStatus -->|inherits| BasicStatus"),
+            "graph was:
+{out}"
+        );
+    }
+
+    /// `::aspect(Base)` is drawn, and as its own kind.
+    ///
+    /// A model that names a base shares that base's key rather than copying its fields down, so
+    /// folding it into `inherits` would say something the language does not.
+    #[test]
+    fn a_models_base_is_a_base_edge() {
+        let out = graph(
+            r#"## Asset
+- id: identifier @pk
+
+## AssetMaintenanceProfile ::aspect(Asset)
+- interval_days: integer
+"#,
+        );
+
+        assert!(
+            out.contains("AssetMaintenanceProfile -->|base| Asset"),
+            "graph was:
+{out}"
+        );
+        assert!(
+            !out.contains("|inherits|"),
+            "graph was:
+{out}"
+        );
+    }
+
+    /// The negative control for the base edge: an ordinary model draws none.
+    #[test]
+    fn a_model_without_a_base_gets_no_base_edge() {
+        let out = graph(
+            r#"## Asset
+- id: identifier @pk
+"#,
+        );
+
+        assert!(
+            !out.contains("|base|"),
             "graph was:
 {out}"
         );

@@ -26,6 +26,9 @@ moment of publishing and not before.</sub>
   while a model's has always carried one. That cost nothing while inheritance was inert; with it
   resolved, a single `m3l format` would have deleted every inherited member and left a file that
   still parses.
+- **`m3l analyze` draws a model's base.** `::aspect(Base)` / `::subtype(Base)` was recorded and
+  never drawn. It is its own edge kind rather than folded into inheritance: a model that names a
+  base shares that base's key, and calling it inheritance would say the fields were copied down.
 - **`m3l analyze` draws an enum's inheritance edge.** Enums were already nodes; only the edge was
   missing, so a child appeared as a standalone enum with fewer members than it has.
 - An enum declaring a parent used to parse, resolve and validate while quietly holding only its

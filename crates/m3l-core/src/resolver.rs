@@ -277,6 +277,25 @@ pub fn resolve_with(
         }
     }
 
+    // Enum inheritance rides the same switch as a model's: an inlined value is indistinguishable
+    // from one the enum declared itself, so a consumer reproducing the source (the formatter) would
+    // re-emit the inherited values *and* the `: Parent` header and duplicate them on every
+    // round-trip — the failure this option exists to prevent, one type over.
+    if options.inline_inherited {
+        let enum_map: HashMap<String, usize> = all_enums
+            .iter()
+            .enumerate()
+            .map(|(i, e)| (e.name.clone(), i))
+            .collect();
+        for i in 0..all_enums.len() {
+            resolve_enum_inheritance(i, &mut all_enums, &enum_map, &mut errors);
+        }
+    }
+
+    for en in all_enums.iter() {
+        check_duplicate_enum_values(en, &mut errors);
+    }
+
     crate::extend::merge_extend_blocks(&mut all_models, extend_blocks, &mut errors);
     crate::extend::check_model_bases(&all_models, &mut errors);
 
@@ -575,6 +594,160 @@ fn resolve_inheritance(
         let own_fields = std::mem::take(&mut all_models[model_idx].fields);
         all_models[model_idx].fields = filtered_inherited;
         all_models[model_idx].fields.extend(own_fields);
+    }
+}
+
+/// Resolves `## Child ::enum : Parent` by copying the parent's values into the child, the way
+/// [`resolve_inheritance`] does for a model's fields.
+///
+/// §3.1.6 defines inheritance as the union of the parents' values and the enum's own, so a
+/// consumer reads a complete list off `values` and never walks `inherits` to assemble it. Before
+/// this existed the parser recorded `inherits` and left `values` holding the child's own block —
+/// the declaration parsed, every target succeeded, and the enum was quietly missing members.
+///
+/// Ordering is part of the contract (an enum is often rendered as an ordered list of choices):
+/// grandparents, then parents left to right, then the enum's own values.
+fn resolve_enum_inheritance(
+    enum_idx: usize,
+    all_enums: &mut [EnumNode],
+    enum_map: &HashMap<String, usize>,
+    errors: &mut Vec<Diagnostic>,
+) {
+    let inherits = all_enums[enum_idx].inherits.clone();
+    if inherits.is_empty() {
+        return;
+    }
+
+    let enum_name = all_enums[enum_idx].name.clone();
+    let enum_source = all_enums[enum_idx].source.clone();
+    let enum_line = all_enums[enum_idx].line;
+
+    let mut inherited: Vec<EnumValue> = Vec::new();
+    let mut resolved: HashSet<String> = HashSet::new();
+    let mut visiting: HashSet<String> = HashSet::new();
+
+    #[allow(clippy::too_many_arguments)]
+    fn collect_values(
+        name: &str,
+        enum_name: &str,
+        enum_source: &str,
+        enum_line: usize,
+        all_enums: &[EnumNode],
+        enum_map: &HashMap<String, usize>,
+        inherited: &mut Vec<EnumValue>,
+        resolved: &mut HashSet<String>,
+        visiting: &mut HashSet<String>,
+        errors: &mut Vec<Diagnostic>,
+    ) {
+        if resolved.contains(name) || visiting.contains(name) {
+            return;
+        }
+        visiting.insert(name.to_string());
+
+        match enum_map.get(name) {
+            None => {
+                errors.push(Diagnostic {
+                    code: "M3L-E007".to_string(),
+                    severity: DiagnosticSeverity::Error,
+                    file: enum_source.to_string(),
+                    line: enum_line,
+                    col: 1,
+                    message: format!(
+                        "Unresolved inheritance reference \"{}\" in enum \"{}\"",
+                        name, enum_name
+                    ),
+                });
+            }
+            Some(&idx) => {
+                let parent_inherits = all_enums[idx].inherits.clone();
+                for grandparent in &parent_inherits {
+                    collect_values(
+                        grandparent,
+                        enum_name,
+                        enum_source,
+                        enum_line,
+                        all_enums,
+                        enum_map,
+                        inherited,
+                        resolved,
+                        visiting,
+                        errors,
+                    );
+                }
+
+                for value in &all_enums[idx].values {
+                    match inherited.iter().find(|v| v.name == value.name) {
+                        // The same value reached by two paths is one value — the diamond case,
+                        // kept once in the position it was first reached.
+                        Some(existing) if *existing == *value => {}
+                        // Two parents disagree about what the name means. Nothing in the source
+                        // says which label wins, and choosing by parent order would make the
+                        // enum's meaning depend on the order the parents happen to be listed in.
+                        Some(_) => errors.push(Diagnostic {
+                            code: "M3L-E020".to_string(),
+                            severity: DiagnosticSeverity::Error,
+                            file: enum_source.to_string(),
+                            line: enum_line,
+                            col: 1,
+                            message: format!(
+                                "Duplicate enum value \"{}\" in enum \"{}\": two parents declare \
+                                 it differently",
+                                value.name, enum_name
+                            ),
+                        }),
+                        None => inherited.push(value.clone()),
+                    }
+                }
+            }
+        }
+
+        visiting.remove(name);
+        resolved.insert(name.to_string());
+    }
+
+    for parent_name in &inherits {
+        collect_values(
+            parent_name,
+            &enum_name,
+            &enum_source,
+            enum_line,
+            all_enums,
+            enum_map,
+            &mut inherited,
+            &mut resolved,
+            &mut visiting,
+            errors,
+        );
+    }
+
+    if !inherited.is_empty() {
+        let own = std::mem::take(&mut all_enums[enum_idx].values);
+        all_enums[enum_idx].values = inherited;
+        all_enums[enum_idx].values.extend(own);
+    }
+}
+
+/// Every value name in an enum is unique once §3.1.6 has been applied.
+///
+/// Runs whether or not inheritance was inlined, because a block that repeats a name on its own was
+/// never reported either — the second declaration simply sat in the list, and which one a consumer
+/// honoured was its own business.
+fn check_duplicate_enum_values(en: &EnumNode, errors: &mut Vec<Diagnostic>) {
+    let mut seen: HashSet<String> = HashSet::new();
+    for value in &en.values {
+        if !seen.insert(value.name.clone()) {
+            errors.push(Diagnostic {
+                code: "M3L-E020".to_string(),
+                severity: DiagnosticSeverity::Error,
+                file: en.source.clone(),
+                line: en.line,
+                col: 1,
+                message: format!(
+                    "Duplicate enum value \"{}\" in enum \"{}\"",
+                    value.name, en.name
+                ),
+            });
+        }
     }
 }
 
@@ -928,5 +1101,178 @@ mod tests {
         let ast = resolve(&[parsed], None);
         assert_eq!(ast.models[0].fields.len(), 1);
         assert_eq!(ast.models[0].fields[0].field_type.as_deref(), Some("text"));
+    }
+}
+
+#[cfg(test)]
+mod enum_inheritance_tests {
+    use super::*;
+    use crate::parser::parse_string;
+
+    /// Value names of an enum, in the order the resolver left them.
+    fn values_of(ast: &M3lAst, name: &str) -> Vec<String> {
+        ast.enums
+            .iter()
+            .find(|e| e.name == name)
+            .unwrap_or_else(|| panic!("enum {name} not found"))
+            .values
+            .iter()
+            .map(|v| v.name.clone())
+            .collect()
+    }
+
+    fn codes(ast: &M3lAst) -> Vec<String> {
+        ast.errors.iter().map(|e| e.code.clone()).collect()
+    }
+
+    /// The union, and its order. Asserted as a sequence rather than a set: §3.1.6 makes ordering
+    /// part of the contract, and a set comparison would pass on a scrambled result.
+    #[test]
+    fn a_child_enum_carries_its_parents_values_first_then_its_own() {
+        let parsed = parse_string(
+            "## BasicStatus ::enum\n- active: \"Active\"\n- inactive: \"Inactive\"\n\n\
+             ## UserStatus ::enum : BasicStatus\n- suspended: \"Suspended\"\n- banned: \"Banned\"",
+            "t.m3l.md",
+        );
+        let ast = resolve(&[parsed], None);
+
+        assert!(ast.errors.is_empty(), "unexpected: {:?}", ast.errors);
+        assert_eq!(
+            values_of(&ast, "UserStatus"),
+            ["active", "inactive", "suspended", "banned"]
+        );
+        // The parent is untouched, and `inherits` still says what the source said.
+        assert_eq!(values_of(&ast, "BasicStatus"), ["active", "inactive"]);
+        assert_eq!(
+            ast.enums
+                .iter()
+                .find(|e| e.name == "UserStatus")
+                .unwrap()
+                .inherits,
+            ["BasicStatus"]
+        );
+    }
+
+    #[test]
+    fn a_grandparents_values_come_before_its_childs() {
+        let parsed = parse_string(
+            "## A ::enum\n- a: \"A\"\n\n## B ::enum : A\n- b: \"B\"\n\n## C ::enum : B\n- c: \"C\"",
+            "t.m3l.md",
+        );
+        let ast = resolve(&[parsed], None);
+
+        assert!(ast.errors.is_empty(), "unexpected: {:?}", ast.errors);
+        assert_eq!(values_of(&ast, "C"), ["a", "b", "c"]);
+    }
+
+    #[test]
+    fn multiple_parents_resolve_left_to_right() {
+        let parsed = parse_string(
+            "## Draft ::enum\n- draft: \"Draft\"\n\n## Published ::enum\n- published: \"Published\"\n\n\
+             ## PostState ::enum : Draft, Published\n- archived: \"Archived\"",
+            "t.m3l.md",
+        );
+        let ast = resolve(&[parsed], None);
+
+        assert!(ast.errors.is_empty(), "unexpected: {:?}", ast.errors);
+        assert_eq!(values_of(&ast, "PostState"), ["draft", "published", "archived"]);
+    }
+
+    /// The diamond: the same value reached by two paths is one value, not a collision.
+    #[test]
+    fn a_value_reached_by_two_paths_is_kept_once() {
+        let parsed = parse_string(
+            "## Base ::enum\n- shared: \"Shared\"\n\n\
+             ## Left ::enum : Base\n- left: \"Left\"\n\n\
+             ## Right ::enum : Base\n- right: \"Right\"\n\n\
+             ## Both ::enum : Left, Right\n- own: \"Own\"",
+            "t.m3l.md",
+        );
+        let ast = resolve(&[parsed], None);
+
+        assert!(ast.errors.is_empty(), "unexpected: {:?}", ast.errors);
+        assert_eq!(values_of(&ast, "Both"), ["shared", "left", "right", "own"]);
+    }
+
+    /// ...but only when they agree. Two parents that spell the same name differently are refused,
+    /// because picking one would make the enum's meaning depend on the order of its parent list.
+    #[test]
+    fn two_parents_that_disagree_about_a_value_are_refused() {
+        let parsed = parse_string(
+            "## Left ::enum\n- shared: \"From the left\"\n\n\
+             ## Right ::enum\n- shared: \"From the right\"\n\n\
+             ## Both ::enum : Left, Right\n- own: \"Own\"",
+            "t.m3l.md",
+        );
+        let ast = resolve(&[parsed], None);
+
+        assert!(codes(&ast).contains(&"M3L-E020".to_string()), "{:?}", ast.errors);
+    }
+
+    #[test]
+    fn a_child_redeclaring_an_inherited_value_is_refused() {
+        let parsed = parse_string(
+            "## Base ::enum\n- active: \"Active\"\n\n\
+             ## Child ::enum : Base\n- active: \"Still active\"",
+            "t.m3l.md",
+        );
+        let ast = resolve(&[parsed], None);
+
+        assert!(codes(&ast).contains(&"M3L-E020".to_string()), "{:?}", ast.errors);
+    }
+
+    /// Previously unreported: a block that repeats a name on its own.
+    #[test]
+    fn a_name_declared_twice_in_one_block_is_refused() {
+        let parsed = parse_string(
+            "## Status ::enum\n- active: \"Active\"\n- active: \"Again\"",
+            "t.m3l.md",
+        );
+        let ast = resolve(&[parsed], None);
+
+        assert!(codes(&ast).contains(&"M3L-E020".to_string()), "{:?}", ast.errors);
+    }
+
+    #[test]
+    fn an_unresolved_parent_is_reported_like_a_models() {
+        let parsed = parse_string("## Child ::enum : Nowhere\n- own: \"Own\"", "t.m3l.md");
+        let ast = resolve(&[parsed], None);
+
+        assert!(codes(&ast).contains(&"M3L-E007".to_string()), "{:?}", ast.errors);
+    }
+
+    /// A parent list that loops does not hang the resolver.
+    #[test]
+    fn a_cycle_terminates() {
+        let parsed = parse_string(
+            "## A ::enum : B\n- a: \"A\"\n\n## B ::enum : A\n- b: \"B\"",
+            "t.m3l.md",
+        );
+        let ast = resolve(&[parsed], None);
+
+        // Whatever it reports, it returns.
+        assert!(ast.enums.len() == 2);
+    }
+
+    /// The negative control for the switch: with inlining off, the values stay as declared.
+    ///
+    /// This is what the formatter reads. If flattening ignored the option, a round-trip would
+    /// re-emit every inherited value *and* the `: Parent` header, growing the enum on each pass —
+    /// the failure `inline_inherited` exists to prevent, one type over from where it was found.
+    #[test]
+    fn inlining_off_leaves_an_enums_own_values_alone() {
+        let source = "## Base ::enum\n- active: \"Active\"\n\n\
+                      ## Child ::enum : Base\n- own: \"Own\"";
+        let parsed = parse_string(source, "t.m3l.md");
+        let ast = resolve_with(
+            &[parsed],
+            None,
+            ResolveOptions {
+                inline_inherited: false,
+                merge_extends: true,
+            },
+        );
+
+        assert_eq!(values_of(&ast, "Child"), ["own"]);
     }
 }

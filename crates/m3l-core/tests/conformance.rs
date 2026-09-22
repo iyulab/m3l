@@ -79,6 +79,33 @@ fn conformance_enum_standalone() {
 }
 
 #[test]
+fn conformance_enum_inheritance() {
+    let input = r#"## BasicStatus ::enum
+- active: "Active"
+- inactive: "Inactive"
+
+## UserStatus ::enum : BasicStatus
+- suspended: "Suspended"
+- banned: "Banned""#;
+
+    let ast = full_pipeline(input, "enum-inheritance.m3l.md");
+
+    assert_eq!(ast.enums.len(), 2);
+    assert!(ast.errors.is_empty());
+
+    let user_status = ast.enums.iter().find(|e| e.name == "UserStatus").unwrap();
+    // The same shape conformance_inheritance asserts for a model's fields: inherited first, own
+    // after, and `inherits` still saying what the source said.
+    assert_eq!(user_status.inherits, vec!["BasicStatus"]);
+    let names: Vec<&str> = user_status.values.iter().map(|v| v.name.as_str()).collect();
+    assert_eq!(names, ["active", "inactive", "suspended", "banned"]);
+
+    // The parent keeps its own list.
+    let basic = ast.enums.iter().find(|e| e.name == "BasicStatus").unwrap();
+    assert_eq!(basic.values.len(), 2);
+}
+
+#[test]
 fn conformance_inheritance() {
     let input = r#"## BaseModel
 - id: identifier @pk

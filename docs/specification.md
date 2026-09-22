@@ -783,6 +783,46 @@ Enums can inherit values from other enums:
 - banned: "Banned"
 ```
 
+`UserStatus` has **four** values: `active`, `inactive`, `suspended`, `banned`. Inheritance is
+resolved into the enum itself — a consumer reads the complete value list off the enum and never has
+to walk `inherits` to assemble it. This mirrors model inheritance (§3.4), where a model's `fields`
+likewise arrive already resolved.
+
+**Order.** Inherited values come first, in the order their parents are declared, followed by the
+enum's own values in declaration order. A grandparent's values precede its child's. Order is part of
+the contract because a consumer may render an enum as an ordered list of choices.
+
+**Multiple parents** are permitted (`## X ::enum : A, B`) and resolved left to right:
+
+```markdown
+## Draft ::enum
+- draft: "Draft"
+
+## Published ::enum
+- published: "Published"
+
+## PostState ::enum : Draft, Published
+- archived: "Archived"
+```
+
+**When the same value name arrives twice**, the outcome depends on whether the two declarations
+agree:
+
+| Situation | Outcome |
+|---|---|
+| Two parents declare the same name **with the same label** | Kept once, in the position of the first. This is the diamond case — the same value reached by two paths is one value |
+| Two parents declare the same name **with different labels** | `M3L-E020`. Nothing in the source says which label wins, and picking one silently would make the enum's meaning depend on the order its parents happen to be listed in |
+| A parent and the enum's own block declare the same name | `M3L-E020`, whether or not the labels agree. Model inheritance lets a child replace an inherited field with `@override` (§3.4.5); enum values have no such marker, so there is no way to write the intent down and the collision is refused instead of guessed |
+| The enum's own block declares a name twice | `M3L-E020`. Previously unreported |
+
+An unresolved parent is `M3L-E007`, the same diagnostic a model gets for an unresolved base.
+
+> **Why an error rather than a winner.** A silently dropped value is invisible at every later
+> stage: the enum still parses, the generated type still compiles, and the missing member only
+> surfaces as a value the application cannot represent. The rule this language already applies to
+> conflicting fields — say what you mean, or be refused — costs one line in the source and removes
+> that class of failure entirely.
+
 #### 3.1.7 Inline Enum Definition
 
 For enums used only within a single field, define values inline. The `values:` key is recommended to visually distinguish enum values from field attributes in the extended format:
@@ -880,6 +920,14 @@ carries none.
 - status: OrderStatus = "pending"   # References standalone OrderStatus enum
 - status: enum = "pending"          # Defines an anonymous inline enum
 ```
+
+**Rule 4**: Within one enum — after inheritance is resolved (§3.1.6) — every value name is unique.
+A repeated name is `M3L-E020`, whether it was repeated in a single block or arrived from a parent.
+The full resolution rules, including the one case where a repeat is not an error, are in §3.1.6.
+
+**Rule 5**: Inheritance is declared on a standalone enum's header (`## Name ::enum : Parent`), so it
+is not available to an inline enum — an inline enum has no header to carry it. An enum that needs a
+parent is a standalone declaration, which Rule 2 already recommends for anything reused.
 
 ### 3.2 Relationship Definition
 > **Status: Implemented** — Fully supported in `m3l-core` parser.
@@ -2853,6 +2901,7 @@ Conforming parsers should use these error codes for consistent diagnostics.
 | `M3L-E017` | Base model `{model}` not found | `::aspect(Base)`/`::subtype(Base)` references a model that is not defined |
 | `M3L-E018` | Base model `{model}` is itself an aspect | `::aspect`/`::subtype` bases must not themselves be `::aspect` models |
 | `M3L-E019` | `{value}` is not a valid prefix, or the header is repeated/late | `# Prefix:` value does not match `[a-z][a-z0-9]*`, a second header appears in the same file, or a header appears after the file's first declaration |
+| `M3L-E020` | Duplicate enum value `{value}` in enum `{enum}` | The same value name appears twice after inheritance is resolved — declared twice in one block, declared by both a parent and the enum itself, or declared by two parents with different labels (§3.1.6). Two parents declaring it identically is the diamond case and is not an error |
 
 #### 10.5.2 Warnings
 

@@ -4,6 +4,36 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+<sub>Not published. `VERSION` is unchanged on purpose — in this repository a `VERSION` change
+pushed to `main` *is* the release, across four channels at once, so the number is set at the
+moment of publishing and not before.</sub>
+
+### Added
+- **Enum inheritance is resolved** (§3.1.6). `## Child ::enum : Parent` now produces an enum
+  whose `values` hold the union — inherited values first, in parent-declaration order with
+  grandparents ahead of their children, then the enum's own. A consumer reads the complete list
+  off `values` and never walks `inherits` to assemble it, the same way a model's `fields` already
+  arrive resolved. `inherits` itself is unchanged, and so is the AST shape: no field was added.
+- **`M3L-E020`** — a value name that appears twice once inheritance is resolved. That covers a
+  name declared twice in one block (previously unreported), a name declared by both a parent and
+  the enum itself, and a name two parents declare with *different* labels. Two parents declaring
+  it identically is the diamond case and is not an error.
+
+### Fixed
+- An enum declaring a parent used to parse, resolve and validate while quietly holding only its
+  own block's values. Nothing reported it: the declaration was syntactically fine, every consumer
+  succeeded, and the missing members surfaced only as values an application could not represent.
+
+### Notes for consumers
+- A consumer that read `values` as "the values this block declares" now sees the inherited ones
+  too. Nothing that previously appeared has gone away.
+- Consumers that reproduce the source document rather than its meaning — the formatter is the one
+  in this repository — are unaffected: flattening honours the same `inline_inherited` switch that
+  already governs model fields, so a round-trip still writes `: Parent` and the enum's own values
+  and does not grow on each pass.
+
 ## [0.13.0] - 2026-09-20
 
 ### Added

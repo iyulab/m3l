@@ -22,6 +22,12 @@ moment of publishing and not before.</sub>
   it identically is the diamond case and is not an error.
 
 ### Fixed
+- **`m3l format` no longer drops an enum's parent list.** The enum header was written without it
+  while a model's has always carried one. That cost nothing while inheritance was inert; with it
+  resolved, a single `m3l format` would have deleted every inherited member and left a file that
+  still parses.
+- **`m3l analyze` draws an enum's inheritance edge.** Enums were already nodes; only the edge was
+  missing, so a child appeared as a standalone enum with fewer members than it has.
 - An enum declaring a parent used to parse, resolve and validate while quietly holding only its
   own block's values. Nothing reported it: the declaration was syntactically fine, every consumer
   succeeded, and the missing members surfaced only as values an application could not represent.

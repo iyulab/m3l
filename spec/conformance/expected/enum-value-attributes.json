@@ -1,0 +1,185 @@
+{
+  "parserVersion": "0.14.0",
+  "astVersion": "1.0",
+  "project": {
+    "name": "conformance.enumattrs"
+  },
+  "sources": [
+    "spec/conformance/inputs/enum-value-attributes.m3l.md"
+  ],
+  "models": [
+    {
+      "name": "Payment",
+      "type": "model",
+      "source": "spec/conformance/inputs/enum-value-attributes.m3l.md",
+      "namespace": "conformance.enumattrs",
+      "line": 12,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            },
+            {
+              "name": "generated",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/enum-value-attributes.m3l.md",
+            "line": 13,
+            "col": 1
+          }
+        },
+        {
+          "name": "method",
+          "type": "PaymentMethod",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "not_null",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/enum-value-attributes.m3l.md",
+            "line": 14,
+            "col": 1
+          }
+        },
+        {
+          "name": "channel",
+          "type": "enum",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "web",
+          "default_value_type": "literal",
+          "defaultValueQuoted": true,
+          "attributes": [],
+          "enum_values": [
+            {
+              "name": "web",
+              "description": "웹"
+            },
+            {
+              "name": "migration",
+              "description": "이관",
+              "attributes": [
+                {
+                  "name": "system"
+                }
+              ]
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/enum-value-attributes.m3l.md",
+            "line": 15,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/enum-value-attributes.m3l.md",
+        "line": 12,
+        "col": 1
+      }
+    }
+  ],
+  "enums": [
+    {
+      "name": "PaymentMethod",
+      "type": "enum",
+      "source": "spec/conformance/inputs/enum-value-attributes.m3l.md",
+      "namespace": "conformance.enumattrs",
+      "line": 3,
+      "inherits": [],
+      "values": [
+        {
+          "name": "cash",
+          "description": "현금"
+        },
+        {
+          "name": "card",
+          "description": "카드"
+        },
+        {
+          "name": "legacy_carryover",
+          "description": "레거시 이관 정리",
+          "attributes": [
+            {
+              "name": "system"
+            }
+          ]
+        }
+      ],
+      "loc": {
+        "file": "spec/conformance/inputs/enum-value-attributes.m3l.md",
+        "line": 3,
+        "col": 1
+      }
+    },
+    {
+      "name": "ShippingPriority",
+      "type": "enum",
+      "source": "spec/conformance/inputs/enum-value-attributes.m3l.md",
+      "namespace": "conformance.enumattrs",
+      "line": 8,
+      "inherits": [],
+      "values": [
+        {
+          "name": "standard",
+          "description": "Standard Shipping",
+          "type": "integer",
+          "value": "0"
+        },
+        {
+          "name": "overnight",
+          "description": "Overnight Delivery",
+          "type": "integer",
+          "value": "2",
+          "attributes": [
+            {
+              "name": "deprecated",
+              "args": [
+                "use express"
+              ],
+              "argsQuoted": [
+                true
+              ]
+            }
+          ]
+        }
+      ],
+      "loc": {
+        "file": "spec/conformance/inputs/enum-value-attributes.m3l.md",
+        "line": 8,
+        "col": 1
+      }
+    }
+  ],
+  "interfaces": [],
+  "views": [],
+  "flows": [],
+  "attributeRegistry": [],
+  "errors": [],
+  "warnings": []
+}

@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.5.0",
+  "parserVersion": "0.14.0",
   "astVersion": "1.0",
   "project": {},
   "sources": [
@@ -137,6 +137,7 @@
           "kind": "stored",
           "default_value": "pending",
           "default_value_type": "literal",
+          "defaultValueQuoted": true,
           "attributes": [],
           "loc": {
             "file": "spec/conformance/inputs/all-field-kinds.m3l.md",
@@ -215,6 +216,9 @@
               "args": [
                 "status + ' #' + id"
               ],
+              "argsQuoted": [
+                true
+              ],
               "isStandard": true
             }
           ],
@@ -244,6 +248,7 @@
   "enums": [],
   "interfaces": [],
   "views": [],
+  "flows": [],
   "attributeRegistry": [],
   "errors": [],
   "warnings": []

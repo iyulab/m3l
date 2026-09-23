@@ -87,6 +87,60 @@
       "category": "sample"
     },
     {
+      "name": "all-field-kinds",
+      "input": "inputs/all-field-kinds.m3l.md",
+      "expected": "expected/all-field-kinds.json",
+      "category": "unit"
+    },
+    {
+      "name": "attribute-registry",
+      "input": "inputs/attribute-registry.m3l.md",
+      "expected": "expected/attribute-registry.json",
+      "category": "unit"
+    },
+    {
+      "name": "deep-nesting",
+      "input": "inputs/deep-nesting.m3l.md",
+      "expected": "expected/deep-nesting.json",
+      "category": "unit"
+    },
+    {
+      "name": "duplicate-fields",
+      "input": "inputs/duplicate-fields.m3l.md",
+      "expected": "expected/duplicate-fields.json",
+      "category": "unit"
+    },
+    {
+      "name": "empty-file",
+      "input": "inputs/empty-file.m3l.md",
+      "expected": "expected/empty-file.json",
+      "category": "unit"
+    },
+    {
+      "name": "enum-value-attributes",
+      "input": "inputs/enum-value-attributes.m3l.md",
+      "expected": "expected/enum-value-attributes.json",
+      "category": "unit"
+    },
+    {
+      "name": "enum-with-labels",
+      "input": "inputs/enum-with-labels.m3l.md",
+      "expected": "expected/enum-with-labels.json",
+      "category": "unit"
+    },
+    {
+      "name": "multi-namespace",
+      "input": "inputs/multi-namespace.m3l.md",
+      "expected": "expected/multi-namespace.json",
+      "category": "unit"
+    },
+    {
+      "name": "undefined-type",
+      "input": "inputs/undefined-type.m3l.md",
+      "expected": "expected/undefined-type.json",
+      "category": "unit"
+    },
+    {
       "name": "multi-file",
       "input_dir": "inputs/multi",
       "expected": "expected/multi-file.json",

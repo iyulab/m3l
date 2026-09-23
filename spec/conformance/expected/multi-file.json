@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.5.0",
+  "parserVersion": "0.14.0",
   "astVersion": "1.0",
   "project": {
     "name": "sample.multi"
@@ -13,6 +13,7 @@
       "name": "BaseEntity",
       "type": "model",
       "source": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+      "namespace": "sample.multi",
       "line": 20,
       "inherits": [
         "Timestampable"
@@ -90,6 +91,7 @@
       "name": "Warehouse",
       "type": "model",
       "source": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+      "namespace": "sample.multi.inventory",
       "line": 10,
       "inherits": [
         "BaseEntity"
@@ -309,6 +311,7 @@
       "name": "Supplier",
       "type": "model",
       "source": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+      "namespace": "sample.multi.inventory",
       "line": 23,
       "inherits": [
         "BaseEntity",
@@ -506,6 +509,7 @@
           "kind": "stored",
           "default_value": "usd",
           "default_value_type": "literal",
+          "defaultValueQuoted": true,
           "attributes": [],
           "loc": {
             "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
@@ -570,6 +574,7 @@
       "name": "Item",
       "type": "model",
       "source": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+      "namespace": "sample.multi.inventory",
       "line": 35,
       "inherits": [
         "BaseEntity"
@@ -710,6 +715,7 @@
           "kind": "stored",
           "default_value": "ea",
           "default_value_type": "literal",
+          "defaultValueQuoted": true,
           "attributes": [],
           "loc": {
             "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
@@ -821,6 +827,7 @@
       "name": "StockItem",
       "type": "model",
       "source": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+      "namespace": "sample.multi.inventory",
       "line": 52,
       "inherits": [
         "BaseEntity"
@@ -1152,6 +1159,9 @@
               "args": [
                 "quantity * unit_cost"
               ],
+              "argsQuoted": [
+                true
+              ],
               "isStandard": true
             }
           ],
@@ -1177,6 +1187,9 @@
               "args": [
                 "expiry_date IS NOT NULL AND expiry_date < CURRENT_DATE"
               ],
+              "argsQuoted": [
+                true
+              ],
               "isStandard": true
             }
           ],
@@ -1201,6 +1214,9 @@
               "name": "computed",
               "args": [
                 "quantity <= min_stock"
+              ],
+              "argsQuoted": [
+                true
               ],
               "isStandard": true
             }
@@ -1233,7 +1249,9 @@
             "unique": true
           },
           {
-            "args": "item_id",
+            "args": [
+              "item_id"
+            ],
             "loc": {
               "col": 1,
               "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
@@ -1260,28 +1278,40 @@
         ],
         "relations": [
           {
+            "direction": "to",
+            "from": "warehouse_id",
             "loc": {
               "col": 1,
               "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
               "line": 80
             },
-            "raw": "warehouse: >Warehouse via warehouse_id"
+            "name": "warehouse",
+            "raw": "warehouse: >Warehouse via warehouse_id",
+            "target": "Warehouse"
           },
           {
+            "direction": "to",
+            "from": "item_id",
             "loc": {
               "col": 1,
               "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
               "line": 81
             },
-            "raw": "item: >Item via item_id"
+            "name": "item",
+            "raw": "item: >Item via item_id",
+            "target": "Item"
           },
           {
+            "direction": "to",
+            "from": "supplier_id",
             "loc": {
               "col": 1,
               "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
               "line": 82
             },
-            "raw": "supplier: >Supplier via supplier_id (optional)"
+            "name": "supplier",
+            "raw": "supplier: >Supplier via supplier_id (optional)",
+            "target": "Supplier"
           }
         ],
         "behaviors": [],
@@ -1297,6 +1327,7 @@
       "name": "StockMovement",
       "type": "model",
       "source": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+      "namespace": "sample.multi.inventory",
       "line": 86,
       "inherits": [
         "BaseEntity"
@@ -1549,6 +1580,7 @@
       "name": "Currency",
       "type": "enum",
       "source": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+      "namespace": "sample.multi",
       "line": 26,
       "inherits": [],
       "values": [
@@ -1583,6 +1615,7 @@
       "name": "UnitOfMeasure",
       "type": "enum",
       "source": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+      "namespace": "sample.multi",
       "line": 34,
       "inherits": [],
       "values": [
@@ -1619,6 +1652,7 @@
       "name": "Timestampable",
       "type": "interface",
       "source": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+      "namespace": "sample.multi",
       "line": 7,
       "inherits": [],
       "attributes": [],
@@ -1672,6 +1706,7 @@
       "name": "SoftDeletable",
       "type": "interface",
       "source": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+      "namespace": "sample.multi",
       "line": 12,
       "inherits": [],
       "attributes": [],
@@ -1742,6 +1777,7 @@
       "name": "LowStockAlert",
       "type": "view",
       "source": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+      "namespace": "sample.multi.inventory",
       "line": 108,
       "inherits": [],
       "description": "Items below minimum stock level.",
@@ -1870,6 +1906,9 @@
               "args": [
                 "Item.min_stock - StockItem.quantity"
               ],
+              "argsQuoted": [
+                true
+              ],
               "isStandard": true
             }
           ],
@@ -1911,6 +1950,7 @@
       "name": "WarehouseSummary",
       "type": "view",
       "source": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+      "namespace": "sample.multi.inventory",
       "line": 127,
       "inherits": [],
       "description": "Aggregated stock value per warehouse.",
@@ -1973,6 +2013,9 @@
               "args": [
                 "COUNT(DISTINCT StockItem.item_id)"
               ],
+              "argsQuoted": [
+                true
+              ],
               "isStandard": true
             }
           ],
@@ -1997,6 +2040,9 @@
               "name": "computed",
               "args": [
                 "SUM(StockItem.quantity)"
+              ],
+              "argsQuoted": [
+                true
               ],
               "isStandard": true
             }
@@ -2026,6 +2072,9 @@
               "name": "computed",
               "args": [
                 "SUM(StockItem.total_value)"
+              ],
+              "argsQuoted": [
+                true
               ],
               "isStandard": true
             }
@@ -2068,6 +2117,7 @@
       }
     }
   ],
+  "flows": [],
   "attributeRegistry": [],
   "errors": [],
   "warnings": []

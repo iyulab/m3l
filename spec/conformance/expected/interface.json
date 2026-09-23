@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.5.0",
+  "parserVersion": "0.14.0",
   "astVersion": "1.0",
   "project": {},
   "sources": [
@@ -168,6 +168,7 @@
     }
   ],
   "views": [],
+  "flows": [],
   "attributeRegistry": [],
   "errors": [],
   "warnings": []

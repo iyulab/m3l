@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.5.0",
+  "parserVersion": "0.14.0",
   "astVersion": "1.0",
   "project": {},
   "sources": [
@@ -91,13 +91,13 @@
               "name": "computed_raw",
               "args": [
                 "`metadata->>'category'`",
-                "platform: postgresql"
+                "platform: \"postgresql\""
               ],
               "isStandard": true
             }
           ],
           "computed": {
-            "expression": "metadata->>'category",
+            "expression": "metadata->>'category'",
             "platform": "postgresql"
           },
           "loc": {
@@ -115,6 +115,7 @@
           "kind": "stored",
           "default_value": "active",
           "default_value_type": "literal",
+          "defaultValueQuoted": true,
           "attributes": [],
           "loc": {
             "file": "spec/conformance/inputs/backtick-expression.m3l.md",
@@ -131,6 +132,7 @@
           "kind": "stored",
           "default_value": "now()",
           "default_value_type": "expression",
+          "defaultValueBacktick": true,
           "attributes": [],
           "loc": {
             "file": "spec/conformance/inputs/backtick-expression.m3l.md",
@@ -147,6 +149,7 @@
           "kind": "stored",
           "default_value": "price * 0.9",
           "default_value_type": "expression",
+          "defaultValueBacktick": true,
           "attributes": [],
           "loc": {
             "file": "spec/conformance/inputs/backtick-expression.m3l.md",
@@ -406,6 +409,7 @@
   "enums": [],
   "interfaces": [],
   "views": [],
+  "flows": [],
   "attributeRegistry": [],
   "errors": [],
   "warnings": []

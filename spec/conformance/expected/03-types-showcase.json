@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.5.0",
+  "parserVersion": "0.14.0",
   "astVersion": "1.0",
   "project": {
     "name": "sample.types"
@@ -12,6 +12,7 @@
       "name": "AllPrimitiveTypes",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
+      "namespace": "sample.types",
       "line": 8,
       "inherits": [],
       "description": "Every primitive type in M3L.",
@@ -234,6 +235,7 @@
       "name": "SemanticTypes",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
+      "namespace": "sample.types",
       "line": 28,
       "inherits": [],
       "description": "Semantic shorthand types that expand to primitives.",
@@ -349,6 +351,7 @@
       "name": "TypeModifiers",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
+      "namespace": "sample.types",
       "line": 41,
       "inherits": [],
       "description": "Nullable, array, and combined modifiers.",
@@ -514,6 +517,7 @@
       "name": "MapTypes",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
+      "namespace": "sample.types",
       "line": 57,
       "inherits": [],
       "description": "Map type variations.",
@@ -590,6 +594,7 @@
       "name": "ComplexNestedObject",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
+      "namespace": "sample.types",
       "line": 67,
       "inherits": [],
       "description": "Object types with nested structures (up to 3 levels).",
@@ -806,6 +811,7 @@
       "name": "ArrayOfObjects",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
+      "namespace": "sample.types",
       "line": 86,
       "inherits": [],
       "description": "Array fields containing structured objects.",
@@ -957,6 +963,7 @@
       "name": "ValidationShowcase",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
+      "namespace": "sample.types",
       "line": 101,
       "inherits": [],
       "description": "Demonstrates all validation attributes and patterns.",
@@ -1186,8 +1193,10 @@
               "file": "spec/conformance/inputs/03-types-showcase.m3l.md",
               "line": 115
             },
+            "message": "Must be at least 13 years old",
             "name": "age_range",
-            "raw": "- age_range"
+            "raw": "- age_range",
+            "rule": "age >= 13"
           },
           {
             "loc": {
@@ -1195,8 +1204,10 @@
               "file": "spec/conformance/inputs/03-types-showcase.m3l.md",
               "line": 118
             },
+            "message": "Must use company email",
             "name": "email_domain",
-            "raw": "- email_domain"
+            "raw": "- email_domain",
+            "rule": "email LIKE '%@company.com'"
           }
         ]
       },
@@ -1210,6 +1221,7 @@
       "name": "DefaultValues",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
+      "namespace": "sample.types",
       "line": 124,
       "inherits": [],
       "description": "Various default value patterns.",
@@ -1249,6 +1261,7 @@
           "kind": "stored",
           "default_value": "active",
           "default_value_type": "literal",
+          "defaultValueQuoted": true,
           "attributes": [],
           "loc": {
             "file": "spec/conformance/inputs/03-types-showcase.m3l.md",
@@ -1365,6 +1378,7 @@
           "kind": "stored",
           "default_value": "price * 0.9",
           "default_value_type": "expression",
+          "defaultValueBacktick": true,
           "attributes": [],
           "loc": {
             "file": "spec/conformance/inputs/03-types-showcase.m3l.md",
@@ -1384,6 +1398,7 @@
           "kind": "stored",
           "default_value": "Hello \\\"World\\\"",
           "default_value_type": "literal",
+          "defaultValueQuoted": true,
           "attributes": [],
           "loc": {
             "file": "spec/conformance/inputs/03-types-showcase.m3l.md",
@@ -1408,6 +1423,7 @@
       "name": "CompositeKeyExample",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
+      "namespace": "sample.types",
       "line": 141,
       "inherits": [],
       "description": "Demonstrates composite primary key definition.",
@@ -1488,6 +1504,7 @@
       "name": "CompositeKeySection",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
+      "namespace": "sample.types",
       "line": 151,
       "inherits": [],
       "description": "Composite key via ### PrimaryKey section.",
@@ -1572,6 +1589,7 @@
       "name": "ExtendedFormatField",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
+      "namespace": "sample.types",
       "line": 164,
       "inherits": [],
       "description": "Fields using extended (multi-line) format.",
@@ -1660,6 +1678,7 @@
       "name": "InheritanceOverride",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
+      "namespace": "sample.types",
       "line": 178,
       "inherits": [
         "AllPrimitiveTypes"
@@ -1906,6 +1925,7 @@
       "name": "ConditionalFields",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
+      "namespace": "sample.types",
       "line": 187,
       "inherits": [],
       "description": "Fields with conditional visibility.",
@@ -1938,6 +1958,7 @@
           "kind": "stored",
           "default_value": "personal",
           "default_value_type": "literal",
+          "defaultValueQuoted": true,
           "attributes": [],
           "enum_values": [
             {
@@ -2044,6 +2065,7 @@
       "name": "DocumentationShowcase",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
+      "namespace": "sample.types",
       "line": 201,
       "inherits": [],
       "description": "This blockquote provides a detailed model description.\nIt spans multiple lines to demonstrate multi-line blockquote support.",
@@ -2158,6 +2180,7 @@
       "name": "ComputedVariants",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
+      "namespace": "sample.types",
       "line": 218,
       "inherits": [],
       "description": "All types of computed fields.",
@@ -2278,6 +2301,9 @@
               "args": [
                 "first_name + ' ' + last_name"
               ],
+              "argsQuoted": [
+                true
+              ],
               "isStandard": true
             }
           ],
@@ -2336,6 +2362,9 @@
               "args": [
                 "price + tax_amount"
               ],
+              "argsQuoted": [
+                true
+              ],
               "isStandard": true
             },
             {
@@ -2364,7 +2393,11 @@
               "name": "computed_raw",
               "args": [
                 "DATEDIFF(year, birth_date, GETDATE())",
-                "platform: sqlserver"
+                "platform: \"sqlserver\""
+              ],
+              "argsQuoted": [
+                true,
+                false
               ],
               "isStandard": true
             }
@@ -2391,7 +2424,11 @@
               "name": "computed_raw",
               "args": [
                 "EXTRACT(YEAR FROM AGE(birth_date))",
-                "platform: postgresql"
+                "platform: \"postgresql\""
+              ],
+              "argsQuoted": [
+                true,
+                false
               ],
               "isStandard": true
             }
@@ -2423,6 +2460,7 @@
       "name": "BehaviorShowcase",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
+      "namespace": "sample.types",
       "line": 238,
       "inherits": [],
       "description": "Demonstrates behavior definitions.",
@@ -2541,6 +2579,7 @@
       "name": "VersionedEntity",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
+      "namespace": "sample.types",
       "line": 257,
       "inherits": [],
       "description": "Schema versioning demonstration.",
@@ -2686,6 +2725,7 @@
   "enums": [],
   "interfaces": [],
   "views": [],
+  "flows": [],
   "attributeRegistry": [],
   "errors": [],
   "warnings": []

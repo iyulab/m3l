@@ -25,6 +25,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   a multi-line `@computed` expression written as a fenced block under its field, and every
   `## name ::attribute` definition — which turned each use of that attribute into an unregistered
   one.
+- **The conformance suite is checked.** `spec/conformance/expected/` was compared with nothing, so
+  it had drifted: files stamped with parser `0.5.0` lacked fields added since (`namespace`,
+  `flows`, `argsQuoted`, `defaultValueQuoted`, `direction`), and three recorded an expression cut
+  short at its closing quote (`'image/%`), a bug fixed long ago that the fixture still called
+  correct. Every file is regenerated from the current parser, `spec.json` lists the nine inputs it
+  was missing, and a test now compares `m3l parse` output with each expected file on every run.
 - `m3l format` is now checked to be lossless: parsing its output gives back the same AST as the
   input, source positions aside, for every shared conformance input.
 

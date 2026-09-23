@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.5.0",
+  "parserVersion": "0.14.0",
   "astVersion": "1.0",
   "project": {},
   "sources": [
@@ -173,6 +173,7 @@
   "enums": [],
   "interfaces": [],
   "views": [],
+  "flows": [],
   "attributeRegistry": [],
   "errors": [],
   "warnings": []

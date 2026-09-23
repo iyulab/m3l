@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.5.0",
+  "parserVersion": "0.14.0",
   "astVersion": "1.0",
   "project": {
     "name": "sample.blog"
@@ -12,6 +12,7 @@
       "name": "User",
       "type": "model",
       "source": "spec/conformance/inputs/02-blog-cms.m3l.md",
+      "namespace": "sample.blog",
       "line": 37,
       "inherits": [
         "BaseModel"
@@ -222,6 +223,7 @@
           "kind": "stored",
           "default_value": "author",
           "default_value_type": "literal",
+          "defaultValueQuoted": true,
           "attributes": [],
           "enum_values": [
             {
@@ -276,11 +278,14 @@
               "args": [
                 "'/users/' + username"
               ],
+              "argsQuoted": [
+                true
+              ],
               "isStandard": true
             }
           ],
           "computed": {
-            "expression": "/users/' + username"
+            "expression": "'/users/' + username"
           },
           "loc": {
             "file": "spec/conformance/inputs/02-blog-cms.m3l.md",
@@ -329,7 +334,7 @@
               "args": [
                 "Post.author_id",
                 "count",
-                "where: status = 'published'"
+                "where: \"status = 'published'\""
               ],
               "isStandard": true
             }
@@ -337,7 +342,8 @@
           "rollup": {
             "target": "Post",
             "fk": "author_id",
-            "aggregate": "count"
+            "aggregate": "count",
+            "where": "status = 'published'"
           },
           "loc": {
             "file": "spec/conformance/inputs/02-blog-cms.m3l.md",
@@ -362,6 +368,7 @@
       "name": "Tag",
       "type": "model",
       "source": "spec/conformance/inputs/02-blog-cms.m3l.md",
+      "namespace": "sample.blog",
       "line": 63,
       "inherits": [
         "BaseModel"
@@ -546,6 +553,7 @@
       "name": "Category",
       "type": "model",
       "source": "spec/conformance/inputs/02-blog-cms.m3l.md",
+      "namespace": "sample.blog",
       "line": 74,
       "inherits": [
         "BaseModel"
@@ -758,6 +766,7 @@
       "name": "Post",
       "type": "model",
       "source": "spec/conformance/inputs/02-blog-cms.m3l.md",
+      "namespace": "sample.blog",
       "line": 87,
       "inherits": [
         "BaseModel",
@@ -969,6 +978,7 @@
           "kind": "stored",
           "default_value": "markdown",
           "default_value_type": "literal",
+          "defaultValueQuoted": true,
           "attributes": [],
           "loc": {
             "file": "spec/conformance/inputs/02-blog-cms.m3l.md",
@@ -985,6 +995,7 @@
           "kind": "stored",
           "default_value": "draft",
           "default_value_type": "literal",
+          "defaultValueQuoted": true,
           "attributes": [],
           "loc": {
             "file": "spec/conformance/inputs/02-blog-cms.m3l.md",
@@ -1298,6 +1309,9 @@
               "args": [
                 "status = 'published' AND published_at <= now()"
               ],
+              "argsQuoted": [
+                true
+              ],
               "isStandard": true
             }
           ],
@@ -1322,6 +1336,9 @@
               "name": "computed",
               "args": [
                 "LENGTH(content) / 5"
+              ],
+              "argsQuoted": [
+                true
               ],
               "isStandard": true
             }
@@ -1421,7 +1438,7 @@
               "line": 126
             },
             "name": "idx_published",
-            "where": "status = 'published"
+            "where": "status = 'published'"
           }
         ],
         "relations": [],
@@ -1469,6 +1486,7 @@
       "name": "PostTag",
       "type": "model",
       "source": "spec/conformance/inputs/02-blog-cms.m3l.md",
+      "namespace": "sample.blog",
       "line": 141,
       "inherits": [],
       "description": "Many-to-many join between Post and Tag.",
@@ -1560,6 +1578,7 @@
       "name": "Comment",
       "type": "model",
       "source": "spec/conformance/inputs/02-blog-cms.m3l.md",
+      "namespace": "sample.blog",
       "line": 155,
       "inherits": [
         "BaseModel"
@@ -1898,6 +1917,9 @@
               "args": [
                 "COALESCE(author_name, guest_name, 'Anonymous')"
               ],
+              "argsQuoted": [
+                true
+              ],
               "isStandard": true
             }
           ],
@@ -1942,6 +1964,7 @@
       "name": "MediaAsset",
       "type": "model",
       "source": "spec/conformance/inputs/02-blog-cms.m3l.md",
+      "namespace": "sample.blog",
       "line": 181,
       "inherits": [
         "BaseModel"
@@ -2198,6 +2221,9 @@
               "args": [
                 "file_size / 1048576.0"
               ],
+              "argsQuoted": [
+                true
+              ],
               "isStandard": true
             }
           ],
@@ -2223,11 +2249,14 @@
               "args": [
                 "mime_type LIKE 'image/%'"
               ],
+              "argsQuoted": [
+                true
+              ],
               "isStandard": true
             }
           ],
           "computed": {
-            "expression": "mime_type LIKE 'image/%"
+            "expression": "mime_type LIKE 'image/%'"
           },
           "loc": {
             "file": "spec/conformance/inputs/02-blog-cms.m3l.md",
@@ -2254,6 +2283,7 @@
       "name": "PostStatus",
       "type": "enum",
       "source": "spec/conformance/inputs/02-blog-cms.m3l.md",
+      "namespace": "sample.blog",
       "line": 22,
       "inherits": [],
       "values": [
@@ -2284,6 +2314,7 @@
       "name": "ContentFormat",
       "type": "enum",
       "source": "spec/conformance/inputs/02-blog-cms.m3l.md",
+      "namespace": "sample.blog",
       "line": 29,
       "inherits": [],
       "values": [
@@ -2312,6 +2343,7 @@
       "name": "BaseModel",
       "type": "interface",
       "source": "spec/conformance/inputs/02-blog-cms.m3l.md",
+      "namespace": "sample.blog",
       "line": 8,
       "inherits": [],
       "attributes": [],
@@ -2392,6 +2424,7 @@
       "name": "Trackable",
       "type": "interface",
       "source": "spec/conformance/inputs/02-blog-cms.m3l.md",
+      "namespace": "sample.blog",
       "line": 14,
       "inherits": [],
       "attributes": [],
@@ -2461,6 +2494,7 @@
       "name": "PublishedPosts",
       "type": "view",
       "source": "spec/conformance/inputs/02-blog-cms.m3l.md",
+      "namespace": "sample.blog",
       "line": 199,
       "inherits": [],
       "description": "All published posts with author info.",
@@ -2488,6 +2522,7 @@
       "name": "PopularPosts",
       "type": "view",
       "source": "spec/conformance/inputs/02-blog-cms.m3l.md",
+      "namespace": "sample.blog",
       "line": 210,
       "inherits": [],
       "description": "Most viewed posts in the last 30 days.",
@@ -2516,6 +2551,7 @@
       }
     }
   ],
+  "flows": [],
   "attributeRegistry": [],
   "errors": [],
   "warnings": []

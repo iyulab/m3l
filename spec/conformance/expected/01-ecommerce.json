@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.5.0",
+  "parserVersion": "0.14.0",
   "astVersion": "1.0",
   "project": {
     "name": "sample.ecommerce"
@@ -12,6 +12,7 @@
       "name": "Customer",
       "type": "model",
       "source": "spec/conformance/inputs/01-ecommerce.m3l.md",
+      "namespace": "sample.ecommerce",
       "line": 52,
       "inherits": [
         "Timestampable"
@@ -147,6 +148,7 @@
           "kind": "stored",
           "default_value": "active",
           "default_value_type": "literal",
+          "defaultValueQuoted": true,
           "attributes": [],
           "enum_values": [
             {
@@ -214,8 +216,8 @@
         "relations": [],
         "behaviors": [],
         "metadata": {
-          "audit_enabled": true,
-          "table_name": "customers"
+          "table_name": "customers",
+          "audit_enabled": true
         }
       },
       "loc": {
@@ -228,6 +230,7 @@
       "name": "Address",
       "type": "model",
       "source": "spec/conformance/inputs/01-ecommerce.m3l.md",
+      "namespace": "sample.ecommerce",
       "line": 75,
       "inherits": [
         "Timestampable"
@@ -323,6 +326,7 @@
           "kind": "stored",
           "default_value": "Home",
           "default_value_type": "literal",
+          "defaultValueQuoted": true,
           "description": "Address label (Home, Office, etc.)",
           "attributes": [],
           "loc": {
@@ -457,7 +461,9 @@
       "sections": {
         "indexes": [
           {
-            "args": "customer_id",
+            "args": [
+              "customer_id"
+            ],
             "loc": {
               "col": 1,
               "file": "spec/conformance/inputs/01-ecommerce.m3l.md",
@@ -496,6 +502,7 @@
       "name": "Category",
       "type": "model",
       "source": "spec/conformance/inputs/01-ecommerce.m3l.md",
+      "namespace": "sample.ecommerce",
       "line": 94,
       "inherits": [
         "Timestampable"
@@ -729,6 +736,7 @@
       "name": "Product",
       "type": "model",
       "source": "spec/conformance/inputs/01-ecommerce.m3l.md",
+      "namespace": "sample.ecommerce",
       "line": 111,
       "inherits": [
         "Timestampable",
@@ -1092,6 +1100,9 @@
               "args": [
                 "FORMAT(price, '$#,##0.00')"
               ],
+              "argsQuoted": [
+                true
+              ],
               "isStandard": true
             }
           ],
@@ -1133,12 +1144,16 @@
         ],
         "relations": [
           {
+            "direction": "to",
+            "from": "category_id",
             "loc": {
               "col": 1,
               "file": "spec/conformance/inputs/01-ecommerce.m3l.md",
               "line": 140
             },
-            "raw": "category: >Category via category_id"
+            "name": "category",
+            "raw": "category: >Category via category_id",
+            "target": "Category"
           }
         ],
         "behaviors": [],
@@ -1154,6 +1169,7 @@
       "name": "Inventory",
       "type": "model",
       "source": "spec/conformance/inputs/01-ecommerce.m3l.md",
+      "namespace": "sample.ecommerce",
       "line": 144,
       "inherits": [
         "Timestampable"
@@ -1334,6 +1350,9 @@
               "args": [
                 "quantity - reserved"
               ],
+              "argsQuoted": [
+                true
+              ],
               "isStandard": true
             }
           ],
@@ -1358,6 +1377,9 @@
               "name": "computed",
               "args": [
                 "available <= reorder_point"
+              ],
+              "argsQuoted": [
+                true
               ],
               "isStandard": true
             }
@@ -1388,6 +1410,7 @@
       "name": "Order",
       "type": "model",
       "source": "spec/conformance/inputs/01-ecommerce.m3l.md",
+      "namespace": "sample.ecommerce",
       "line": 159,
       "inherits": [
         "Timestampable",
@@ -1542,6 +1565,7 @@
           "kind": "stored",
           "default_value": "draft",
           "default_value_type": "literal",
+          "defaultValueQuoted": true,
           "attributes": [],
           "loc": {
             "file": "spec/conformance/inputs/01-ecommerce.m3l.md",
@@ -1847,6 +1871,9 @@
               "args": [
                 "subtotal * 0.1"
               ],
+              "argsQuoted": [
+                true
+              ],
               "isStandard": true
             }
           ],
@@ -1942,6 +1969,7 @@
       "name": "OrderItem",
       "type": "model",
       "source": "spec/conformance/inputs/01-ecommerce.m3l.md",
+      "namespace": "sample.ecommerce",
       "line": 204,
       "inherits": [],
       "attributes": [],
@@ -2171,6 +2199,9 @@
               "args": [
                 "unit_price * quantity * discount_pct / 100"
               ],
+              "argsQuoted": [
+                true
+              ],
               "isStandard": true
             }
           ],
@@ -2244,6 +2275,7 @@
       "name": "Review",
       "type": "model",
       "source": "spec/conformance/inputs/01-ecommerce.m3l.md",
+      "namespace": "sample.ecommerce",
       "line": 225,
       "inherits": [
         "Timestampable"
@@ -2462,6 +2494,7 @@
       "name": "CustomerStatus",
       "type": "enum",
       "source": "spec/conformance/inputs/01-ecommerce.m3l.md",
+      "namespace": "sample.ecommerce",
       "line": 20,
       "inherits": [],
       "values": [
@@ -2492,6 +2525,7 @@
       "name": "PaymentMethod",
       "type": "enum",
       "source": "spec/conformance/inputs/01-ecommerce.m3l.md",
+      "namespace": "sample.ecommerce",
       "line": 27,
       "inherits": [],
       "values": [
@@ -2522,6 +2556,7 @@
       "name": "OrderStatus",
       "type": "enum",
       "source": "spec/conformance/inputs/01-ecommerce.m3l.md",
+      "namespace": "sample.ecommerce",
       "line": 34,
       "inherits": [],
       "values": [
@@ -2564,6 +2599,7 @@
       "name": "ShippingPriority",
       "type": "enum",
       "source": "spec/conformance/inputs/01-ecommerce.m3l.md",
+      "namespace": "sample.ecommerce",
       "line": 44,
       "inherits": [],
       "values": [
@@ -2598,6 +2634,7 @@
       "name": "Timestampable",
       "type": "interface",
       "source": "spec/conformance/inputs/01-ecommerce.m3l.md",
+      "namespace": "sample.ecommerce",
       "line": 8,
       "inherits": [],
       "attributes": [],
@@ -2651,6 +2688,7 @@
       "name": "Auditable",
       "type": "interface",
       "source": "spec/conformance/inputs/01-ecommerce.m3l.md",
+      "namespace": "sample.ecommerce",
       "line": 13,
       "inherits": [],
       "attributes": [],
@@ -2708,6 +2746,7 @@
       "name": "ActiveProducts",
       "type": "view",
       "source": "spec/conformance/inputs/01-ecommerce.m3l.md",
+      "namespace": "sample.ecommerce",
       "line": 239,
       "inherits": [],
       "description": "Products currently available for sale.",
@@ -2735,6 +2774,7 @@
       "name": "CustomerOrderSummary",
       "type": "view",
       "source": "spec/conformance/inputs/01-ecommerce.m3l.md",
+      "namespace": "sample.ecommerce",
       "line": 250,
       "inherits": [],
       "description": "Aggregated customer order statistics.",
@@ -2915,6 +2955,7 @@
       }
     }
   ],
+  "flows": [],
   "attributeRegistry": [],
   "errors": [],
   "warnings": []

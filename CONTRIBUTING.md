@@ -46,6 +46,15 @@ fixture is a `.m3l.md` input paired with the AST it must produce. A spec change 
 by a new or updated fixture here is not actually pinned; anyone could regress it later without a
 test noticing. When `m3l-lint`'s rules change, the equivalent lives in `crates/m3l-lint/tests/`.
 
+`crates/m3l-cli/tests/conformance_expected.rs` runs `m3l parse` on every entry of `spec.json` and
+compares the output with its expected file (`parserVersion` aside), and fails if an input is missing
+from the manifest. After an intended AST change, regenerate the expected files and review the diff
+before committing:
+
+```sh
+M3L_BLESS=1 cargo test -p m3l-cli --test conformance_expected
+```
+
 ### Layout
 
 ```

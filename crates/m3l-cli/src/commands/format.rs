@@ -161,6 +161,10 @@ fn format_field(lines: &mut Vec<String>, field: &m3l_core::FieldNode, indent: us
 
     if let Some(ref ft) = field.field_type {
         line.push_str(&format!(": {ft}"));
+        // `map<string, integer>` — the type arguments come before any `(params)`.
+        if let Some(ref generic) = field.generic_params {
+            line.push_str(&format!("<{}>", generic.join(", ")));
+        }
         if let Some(ref params) = field.params {
             let param_strs: Vec<String> = params
                 .iter()
@@ -203,6 +207,16 @@ fn format_field(lines: &mut Vec<String>, field: &m3l_core::FieldNode, indent: us
         if let Some(args_str) = format_attr_args(attr) {
             line.push_str(&args_str);
         }
+        // `@reference(Customer)?` — the referential-action symbol belongs to the attribute it
+        // follows; without it the reference falls back to the default action.
+        if let Some(ref symbol) = attr.cascade {
+            line.push_str(symbol);
+        }
+    }
+
+    // Framework attributes (`` `[MaxLength(70)]` ``) pass through untouched.
+    for fa in field.framework_attrs.iter().flatten() {
+        line.push_str(&format!(" `[{}]`", fa.content));
     }
 
     lines.push(line);
@@ -708,12 +722,11 @@ mod lossless {
     /// Shared conformance inputs whose round-trip still loses information, with the number of
     /// differing AST paths. Every input not listed must round-trip exactly.
     const KNOWN_LOSSES: &[(&str, usize)] = &[
-        ("01-ecommerce.m3l.md", 21),
-        ("02-blog-cms.m3l.md", 19),
-        ("03-types-showcase.m3l.md", 7),
+        ("01-ecommerce.m3l.md", 15),
+        ("02-blog-cms.m3l.md", 10),
+        ("03-types-showcase.m3l.md", 5),
         ("attribute-registry.m3l.md", 2),
         ("backtick-expression.m3l.md", 1),
-        ("framework-attrs.m3l.md", 1),
         ("view-sql-block.m3l.md", 1),
         ("view.m3l.md", 1),
     ];
@@ -791,6 +804,20 @@ mod lossless {
              ## Order(Sales Order) : Timestamped\n- id(Order ID): identifier @pk\n\
              - lines(Line Items): object[]\n  - sku(SKU): string\n\n\
              ## OpenOrders(Open Orders) ::view\n- id: identifier\n",
+        );
+        assert!(losses.is_empty(), "{losses:#?}");
+    }
+
+    #[test]
+    fn field_line_constructs_survive_a_round_trip() {
+        let losses = round_trip_losses(
+            "# Namespace: t\n\n\
+             ## Customer\n- id: identifier @pk\n\n\
+             ## Order\n- id: identifier @pk\n\
+             - customer_id: identifier? @reference(Customer)?\n\
+             - owner_id: identifier @reference(Customer)!!\n\
+             - tags: map<string, integer>\n\
+             - secret: string(100) `[JsonIgnore]` `[MaxLength(100)]`\n",
         );
         assert!(losses.is_empty(), "{losses:#?}");
     }

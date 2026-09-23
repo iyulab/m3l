@@ -532,7 +532,7 @@ mod tests {
     /// `array` + `nullable`/`array_item_nullable`: parses `Type?[]?` (leading `?`
     /// = item-nullable, trailing `?` after `[]` = array-nullable). The formatter
     /// must reproduce both flags at their own position, not just one of them
-    /// or the other's position (ISSUE-m3l-20260829-format-roundtrip-fidelity-gaps).
+    /// or the other's position.
     fn roundtrip_array_flags(field_decl: &str) -> (bool, bool) {
         let src = format!("## T\n- f: {field_decl}");
         let ast = m3l_core::resolve(&[m3l_core::parse_string(&src, "t.m3l.md")], None);
@@ -566,8 +566,7 @@ mod tests {
     /// A field's first attribute's `args`/`args_quoted`, round-tripped through
     /// one format pass — `AttrArgValue` is `#[serde(untagged)]`, so without
     /// `args_quoted` a quoted and bareword string arg parse to the identical
-    /// value and the formatter can't tell them apart on the second pass
-    /// (ISSUE-m3l-20260829-format-roundtrip-fidelity-gaps, cause 1).
+    /// value and the formatter can't tell them apart on the second pass.
     fn roundtrip_attr_args(
         field_decl: &str,
     ) -> (Option<Vec<m3l_core::AttrArgValue>>, Option<Vec<bool>>) {
@@ -603,8 +602,7 @@ mod tests {
     }
 
     /// A field's default-value shape, round-tripped through one format pass —
-    /// covers causes 3 (`Literal` quote-origin) and the backtick-`Expression`
-    /// case discovered while fixing it (ISSUE-m3l-20260829-format-roundtrip-fidelity-gaps).
+    /// covers a `Literal`'s quote origin and the backtick-`Expression` case.
     fn roundtrip_default_value(
         field_decl: &str,
     ) -> (

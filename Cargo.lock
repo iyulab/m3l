@@ -223,6 +223,7 @@ dependencies = [
  "glob",
  "m3l-core",
  "m3l-lint",
+ "regex",
  "serde",
  "serde_json",
  "serde_yaml",

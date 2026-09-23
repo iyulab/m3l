@@ -4,11 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
-
-<sub>Not published. `VERSION` is unchanged on purpose — in this repository a `VERSION` change
-pushed to `main` *is* the release, across four channels at once, so the number is set at the
-moment of publishing and not before.</sub>
+## [0.14.0] - 2026-09-23
 
 ### Added
 - **Enum inheritance is resolved** (§3.1.6). `## Child ::enum : Parent` now produces an enum

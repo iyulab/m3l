@@ -55,6 +55,9 @@ fn format_ast(ast: &m3l_core::M3lAst) -> String {
         }
     }
 
+    // Attribute definitions first: they are what the attributes used below refer to.
+    format_attribute_registry(&mut lines, &ast.attribute_registry);
+
     // Models
     for model in &ast.models {
         format_model(&mut lines, model);
@@ -79,8 +82,7 @@ fn format_ast(ast: &m3l_core::M3lAst) -> String {
 
     // Views
     for view in &ast.views {
-        lines.push(format!("## {} ::view", labelled(&view.name, &view.label)));
-        format_model_body(&mut lines, view);
+        format_view(&mut lines, view);
         lines.push(String::new());
     }
 
@@ -155,6 +157,95 @@ fn format_model_body(lines: &mut Vec<String>, model: &m3l_core::ModelNode) {
         format_field(lines, field, 0);
     }
     format_sections(lines, &model.sections);
+}
+
+/// `## name ::attribute` blocks. The registry is what makes a custom attribute known
+/// (`isRegistered`); dropping it turns every use of that attribute into an unknown one.
+fn format_attribute_registry(
+    lines: &mut Vec<String>,
+    registry: &[m3l_core::AttributeRegistryEntry],
+) {
+    for entry in registry {
+        lines.push(format!("## {} ::attribute", entry.name));
+        if let Some(ref desc) = entry.description {
+            push_description(lines, desc, "");
+        }
+        lines.push(format!("- target: [{}]", entry.target.join(", ")));
+        lines.push(format!("- type: {}", entry.attr_type));
+        if let Some((lo, hi)) = entry.range {
+            lines.push(format!("- range: [{lo}, {hi}]"));
+        }
+        if entry.required {
+            lines.push("- required: true".to_string());
+        }
+        if let Some(ref default) = entry.default_value {
+            lines.push(format!("- default: {}", format_arg(default, false)));
+        }
+        lines.push(String::new());
+    }
+}
+
+/// A view: `@materialized` on the header, then `### Source` (directives or a SQL block) ahead of
+/// the fields — the parser reads fields inside `### Source` as the view's columns — and
+/// `### Refresh` after them.
+fn format_view(lines: &mut Vec<String>, view: &m3l_core::ModelNode) {
+    let mut header = format!("## {} ::view", labelled(&view.name, &view.label));
+    if view.materialized == Some(true) {
+        header.push_str(" @materialized");
+    }
+    lines.push(header);
+    if let Some(ref desc) = view.description {
+        push_description(lines, desc, "");
+    }
+    if let Some(ref source) = view.source_def {
+        lines.push(String::new());
+        lines.push("### Source".to_string());
+        if let Some(ref sql) = source.raw_sql {
+            lines.push(format!(
+                "```{}",
+                source.language_hint.as_deref().unwrap_or_default()
+            ));
+            lines.extend(sql.lines().map(str::to_string));
+            lines.push("```".to_string());
+            lines.push(String::new());
+        }
+        if let Some(ref from) = source.from {
+            lines.push(format!("- from: {}", directive_value(from)));
+        }
+        for join in source.joins.iter().flatten() {
+            lines.push(format!("- join: \"{} on {}\"", join.model, join.on));
+        }
+        if let Some(ref w) = source.where_clause {
+            lines.push(format!("- where: \"{w}\""));
+        }
+        if let Some(ref g) = source.group_by {
+            lines.push(format!("- group_by: \"[{}]\"", g.join(", ")));
+        }
+        if let Some(ref o) = source.order_by {
+            lines.push(format!("- order_by: \"{o}\""));
+        }
+    }
+    for field in &view.fields {
+        format_field(lines, field, 0);
+    }
+    format_sections(lines, &view.sections);
+    if let Some(ref refresh) = view.refresh {
+        lines.push(String::new());
+        lines.push("### Refresh".to_string());
+        lines.push(format!("- strategy: {}", refresh.strategy));
+        if let Some(ref interval) = refresh.interval {
+            lines.push(format!("- interval: \"{interval}\""));
+        }
+    }
+}
+
+/// A `### Source` directive value: a plain name as is, anything else quoted.
+fn directive_value(s: &str) -> String {
+    if is_plain_word(s) {
+        s.to_string()
+    } else {
+        format!("\"{s}\"")
+    }
 }
 
 /// Re-emit a model's `###` sections from the AST.
@@ -426,6 +517,22 @@ fn format_field(lines: &mut Vec<String>, field: &m3l_core::FieldNode, indent: us
     }
 
     lines.push(line);
+
+    // A multi-line `@computed` expression is written as a fenced block under the field, the one
+    // place the parser takes an argument-less `@computed`'s expression from. It must come before
+    // the description: the block attaches only to the line directly above it.
+    if let Some(ref computed) = field.computed {
+        let from_block = field
+            .attributes
+            .iter()
+            .any(|a| (a.name == "computed" || a.name == "computed_raw") && a.args.is_none());
+        if from_block {
+            let indent = format!("{prefix}  ");
+            lines.push(format!("{indent}```"));
+            lines.extend(computed.expression.lines().map(|l| format!("{indent}{l}")));
+            lines.push(format!("{indent}```"));
+        }
+    }
 
     // Descriptions go in blockquote continuation lines rather than a trailing
     // `# ...` comment: the comment form put a raw newline mid-line for
@@ -912,29 +1019,13 @@ mod tests {
 }
 
 /// `m3l format` must not change what a file means: parse → format → parse has to give back the
-/// same AST, source positions aside.
-///
-/// It does not yet. The formatter re-emits declarations, fields and attributes, but not every
-/// construct the parser records — sections, cascade symbols, framework attributes and view
-/// sources among them — so formatting such a file deletes them and leaves one that still parses.
-/// [`KNOWN_LOSSES`] records how many AST differences each shared input produces today. The count
-/// is held exactly: a new loss fails the test, and so does a fix, until the table says so — the
-/// table is the remaining work, and it only goes down.
+/// same AST, source positions aside. Anything the formatter fails to write back is deleted from
+/// the user's file by `m3l format` and leaves one that still parses, so nothing else catches it —
+/// `format_idempotent` compares two formatted outputs and a first-pass loss is in both.
 #[cfg(test)]
 mod lossless {
     use super::format_ast;
     use serde_json::Value;
-
-    /// Shared conformance inputs whose round-trip still loses information, with the number of
-    /// differing AST paths. Every input not listed must round-trip exactly.
-    const KNOWN_LOSSES: &[(&str, usize)] = &[
-        ("01-ecommerce.m3l.md", 4),
-        ("02-blog-cms.m3l.md", 4),
-        ("attribute-registry.m3l.md", 2),
-        ("backtick-expression.m3l.md", 1),
-        ("view-sql-block.m3l.md", 1),
-        ("view.m3l.md", 1),
-    ];
 
     fn options() -> m3l_core::ResolveOptions {
         m3l_core::ResolveOptions {
@@ -1074,33 +1165,81 @@ mod lossless {
     }
 
     #[test]
-    fn shared_inputs_lose_no_more_than_recorded() {
-        let dir =
-            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../spec/conformance/inputs");
+    fn views_computed_blocks_and_the_attribute_registry_survive_a_round_trip() {
+        let src = [
+            "# Namespace: t",
+            "",
+            "## tracked(Tracked) ::attribute",
+            "> Audit marker",
+            "- target: [field, model]",
+            "- type: integer",
+            "- range: [1, 5]",
+            "- required: true",
+            "- default: 3",
+            "",
+            "## Customer",
+            "- id: identifier @pk",
+            "- name: string(50) @tracked(2)",
+            "- score: decimal @computed",
+            "  ```",
+            "  CASE",
+            "    WHEN id IS NULL THEN 0",
+            "    ELSE 1",
+            "  END",
+            "  ```",
+            "  > The score.",
+            "",
+            "## Order",
+            "- id: identifier @pk",
+            "- customer_id: identifier @reference(Customer)",
+            "",
+            "## Recent(Recent orders) ::view @materialized",
+            "> Orders of the last week.",
+            "",
+            "### Source",
+            "- from: Order",
+            "- join: \"Customer on Customer.id = Order.customer_id\"",
+            "- where: \"id IS NOT NULL\"",
+            "- group_by: \"[customer_id, id]\"",
+            "- order_by: \"id desc\"",
+            "- order_id: identifier @from(Order.id)",
+            "",
+            "### Refresh",
+            "- strategy: incremental",
+            "- interval: \"1 hour\"",
+            "",
+            "## Report ::view",
+            "### Source",
+            "```sql",
+            "FROM Order o",
+            "WHERE o.id IS NOT NULL",
+            "```",
+            "",
+            "- order_id: identifier @from(Order.id)",
+        ]
+        .join("\n");
+        let losses = round_trip_losses(&src);
+        assert!(losses.is_empty(), "{losses:#?}");
+    }
+
+    #[test]
+    fn shared_inputs_round_trip_without_loss() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let mut inputs: Vec<std::path::PathBuf> =
+            std::fs::read_dir(root.join("spec/conformance/inputs"))
+                .unwrap()
+                .map(|e| e.unwrap().path())
+                .filter(|p| p.extension().is_some_and(|x| x == "md"))
+                .collect();
+        inputs.push(root.join("samples/test/format/full.m3l.md"));
+
         let mut failures = Vec::new();
-        for entry in std::fs::read_dir(&dir).unwrap() {
-            let path = entry.unwrap().path();
-            if path.extension().is_none_or(|x| x != "md") {
-                continue;
-            }
-            let name = path.file_name().unwrap().to_string_lossy().into_owned();
-            let losses = round_trip_losses(&std::fs::read_to_string(&path).unwrap());
-            let known = KNOWN_LOSSES
-                .iter()
-                .find(|(n, _)| *n == name)
-                .map_or(0, |(_, c)| *c);
-            if losses.len() != known {
-                failures.push(format!(
-                    "{name}: recorded {known}, now {}\n  {}",
-                    losses.len(),
-                    losses.join("\n  ")
-                ));
+        for path in &inputs {
+            let losses = round_trip_losses(&std::fs::read_to_string(path).unwrap());
+            if !losses.is_empty() {
+                failures.push(format!("{}:\n  {}", path.display(), losses.join("\n  ")));
             }
         }
-        assert!(
-            failures.is_empty(),
-            "update KNOWN_LOSSES only to record a fix:\n{}",
-            failures.join("\n")
-        );
+        assert!(failures.is_empty(), "{}", failures.join("\n"));
     }
 }

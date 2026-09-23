@@ -20,13 +20,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `- @index(customer_id)`. They are now written back — sections in a fixed order (indexes,
   relations, behaviors, the other sections in source order, metadata), so formatting twice gives
   the same text.
-
-### Known issue
-- **`m3l format` still drops some constructs.** Parsing a formatted file does not yet give back
-  the same AST for every input: multi-line backtick expressions, a view's `### Source`
-  definition, `@materialized` and refresh settings, and the attribute registry are lost. A test
-  now measures the loss on the shared inputs and fails if it grows. Until it reaches zero, do not
-  run `m3l format` over files that use these constructs.
+- **`m3l format` kept views, fenced `@computed` expressions and attribute definitions.** A view's
+  `### Source` (directives or a SQL block), `@materialized` and `### Refresh` were dropped; so was
+  a multi-line `@computed` expression written as a fenced block under its field, and every
+  `## name ::attribute` definition — which turned each use of that attribute into an unregistered
+  one.
+- `m3l format` is now checked to be lossless: parsing its output gives back the same AST as the
+  input, source positions aside, for every shared conformance input.
 
 ## [0.14.0] - 2026-09-23
 

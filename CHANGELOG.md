@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **`M3L-E022`** — a Lookup path segment that is not a field of the model reached at that point
+  (§4.5.4 "Path resolution"). `@lookup(order_id.nothing_id.name)` used to validate clean: the check
+  stopped at the first segment it could not find and said nothing, so the mistake surfaced only in
+  whatever consumed the AST. Every segment is checked, the last one included; a field reaches a
+  model by declaration, inheritance or as another derived field. A path through a model the
+  document does not define is not checked past that model.
+
 ### Changed
 - **`m3l parse` prints the same text for the same input, on every run and every platform.**
   - Keys of the maps in the AST — `sections.metadata`, custom sections and `extensions` — came out

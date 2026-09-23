@@ -1633,6 +1633,7 @@ Simple Format and Extended Format correspondence:
 - **No circular references**: The parser must raise an error if a Lookup chain loops back to itself.
 - **Nullable propagation**: If any reference in the chain is nullable, the result is also nullable.
 - **Reference validation**: Each FK field in the Lookup path must have a `@reference` attribute declared. `@lookup(product_id.name)` requires `product_id` to have `@reference(Product)`, otherwise the parser raises an error.
+- **Path resolution**: Each segment of the Lookup path must name a field of the model reached at that point — the first on the declaring model, each later one on the model the previous key references (declared, inherited, or itself derived). `@lookup(order_id.nothing_id.name)` raises `M3L-E022`. A path that passes through a model the document does not define is not checked beyond that point.
 
 ```markdown
 # category_id is nullable → result is nullable
@@ -2903,6 +2904,7 @@ Conforming parsers should use these error codes for consistent diagnostics.
 | `M3L-E019` | `{value}` is not a valid prefix, or the header is repeated/late | `# Prefix:` value does not match `[a-z][a-z0-9]*`, a second header appears in the same file, or a header appears after the file's first declaration |
 | `M3L-E020` | Duplicate enum value `{value}` in enum `{enum}` | The same value name appears twice after inheritance is resolved — declared twice in one block, declared by both a parent and the enum itself, or declared by two parents with different labels (§3.1.6). Two parents declaring it identically is the diamond case and is not an error |
 | `M3L-E021` | `::extend({arg})` takes no argument | An extend block names its target with the declaration name (`## Target ::extend`), so a parenthesised argument has nowhere to go. Reported rather than ignored because the silence misleads: `## Other ::extend(Base)` is read as extending `Other`, and the resulting `M3L-E011` names a target the author never wrote. Empty parentheses are reported too — they merge correctly, which is why the mistake is only discovered once a name is put inside them |
+| `M3L-E022` | Lookup path segment `{segment}` is not a field of `{model}` | A segment of an `@lookup` path names no field on the model reached at that point (§4.5.4 Path resolution). The walk follows each key's `@reference`/`@fk`; a segment after a reference to a model the document does not define is not checked |
 
 #### 10.5.2 Warnings
 

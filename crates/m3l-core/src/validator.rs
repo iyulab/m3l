@@ -442,13 +442,28 @@ fn validate_lookup_reference(
 
     // Every segment but the last is an FK hop (spec 4.5.4: "Each FK field in the Lookup path
     // must have a @reference"). Walk them in order, stepping into each hop's referenced model.
-    // A hop that cannot be resolved (unknown field, or a reference to a model outside this AST)
-    // ends the walk without a diagnostic here — the same as the first hop always did.
+    // Every segment must name a field of the model reached at that point (M3L-E022). A reference
+    // to a model outside this AST ends the walk without a diagnostic — a partial document cannot
+    // know that model's fields.
     let mut current = model;
+    let unknown = |segment: &str, on: &ModelNode| Diagnostic {
+        code: "M3L-E022".into(),
+        severity: DiagnosticSeverity::Error,
+        file: field.loc.file.clone(),
+        line: field.loc.line,
+        col: 1,
+        message: format!(
+            "@lookup on \"{}\" names \"{}\", which is not a field of \"{}\"",
+            field.name, segment, on.name
+        ),
+    };
     for (hop, fk_field_name) in segments[..segments.len() - 1].iter().enumerate() {
         let fk_field = match current.fields.iter().find(|f| f.name == *fk_field_name) {
             Some(f) => f,
-            None => return,
+            None => {
+                errors.push(unknown(fk_field_name, current));
+                return;
+            }
         };
 
         let reference = fk_field
@@ -487,6 +502,11 @@ fn validate_lookup_reference(
             Some(m) => m,
             None => return,
         };
+    }
+
+    let last = segments[segments.len() - 1];
+    if !current.fields.iter().any(|f| f.name == last) {
+        errors.push(unknown(last, current));
     }
 }
 

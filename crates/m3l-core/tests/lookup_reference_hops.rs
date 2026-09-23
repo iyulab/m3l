@@ -75,8 +75,8 @@ fn an_fk_attribute_counts_at_a_later_hop() {
 }
 
 /// The walk steps into the model each hop references -- a key that exists only
-/// on some other model is not found there, and an unresolvable hop is left to
-/// whatever reports unknown fields rather than reported as a missing reference.
+/// on some other model is not found there. That is an unknown field
+/// (`M3L-E022`, see `lookup_unknown_segment.rs`), not a missing reference.
 #[test]
 fn an_unknown_later_hop_is_not_reported_as_a_missing_reference() {
     assert!(lookup_errors(&with_line("- x: string @lookup(order_id.nothing_id.name)")).is_empty());

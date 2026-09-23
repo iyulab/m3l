@@ -8,6 +8,14 @@ on:
       - 'spec/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
+      # Every manifest the version-sync job checks, so drift fails on the commit that
+      # introduces it rather than on the next release (crates/** already covers NAPI's).
+      - 'VERSION'
+      - 'bindings/csharp/M3L.Native.csproj'
+      - 'bindings/typescript/package.json'
+      - 'update-version.ps1'
+      - '.github/actions/verify-version-sync/**'
+      - '.github/workflows/rust-ci.yml'
   pull_request:
     branches: [main]
     paths:
@@ -15,11 +23,28 @@ on:
       - 'spec/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
+      # Every manifest the version-sync job checks, so drift fails on the commit that
+      # introduces it rather than on the next release (crates/** already covers NAPI's).
+      - 'VERSION'
+      - 'bindings/csharp/M3L.Native.csproj'
+      - 'bindings/typescript/package.json'
+      - 'update-version.ps1'
+      - '.github/actions/verify-version-sync/**'
+      - '.github/workflows/rust-ci.yml'
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  version-sync:
+    name: Version sync
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      # The same gate the four publish workflows run first. Here it runs on every change
+      # to a manifest, so a drifted tree is caught before a release is attempted from it.
+      - uses: ./.github/actions/verify-version-sync
+
   test:
     name: Test
     runs-on: ubuntu-latest

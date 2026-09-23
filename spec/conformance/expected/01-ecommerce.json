@@ -216,8 +216,8 @@
         "relations": [],
         "behaviors": [],
         "metadata": {
-          "table_name": "customers",
-          "audit_enabled": true
+          "audit_enabled": true,
+          "table_name": "customers"
         }
       },
       "loc": {

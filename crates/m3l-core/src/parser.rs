@@ -3,7 +3,7 @@
 #![allow(clippy::field_reassign_with_default)]
 
 use regex::Regex;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::sync::LazyLock;
 
 use crate::catalogs::STANDARD_ATTRIBUTES;
@@ -58,7 +58,7 @@ struct ParserState {
     interfaces: Vec<ModelNode>,
     views: Vec<ModelNode>,
     flows: Vec<ModelNode>,
-    extensions: HashMap<String, Vec<ModelNode>>,
+    extensions: BTreeMap<String, Vec<ModelNode>>,
     attribute_registry: Vec<AttributeRegistryEntry>,
     current_attr_def: Option<AttrDef>,
     source_directives_done: bool,
@@ -88,7 +88,7 @@ pub fn parse_tokens(tokens: &[Token], file: &str) -> ParsedFile {
         interfaces: Vec::new(),
         views: Vec::new(),
         flows: Vec::new(),
-        extensions: HashMap::new(),
+        extensions: BTreeMap::new(),
         attribute_registry: Vec::new(),
         current_attr_def: None,
         source_directives_done: false,

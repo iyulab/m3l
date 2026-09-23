@@ -5,14 +5,14 @@
     "name": "sample.multi"
   },
   "sources": [
-    "spec\\conformance\\inputs\\multi\\base.m3l.md",
-    "spec\\conformance\\inputs\\multi\\inventory.m3l.md"
+    "spec/conformance/inputs/multi/base.m3l.md",
+    "spec/conformance/inputs/multi/inventory.m3l.md"
   ],
   "models": [
     {
       "name": "BaseEntity",
       "type": "model",
-      "source": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+      "source": "spec/conformance/inputs/multi/base.m3l.md",
       "namespace": "sample.multi",
       "line": 20,
       "inherits": [
@@ -31,7 +31,7 @@
           "default_value_type": "expression",
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "file": "spec/conformance/inputs/multi/base.m3l.md",
             "line": 9,
             "col": 1
           }
@@ -47,7 +47,7 @@
           "default_value_type": "expression",
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "file": "spec/conformance/inputs/multi/base.m3l.md",
             "line": 10,
             "col": 1
           }
@@ -69,7 +69,7 @@
             }
           ],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "file": "spec/conformance/inputs/multi/base.m3l.md",
             "line": 22,
             "col": 1
           }
@@ -82,7 +82,7 @@
         "metadata": {}
       },
       "loc": {
-        "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+        "file": "spec/conformance/inputs/multi/base.m3l.md",
         "line": 20,
         "col": 1
       }
@@ -90,7 +90,7 @@
     {
       "name": "Warehouse",
       "type": "model",
-      "source": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+      "source": "spec/conformance/inputs/multi/inventory.m3l.md",
       "namespace": "sample.multi.inventory",
       "line": 10,
       "inherits": [
@@ -109,7 +109,7 @@
           "default_value_type": "expression",
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "file": "spec/conformance/inputs/multi/base.m3l.md",
             "line": 9,
             "col": 1
           }
@@ -125,7 +125,7 @@
           "default_value_type": "expression",
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "file": "spec/conformance/inputs/multi/base.m3l.md",
             "line": 10,
             "col": 1
           }
@@ -147,7 +147,7 @@
             }
           ],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "file": "spec/conformance/inputs/multi/base.m3l.md",
             "line": 22,
             "col": 1
           }
@@ -173,7 +173,7 @@
             }
           ],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 12,
             "col": 1
           }
@@ -195,7 +195,7 @@
             }
           ],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 13,
             "col": 1
           }
@@ -212,7 +212,7 @@
           "kind": "stored",
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 14,
             "col": 1
           }
@@ -228,7 +228,7 @@
           "default_value_type": "literal",
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 15,
             "col": 1
           }
@@ -256,7 +256,7 @@
             "aggregate": "count"
           },
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 18,
             "col": 1
           }
@@ -289,7 +289,7 @@
             "field": "total_value"
           },
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 19,
             "col": 1
           }
@@ -302,7 +302,7 @@
         "metadata": {}
       },
       "loc": {
-        "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+        "file": "spec/conformance/inputs/multi/inventory.m3l.md",
         "line": 10,
         "col": 1
       }
@@ -310,7 +310,7 @@
     {
       "name": "Supplier",
       "type": "model",
-      "source": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+      "source": "spec/conformance/inputs/multi/inventory.m3l.md",
       "namespace": "sample.multi.inventory",
       "line": 23,
       "inherits": [
@@ -330,7 +330,7 @@
           "default_value_type": "expression",
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "file": "spec/conformance/inputs/multi/base.m3l.md",
             "line": 9,
             "col": 1
           }
@@ -346,7 +346,7 @@
           "default_value_type": "expression",
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "file": "spec/conformance/inputs/multi/base.m3l.md",
             "line": 10,
             "col": 1
           }
@@ -368,7 +368,7 @@
             }
           ],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "file": "spec/conformance/inputs/multi/base.m3l.md",
             "line": 22,
             "col": 1
           }
@@ -384,7 +384,7 @@
           "default_value_type": "literal",
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "file": "spec/conformance/inputs/multi/base.m3l.md",
             "line": 14,
             "col": 1
           }
@@ -398,7 +398,7 @@
           "kind": "stored",
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "file": "spec/conformance/inputs/multi/base.m3l.md",
             "line": 15,
             "col": 1
           }
@@ -415,7 +415,7 @@
           "kind": "stored",
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "file": "spec/conformance/inputs/multi/base.m3l.md",
             "line": 16,
             "col": 1
           }
@@ -441,7 +441,7 @@
             }
           ],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 25,
             "col": 1
           }
@@ -467,7 +467,7 @@
             }
           ],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 26,
             "col": 1
           }
@@ -481,7 +481,7 @@
           "kind": "stored",
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 27,
             "col": 1
           }
@@ -495,7 +495,7 @@
           "kind": "stored",
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 28,
             "col": 1
           }
@@ -512,7 +512,7 @@
           "defaultValueQuoted": true,
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 29,
             "col": 1
           }
@@ -536,7 +536,7 @@
             }
           ],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 30,
             "col": 1
           }
@@ -552,7 +552,7 @@
           "default_value_type": "literal",
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 31,
             "col": 1
           }
@@ -565,7 +565,7 @@
         "metadata": {}
       },
       "loc": {
-        "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+        "file": "spec/conformance/inputs/multi/inventory.m3l.md",
         "line": 23,
         "col": 1
       }
@@ -573,7 +573,7 @@
     {
       "name": "Item",
       "type": "model",
-      "source": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+      "source": "spec/conformance/inputs/multi/inventory.m3l.md",
       "namespace": "sample.multi.inventory",
       "line": 35,
       "inherits": [
@@ -593,7 +593,7 @@
           "default_value_type": "expression",
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "file": "spec/conformance/inputs/multi/base.m3l.md",
             "line": 9,
             "col": 1
           }
@@ -609,7 +609,7 @@
           "default_value_type": "expression",
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "file": "spec/conformance/inputs/multi/base.m3l.md",
             "line": 10,
             "col": 1
           }
@@ -631,7 +631,7 @@
             }
           ],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "file": "spec/conformance/inputs/multi/base.m3l.md",
             "line": 22,
             "col": 1
           }
@@ -661,7 +661,7 @@
             }
           ],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 39,
             "col": 1
           }
@@ -687,7 +687,7 @@
             }
           ],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 40,
             "col": 1
           }
@@ -701,7 +701,7 @@
           "kind": "stored",
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 41,
             "col": 1
           }
@@ -718,7 +718,7 @@
           "defaultValueQuoted": true,
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 42,
             "col": 1
           }
@@ -735,7 +735,7 @@
           "kind": "stored",
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 43,
             "col": 1
           }
@@ -760,7 +760,7 @@
             }
           ],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 44,
             "col": 1
           }
@@ -776,7 +776,7 @@
           "default_value_type": "literal",
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 45,
             "col": 1
           }
@@ -805,7 +805,7 @@
             "field": "quantity"
           },
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 48,
             "col": 1
           }
@@ -818,7 +818,7 @@
         "metadata": {}
       },
       "loc": {
-        "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+        "file": "spec/conformance/inputs/multi/inventory.m3l.md",
         "line": 35,
         "col": 1
       }
@@ -826,7 +826,7 @@
     {
       "name": "StockItem",
       "type": "model",
-      "source": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+      "source": "spec/conformance/inputs/multi/inventory.m3l.md",
       "namespace": "sample.multi.inventory",
       "line": 52,
       "inherits": [
@@ -846,7 +846,7 @@
           "default_value_type": "expression",
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "file": "spec/conformance/inputs/multi/base.m3l.md",
             "line": 9,
             "col": 1
           }
@@ -862,7 +862,7 @@
           "default_value_type": "expression",
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "file": "spec/conformance/inputs/multi/base.m3l.md",
             "line": 10,
             "col": 1
           }
@@ -884,7 +884,7 @@
             }
           ],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "file": "spec/conformance/inputs/multi/base.m3l.md",
             "line": 22,
             "col": 1
           }
@@ -906,7 +906,7 @@
             }
           ],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 56,
             "col": 1
           }
@@ -929,7 +929,7 @@
             }
           ],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 57,
             "col": 1
           }
@@ -952,7 +952,7 @@
             }
           ],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 58,
             "col": 1
           }
@@ -976,7 +976,7 @@
             }
           ],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 59,
             "col": 1
           }
@@ -1006,7 +1006,7 @@
             }
           ],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 60,
             "col": 1
           }
@@ -1023,7 +1023,7 @@
           "kind": "stored",
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 61,
             "col": 1
           }
@@ -1037,7 +1037,7 @@
           "kind": "stored",
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 62,
             "col": 1
           }
@@ -1062,7 +1062,7 @@
             "path": "warehouse_id.name"
           },
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 65,
             "col": 1
           }
@@ -1087,7 +1087,7 @@
             "path": "item_id.name"
           },
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 66,
             "col": 1
           }
@@ -1112,7 +1112,7 @@
             "path": "item_id.sku"
           },
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 67,
             "col": 1
           }
@@ -1137,7 +1137,7 @@
             "path": "supplier_id.name"
           },
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 68,
             "col": 1
           }
@@ -1169,7 +1169,7 @@
             "expression": "quantity * unit_cost"
           },
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 71,
             "col": 1
           }
@@ -1197,7 +1197,7 @@
             "expression": "expiry_date IS NOT NULL AND expiry_date < CURRENT_DATE"
           },
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 72,
             "col": 1
           }
@@ -1225,7 +1225,7 @@
             "expression": "quantity <= min_stock"
           },
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 73,
             "col": 1
           }
@@ -1241,7 +1241,7 @@
             ],
             "loc": {
               "col": 1,
-              "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+              "file": "spec/conformance/inputs/multi/inventory.m3l.md",
               "line": 75
             },
             "raw": "- @unique(warehouse_id, item_id, batch_number)",
@@ -1254,7 +1254,7 @@
             ],
             "loc": {
               "col": 1,
-              "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+              "file": "spec/conformance/inputs/multi/inventory.m3l.md",
               "line": 76
             },
             "raw": "- @index(item_id)",
@@ -1268,7 +1268,7 @@
             ],
             "loc": {
               "col": 1,
-              "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+              "file": "spec/conformance/inputs/multi/inventory.m3l.md",
               "line": 77
             },
             "raw": "- @index(warehouse_id, item_id)",
@@ -1282,7 +1282,7 @@
             "from": "warehouse_id",
             "loc": {
               "col": 1,
-              "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+              "file": "spec/conformance/inputs/multi/inventory.m3l.md",
               "line": 80
             },
             "name": "warehouse",
@@ -1294,7 +1294,7 @@
             "from": "item_id",
             "loc": {
               "col": 1,
-              "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+              "file": "spec/conformance/inputs/multi/inventory.m3l.md",
               "line": 81
             },
             "name": "item",
@@ -1306,7 +1306,7 @@
             "from": "supplier_id",
             "loc": {
               "col": 1,
-              "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+              "file": "spec/conformance/inputs/multi/inventory.m3l.md",
               "line": 82
             },
             "name": "supplier",
@@ -1318,7 +1318,7 @@
         "metadata": {}
       },
       "loc": {
-        "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+        "file": "spec/conformance/inputs/multi/inventory.m3l.md",
         "line": 52,
         "col": 1
       }
@@ -1326,7 +1326,7 @@
     {
       "name": "StockMovement",
       "type": "model",
-      "source": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+      "source": "spec/conformance/inputs/multi/inventory.m3l.md",
       "namespace": "sample.multi.inventory",
       "line": 86,
       "inherits": [
@@ -1346,7 +1346,7 @@
           "default_value_type": "expression",
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "file": "spec/conformance/inputs/multi/base.m3l.md",
             "line": 9,
             "col": 1
           }
@@ -1362,7 +1362,7 @@
           "default_value_type": "expression",
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "file": "spec/conformance/inputs/multi/base.m3l.md",
             "line": 10,
             "col": 1
           }
@@ -1384,7 +1384,7 @@
             }
           ],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "file": "spec/conformance/inputs/multi/base.m3l.md",
             "line": 22,
             "col": 1
           }
@@ -1406,7 +1406,7 @@
             }
           ],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 90,
             "col": 1
           }
@@ -1443,7 +1443,7 @@
             }
           ],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 91,
             "col": 1
           }
@@ -1463,7 +1463,7 @@
             }
           ],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 96,
             "col": 1
           }
@@ -1480,7 +1480,7 @@
           "kind": "stored",
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 97,
             "col": 1
           }
@@ -1494,7 +1494,7 @@
           "kind": "stored",
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 98,
             "col": 1
           }
@@ -1516,7 +1516,7 @@
             }
           ],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 99,
             "col": 1
           }
@@ -1541,7 +1541,7 @@
             "path": "stock_item_id.item_name"
           },
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 102,
             "col": 1
           }
@@ -1556,7 +1556,7 @@
             ],
             "loc": {
               "col": 1,
-              "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+              "file": "spec/conformance/inputs/multi/inventory.m3l.md",
               "line": 104
             },
             "raw": "- @index(stock_item_id, created_at)",
@@ -1569,7 +1569,7 @@
         "metadata": {}
       },
       "loc": {
-        "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+        "file": "spec/conformance/inputs/multi/inventory.m3l.md",
         "line": 86,
         "col": 1
       }
@@ -1579,7 +1579,7 @@
     {
       "name": "Currency",
       "type": "enum",
-      "source": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+      "source": "spec/conformance/inputs/multi/base.m3l.md",
       "namespace": "sample.multi",
       "line": 26,
       "inherits": [],
@@ -1606,7 +1606,7 @@
         }
       ],
       "loc": {
-        "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+        "file": "spec/conformance/inputs/multi/base.m3l.md",
         "line": 26,
         "col": 1
       }
@@ -1614,7 +1614,7 @@
     {
       "name": "UnitOfMeasure",
       "type": "enum",
-      "source": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+      "source": "spec/conformance/inputs/multi/base.m3l.md",
       "namespace": "sample.multi",
       "line": 34,
       "inherits": [],
@@ -1641,7 +1641,7 @@
         }
       ],
       "loc": {
-        "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+        "file": "spec/conformance/inputs/multi/base.m3l.md",
         "line": 34,
         "col": 1
       }
@@ -1651,7 +1651,7 @@
     {
       "name": "Timestampable",
       "type": "interface",
-      "source": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+      "source": "spec/conformance/inputs/multi/base.m3l.md",
       "namespace": "sample.multi",
       "line": 7,
       "inherits": [],
@@ -1668,7 +1668,7 @@
           "default_value_type": "expression",
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "file": "spec/conformance/inputs/multi/base.m3l.md",
             "line": 9,
             "col": 1
           }
@@ -1684,7 +1684,7 @@
           "default_value_type": "expression",
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "file": "spec/conformance/inputs/multi/base.m3l.md",
             "line": 10,
             "col": 1
           }
@@ -1697,7 +1697,7 @@
         "metadata": {}
       },
       "loc": {
-        "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+        "file": "spec/conformance/inputs/multi/base.m3l.md",
         "line": 7,
         "col": 1
       }
@@ -1705,7 +1705,7 @@
     {
       "name": "SoftDeletable",
       "type": "interface",
-      "source": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+      "source": "spec/conformance/inputs/multi/base.m3l.md",
       "namespace": "sample.multi",
       "line": 12,
       "inherits": [],
@@ -1722,7 +1722,7 @@
           "default_value_type": "literal",
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "file": "spec/conformance/inputs/multi/base.m3l.md",
             "line": 14,
             "col": 1
           }
@@ -1736,7 +1736,7 @@
           "kind": "stored",
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "file": "spec/conformance/inputs/multi/base.m3l.md",
             "line": 15,
             "col": 1
           }
@@ -1753,7 +1753,7 @@
           "kind": "stored",
           "attributes": [],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+            "file": "spec/conformance/inputs/multi/base.m3l.md",
             "line": 16,
             "col": 1
           }
@@ -1766,7 +1766,7 @@
         "metadata": {}
       },
       "loc": {
-        "file": "spec\\conformance\\inputs\\multi\\base.m3l.md",
+        "file": "spec/conformance/inputs/multi/base.m3l.md",
         "line": 12,
         "col": 1
       }
@@ -1776,7 +1776,7 @@
     {
       "name": "LowStockAlert",
       "type": "view",
-      "source": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+      "source": "spec/conformance/inputs/multi/inventory.m3l.md",
       "namespace": "sample.multi.inventory",
       "line": 108,
       "inherits": [],
@@ -1800,7 +1800,7 @@
             }
           ],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 118,
             "col": 1
           }
@@ -1822,7 +1822,7 @@
             }
           ],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 119,
             "col": 1
           }
@@ -1844,7 +1844,7 @@
             }
           ],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 120,
             "col": 1
           }
@@ -1866,7 +1866,7 @@
             }
           ],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 121,
             "col": 1
           }
@@ -1888,7 +1888,7 @@
             }
           ],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 122,
             "col": 1
           }
@@ -1916,7 +1916,7 @@
             "expression": "Item.min_stock - StockItem.quantity"
           },
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 123,
             "col": 1
           }
@@ -1941,7 +1941,7 @@
         "order_by": "StockItem.quantity asc"
       },
       "loc": {
-        "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+        "file": "spec/conformance/inputs/multi/inventory.m3l.md",
         "line": 108,
         "col": 1
       }
@@ -1949,7 +1949,7 @@
     {
       "name": "WarehouseSummary",
       "type": "view",
-      "source": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+      "source": "spec/conformance/inputs/multi/inventory.m3l.md",
       "namespace": "sample.multi.inventory",
       "line": 127,
       "inherits": [],
@@ -1973,7 +1973,7 @@
             }
           ],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 136,
             "col": 1
           }
@@ -1995,7 +1995,7 @@
             }
           ],
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 137,
             "col": 1
           }
@@ -2023,7 +2023,7 @@
             "expression": "COUNT(DISTINCT StockItem.item_id)"
           },
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 138,
             "col": 1
           }
@@ -2051,7 +2051,7 @@
             "expression": "SUM(StockItem.quantity)"
           },
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 139,
             "col": 1
           }
@@ -2083,7 +2083,7 @@
             "expression": "SUM(StockItem.total_value)"
           },
           "loc": {
-            "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+            "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 140,
             "col": 1
           }
@@ -2111,7 +2111,7 @@
         "interval": "30 minutes"
       },
       "loc": {
-        "file": "spec\\conformance\\inputs\\multi\\inventory.m3l.md",
+        "file": "spec/conformance/inputs/multi/inventory.m3l.md",
         "line": 127,
         "col": 1
       }

@@ -17,6 +17,20 @@ pub struct M3lConfig {
     pub sources: Option<Vec<String>>,
 }
 
+/// The path recorded as a file's `source` in the AST, with `/` separators on every platform.
+///
+/// The AST is a portable artefact — the same files must produce the same output wherever they are
+/// parsed — and Windows paths would otherwise carry `\`. Only the platform separator is
+/// rewritten: on Unix a backslash is an ordinary file-name character.
+fn source_path(path: &Path) -> String {
+    let text = path.to_string_lossy();
+    if std::path::MAIN_SEPARATOR == '\\' {
+        text.replace('\\', "/")
+    } else {
+        text.into_owned()
+    }
+}
+
 /// Read M3L files from a path (file or directory).
 pub fn read_m3l_files(input_path: &Path) -> Result<Vec<M3lFile>, String> {
     if !input_path.exists() {
@@ -27,7 +41,7 @@ pub fn read_m3l_files(input_path: &Path) -> Result<Vec<M3lFile>, String> {
         let content = fs::read_to_string(input_path)
             .map_err(|e| format!("Failed to read {}: {}", input_path.display(), e))?;
         return Ok(vec![M3lFile {
-            path: input_path.to_string_lossy().to_string(),
+            path: source_path(input_path),
             content,
         }]);
     }
@@ -97,7 +111,7 @@ fn scan_directory(dir_path: &Path) -> Result<Vec<M3lFile>, String> {
         let content = fs::read_to_string(&path)
             .map_err(|e| format!("Failed to read {}: {}", path.display(), e))?;
         files.push(M3lFile {
-            path: path.to_string_lossy().to_string(),
+            path: source_path(&path),
             content,
         });
     }
@@ -144,7 +158,7 @@ fn read_from_config(config_path: &Path, base_dir: &Path) -> Result<Vec<M3lFile>,
             let content = fs::read_to_string(&path)
                 .map_err(|e| format!("Failed to read {}: {}", path.display(), e))?;
             files.push(M3lFile {
-                path: path.to_string_lossy().to_string(),
+                path: source_path(&path),
                 content,
             });
         }

@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 use crate::catalogs::{AST_VERSION, PARSER_VERSION};
 use crate::types::*;
@@ -51,7 +51,7 @@ pub fn resolve_with(
     let mut all_interfaces: Vec<ModelNode> = Vec::new();
     let mut all_views: Vec<ModelNode> = Vec::new();
     let mut all_flows: Vec<ModelNode> = Vec::new();
-    let mut all_extensions: HashMap<String, Vec<ModelNode>> = HashMap::new();
+    let mut all_extensions: BTreeMap<String, Vec<ModelNode>> = BTreeMap::new();
     let mut all_attr_registry: Vec<AttributeRegistryEntry> = Vec::new();
     let mut sources: Vec<String> = Vec::new();
 

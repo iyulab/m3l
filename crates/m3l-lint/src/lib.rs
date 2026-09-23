@@ -252,7 +252,7 @@ mod tests {
             interfaces: vec![],
             views: vec![],
             flows: vec![],
-            extensions: std::collections::HashMap::new(),
+            extensions: std::collections::BTreeMap::new(),
             attribute_registry: vec![],
             errors: vec![],
             warnings: vec![],

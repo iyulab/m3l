@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- **`m3l parse` prints the same text for the same input, on every run and every platform.**
+  - Keys of the maps in the AST — `sections.metadata`, custom sections and `extensions` — came out
+    in a different order on each run, because they were hash maps. They are now sorted by key.
+    **Rust API:** those three fields are `BTreeMap` instead of `HashMap` (`Sections::metadata`,
+    `Sections::custom`, `M3lAst::extensions`); code that only reads them through `get`, `iter` or
+    indexing is unaffected. The JSON shape is unchanged.
+  - A file's `source` path and every `loc.file` used the platform separator, so the same files
+    parsed on Windows and on Linux produced different ASTs. The CLI now records paths with `/`
+    everywhere.
+
 ### Fixed
 - **`m3l format` kept every label.** A label written as `Name(Label)` — on a model, enum,
   interface, view or `::extend` header, or on a field — was dropped from the output, so formatting

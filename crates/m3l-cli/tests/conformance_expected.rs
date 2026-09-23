@@ -149,3 +149,19 @@ fn every_input_produces_its_expected_ast() {
         failures.join("\n")
     );
 }
+
+/// The printed AST is the same text on every run. The comparison above is by value and would not
+/// notice keys changing order, but a consumer that diffs or caches the output would — maps in the
+/// AST are kept in a sorted order, not in whatever order a hash map iterates that process.
+#[test]
+fn parse_output_is_the_same_text_on_every_run() {
+    let input = "spec/conformance/inputs/01-ecommerce.m3l.md";
+    let (first, _) = parse(input);
+    for _ in 0..4 {
+        let (again, _) = parse(input);
+        assert_eq!(
+            again, first,
+            "m3l parse printed a different text for the same input"
+        );
+    }
+}

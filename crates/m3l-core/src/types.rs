@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 // ---------------------------------------------------------------------------
 // Source location
@@ -369,9 +369,9 @@ pub struct Sections {
     pub indexes: Vec<serde_json::Value>,
     pub relations: Vec<serde_json::Value>,
     pub behaviors: Vec<serde_json::Value>,
-    pub metadata: HashMap<String, serde_json::Value>,
+    pub metadata: BTreeMap<String, serde_json::Value>,
     #[serde(flatten)]
-    pub custom: HashMap<String, serde_json::Value>,
+    pub custom: BTreeMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -545,7 +545,7 @@ pub struct ParsedFile {
     pub interfaces: Vec<ModelNode>,
     pub views: Vec<ModelNode>,
     pub flows: Vec<ModelNode>,
-    pub extensions: HashMap<String, Vec<ModelNode>>,
+    pub extensions: BTreeMap<String, Vec<ModelNode>>,
     pub attribute_registry: Vec<AttributeRegistryEntry>,
     /// Import paths found in this file (for circular import detection).
     pub imports: Vec<String>,
@@ -569,8 +569,8 @@ pub struct M3lAst {
     pub interfaces: Vec<ModelNode>,
     pub views: Vec<ModelNode>,
     pub flows: Vec<ModelNode>,
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub extensions: HashMap<String, Vec<ModelNode>>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub extensions: BTreeMap<String, Vec<ModelNode>>,
     #[serde(rename = "attributeRegistry")]
     pub attribute_registry: Vec<AttributeRegistryEntry>,
     pub errors: Vec<Diagnostic>,

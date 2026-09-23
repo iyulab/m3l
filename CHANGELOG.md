@@ -14,11 +14,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   attribute (`@reference(Customer)?` came back as a plain reference, i.e. the default referential
   action), framework attributes (`` `[MaxLength(70)]` ``) and generic type arguments
   (`map<string, integer>` came back as `map`).
+- **`m3l format` kept a model's sections.** `### Indexes`, `### Relations`, `### Behaviors`,
+  `### Metadata` and every other named section (`### PrimaryKey`, `### Validations`, custom ones)
+  were dropped along with their sub-items, and so were directive lines such as
+  `- @index(customer_id)`. They are now written back — sections in a fixed order (indexes,
+  relations, behaviors, the other sections in source order, metadata), so formatting twice gives
+  the same text.
 
 ### Known issue
 - **`m3l format` still drops some constructs.** Parsing a formatted file does not yet give back
-  the same AST for every input: sections (`### Indexes`, `### Relations`, `### Metadata`,
-  `### Behaviors` and custom sections), multi-line backtick expressions, a view's `### Source`
+  the same AST for every input: multi-line backtick expressions, a view's `### Source`
   definition, `@materialized` and refresh settings, and the attribute registry are lost. A test
   now measures the loss on the shared inputs and fails if it grows. Until it reaches zero, do not
   run `m3l format` over files that use these constructs.

@@ -1,3 +1,4 @@
+use serde_json::Value;
 use std::path::Path;
 
 use crate::build_ast_with;
@@ -152,6 +153,211 @@ fn format_model_body(lines: &mut Vec<String>, model: &m3l_core::ModelNode) {
     }
     for field in &model.fields {
         format_field(lines, field, 0);
+    }
+    format_sections(lines, &model.sections);
+}
+
+/// Re-emit a model's `###` sections from the AST.
+///
+/// The parser keeps each item's source line in `raw` wherever it has one, and folds `- key: value`
+/// sub-items into the item's object; the formatter writes the line back and the remaining keys as
+/// sub-items. Directive items (`- @index(a, b)`, `- @behavior(...)`) are written in the model body,
+/// where they are read the same way wherever they sit. Sections come out in a fixed order —
+/// indexes, relations, behaviors, the other named sections in source order, metadata — so a
+/// second format produces the same text.
+fn format_sections(lines: &mut Vec<String>, sections: &m3l_core::Sections) {
+    let is_directive = |item: &Value| raw_of(item).is_some_and(|r| r.starts_with("- @"));
+
+    // Directive items first, in the body.
+    let directive_lists = [&sections.indexes, &sections.relations, &sections.behaviors];
+    for item in directive_lists
+        .into_iter()
+        .flatten()
+        .filter(|i| is_directive(i))
+    {
+        lines.push(raw_of(item).unwrap_or_default().to_string());
+    }
+    let mut custom: Vec<(&String, &Vec<Value>)> = sections
+        .custom
+        .iter()
+        .filter_map(|(name, v)| v.as_array().map(|a| (name, a)))
+        .collect();
+    custom.sort_by_key(|(name, items)| {
+        (
+            items.first().and_then(first_line).unwrap_or(usize::MAX),
+            *name,
+        )
+    });
+    for (_, items) in &custom {
+        for item in items.iter().filter(|i| is_directive(i)) {
+            lines.push(raw_of(item).unwrap_or_default().to_string());
+        }
+    }
+
+    let indexes: Vec<&Value> = sections
+        .indexes
+        .iter()
+        .filter(|i| !is_directive(i))
+        .collect();
+    if !indexes.is_empty() {
+        push_section_heading(lines, "Indexes");
+        for item in indexes {
+            lines.push(index_head(item));
+            push_sub_items(
+                lines,
+                item,
+                &["name", "label", "type", "attr", "unique", "args", "nulls"],
+            );
+        }
+    }
+
+    let relations: Vec<&Value> = sections
+        .relations
+        .iter()
+        .filter(|i| !is_directive(i))
+        .collect();
+    if !relations.is_empty() {
+        push_section_heading(lines, "Relations");
+        for item in relations {
+            // The notation is parsed back out of `raw`; only keys a sub-item set are written.
+            lines.push(format!("- {}", raw_of(item).unwrap_or_default()));
+            push_sub_items(
+                lines,
+                item,
+                &[
+                    "raw",
+                    "direction",
+                    "name",
+                    "target",
+                    "cardinality",
+                    "from",
+                    "type",
+                    "args",
+                ],
+            );
+        }
+    }
+
+    let behaviors: Vec<&Value> = sections
+        .behaviors
+        .iter()
+        .filter(|i| !is_directive(i))
+        .collect();
+    if !behaviors.is_empty() {
+        push_section_heading(lines, "Behaviors");
+        for item in behaviors {
+            lines.push(raw_of(item).unwrap_or_default().to_string());
+            push_sub_items(lines, item, &["name", "raw", "args"]);
+        }
+    }
+
+    for (name, items) in &custom {
+        let items: Vec<&Value> = items.iter().filter(|i| !is_directive(i)).collect();
+        if items.is_empty() {
+            continue;
+        }
+        push_section_heading(lines, name);
+        for item in items {
+            lines.push(raw_of(item).unwrap_or_default().to_string());
+            push_sub_items(lines, item, &["name", "raw", "value", "args"]);
+        }
+    }
+
+    if !sections.metadata.is_empty() {
+        push_section_heading(lines, "Metadata");
+        let mut keys: Vec<&String> = sections.metadata.keys().collect();
+        keys.sort();
+        for key in keys {
+            lines.push(format!(
+                "- {key}: {}",
+                metadata_value(&sections.metadata[key])
+            ));
+        }
+    }
+}
+
+fn push_section_heading(lines: &mut Vec<String>, name: &str) {
+    lines.push(String::new());
+    lines.push(format!("### {name}"));
+}
+
+fn raw_of(item: &Value) -> Option<&str> {
+    item.get("raw").and_then(Value::as_str)
+}
+
+fn first_line(item: &Value) -> Option<usize> {
+    item.get("loc")?.get("line")?.as_u64().map(|l| l as usize)
+}
+
+/// `- name(Label): @index(a, b)` for the labelled form, `- name` when the index is described only
+/// by sub-items.
+fn index_head(item: &Value) -> String {
+    let name = item.get("name").and_then(Value::as_str).unwrap_or_default();
+    let label = item
+        .get("label")
+        .and_then(Value::as_str)
+        .map(str::to_string);
+    let mut head = format!("- {}", labelled(name, &label));
+    if let Some(attr) = item.get("attr").and_then(Value::as_str) {
+        let mut args: Vec<String> = item
+            .get("args")
+            .and_then(Value::as_array)
+            .map(|a| a.iter().map(bare_value).collect())
+            .unwrap_or_default();
+        if let Some(nulls) = item.get("nulls").and_then(Value::as_str) {
+            args.push(format!("nulls: \"{nulls}\""));
+        }
+        head.push_str(&format!(": @{attr}({})", args.join(", ")));
+    }
+    head
+}
+
+/// Every key the head line does not account for, as a `  - key: value` sub-item.
+fn push_sub_items(lines: &mut Vec<String>, item: &Value, head_keys: &[&str]) {
+    let Some(obj) = item.as_object() else { return };
+    for (key, value) in obj {
+        if key == "loc" || head_keys.contains(&key.as_str()) {
+            continue;
+        }
+        lines.push(format!("  - {key}: {}", nested_value(value)));
+    }
+}
+
+/// A sub-item value in the shape the parser reads back: arrays bracketed, strings bare when they
+/// would read back as the same string, quoted otherwise.
+fn nested_value(value: &Value) -> String {
+    match value {
+        Value::Array(items) => format!(
+            "[{}]",
+            items.iter().map(bare_value).collect::<Vec<_>>().join(", ")
+        ),
+        other => metadata_value(other),
+    }
+}
+
+/// A metadata value. A string is written bare only when it is a plain word the parser cannot
+/// mistake for a number or a boolean; anything else is quoted, and the parser strips the quotes.
+fn metadata_value(value: &Value) -> String {
+    match value {
+        Value::String(s) if is_plain_word(s) => s.clone(),
+        Value::String(s) => format!("\"{s}\""),
+        other => other.to_string(),
+    }
+}
+
+fn is_plain_word(s: &str) -> bool {
+    !s.is_empty()
+        && s.chars()
+            .all(|c| c.is_alphanumeric() || c == '_' || c == '-' || c == '.')
+        && s != "true"
+        && s != "false"
+        && s.parse::<f64>().is_err()
+}
+
+fn bare_value(value: &Value) -> String {
+    match value {
+        Value::String(s) => s.clone(),
+        other => other.to_string(),
     }
 }
 
@@ -722,9 +928,8 @@ mod lossless {
     /// Shared conformance inputs whose round-trip still loses information, with the number of
     /// differing AST paths. Every input not listed must round-trip exactly.
     const KNOWN_LOSSES: &[(&str, usize)] = &[
-        ("01-ecommerce.m3l.md", 15),
-        ("02-blog-cms.m3l.md", 10),
-        ("03-types-showcase.m3l.md", 5),
+        ("01-ecommerce.m3l.md", 4),
+        ("02-blog-cms.m3l.md", 4),
         ("attribute-registry.m3l.md", 2),
         ("backtick-expression.m3l.md", 1),
         ("view-sql-block.m3l.md", 1),
@@ -819,6 +1024,52 @@ mod lossless {
              - tags: map<string, integer>\n\
              - secret: string(100) `[JsonIgnore]` `[MaxLength(100)]`\n",
         );
+        assert!(losses.is_empty(), "{losses:#?}");
+    }
+
+    #[test]
+    fn model_sections_survive_a_round_trip() {
+        // Joined rather than written with `\` continuations, which would strip the
+        // sub-items' indentation.
+        let src = [
+            "# Namespace: t",
+            "",
+            "## Order",
+            "- id: identifier @pk",
+            "- customer_id: identifier",
+            "- code: string(10)?",
+            "- @index(customer_id)",
+            "- @behavior(before_create, stamp)",
+            "",
+            "### Indexes",
+            "- idx_customer",
+            "  - fields: [customer_id, code]",
+            "  - where: \"code IS NOT NULL\"",
+            "- uk_code(Unique code): @unique(code, nulls: \"not_distinct\")",
+            "",
+            "### Relations",
+            "- customer: >Customer via customer_id",
+            "  - on_delete: cascade",
+            "",
+            "### Behaviors",
+            "- before_update: touch",
+            "  - condition: always",
+            "",
+            "### Metadata",
+            "- table_name: orders",
+            "- cache_ttl: 300",
+            "- audited: true",
+            "- version_tag: \"2026\"",
+            "",
+            "### Validations",
+            "- code_shape",
+            "  - rule: \"LEN(code) = 10\"",
+            "",
+            "### Version",
+            "- major: 2",
+        ]
+        .join("\n");
+        let losses = round_trip_losses(&src);
         assert!(losses.is_empty(), "{losses:#?}");
     }
 

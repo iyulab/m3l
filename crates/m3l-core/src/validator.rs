@@ -36,7 +36,7 @@ pub fn validate(ast: &M3lAst, options: &ValidateOptions) -> ValidateResult {
         for field in &model.fields {
             if field.kind == FieldKind::Lookup {
                 if let Some(ref lookup) = field.lookup {
-                    validate_lookup_reference(field, model, lookup, &mut errors);
+                    validate_lookup_reference(field, model, lookup, &model_map, &mut errors);
                 }
             }
         }
@@ -432,6 +432,7 @@ fn validate_lookup_reference(
     field: &FieldNode,
     model: &ModelNode,
     lookup: &LookupDef,
+    model_map: &HashMap<&str, &ModelNode>,
     errors: &mut Vec<Diagnostic>,
 ) {
     let segments: Vec<&str> = lookup.path.split('.').collect();
@@ -439,29 +440,53 @@ fn validate_lookup_reference(
         return;
     }
 
-    let fk_field_name = segments[0];
-    let fk_field = match model.fields.iter().find(|f| f.name == fk_field_name) {
-        Some(f) => f,
-        None => return,
-    };
+    // Every segment but the last is an FK hop (spec 4.5.4: "Each FK field in the Lookup path
+    // must have a @reference"). Walk them in order, stepping into each hop's referenced model.
+    // A hop that cannot be resolved (unknown field, or a reference to a model outside this AST)
+    // ends the walk without a diagnostic here — the same as the first hop always did.
+    let mut current = model;
+    for (hop, fk_field_name) in segments[..segments.len() - 1].iter().enumerate() {
+        let fk_field = match current.fields.iter().find(|f| f.name == *fk_field_name) {
+            Some(f) => f,
+            None => return,
+        };
 
-    let has_reference = fk_field
-        .attributes
-        .iter()
-        .any(|a| a.name == "reference" || a.name == "fk");
+        let reference = fk_field
+            .attributes
+            .iter()
+            .find(|a| a.name == "reference" || a.name == "fk");
+        let reference = match reference {
+            Some(r) => r,
+            None => {
+                let location = if hop == 0 {
+                    String::new()
+                } else {
+                    format!(" (on \"{}\")", current.name)
+                };
+                errors.push(Diagnostic {
+                    code: "M3L-E002".into(),
+                    severity: DiagnosticSeverity::Error,
+                    file: field.loc.file.clone(),
+                    line: field.loc.line,
+                    col: 1,
+                    message: format!(
+                        "@lookup on \"{}\" references FK \"{}\"{} which has no @reference or @fk attribute",
+                        field.name, fk_field_name, location
+                    ),
+                });
+                return;
+            }
+        };
 
-    if !has_reference {
-        errors.push(Diagnostic {
-            code: "M3L-E002".into(),
-            severity: DiagnosticSeverity::Error,
-            file: field.loc.file.clone(),
-            line: field.loc.line,
-            col: 1,
-            message: format!(
-                "@lookup on \"{}\" references FK \"{}\" which has no @reference or @fk attribute",
-                field.name, fk_field_name
-            ),
-        });
+        // `@reference(Model)` names the model; `@fk(Model.field)` names it before the dot.
+        let target = match reference.args.as_deref() {
+            Some([AttrArgValue::String(arg), ..]) => arg.split('.').next().unwrap_or(arg),
+            _ => return,
+        };
+        current = match model_map.get(target) {
+            Some(m) => m,
+            None => return,
+        };
     }
 }
 

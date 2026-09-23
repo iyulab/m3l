@@ -37,6 +37,13 @@ moment of publishing and not before.</sub>
   base shares that base's key, and calling it inheritance would say the fields were copied down.
 - **`m3l analyze` draws an enum's inheritance edge.** Enums were already nodes; only the edge was
   missing, so a child appeared as a standalone enum with fewer members than it has.
+- **`M3L-E002` checks every FK hop of a Lookup path**, not only the first (§4.5.4: "Each FK field
+  in the Lookup path must have a `@reference`"). In `@lookup(order_id.customer_id.name)` the second
+  key, `customer_id`, lives on the model `order_id` references; it was never looked at, so a chain
+  whose later key was a plain column validated clean and failed in whatever consumed it. A report
+  for a later hop names the model the key was looked up on. A hop that cannot be resolved — an
+  unknown field, or a reference to a model outside the document — ends the check without a report,
+  as the first hop always did.
 - An enum declaring a parent used to parse, resolve and validate while quietly holding only its
   own block's values. Nothing reported it: the declaration was syntactically fine, every consumer
   succeeded, and the missing members surfaced only as values an application could not represent.
@@ -44,6 +51,8 @@ moment of publishing and not before.</sub>
 ### Notes for consumers
 - A consumer that read `values` as "the values this block declares" now sees the inherited ones
   too. Nothing that previously appeared has gone away.
+- A document with a multi-hop Lookup whose later key has no `@reference` or `@fk` now fails
+  validation with `M3L-E002` where it used to pass.
 - Consumers that reproduce the source document rather than its meaning — the formatter is the one
   in this repository — are unaffected: flattening honours the same `inline_inherited` switch that
   already governs model fields, so a round-trip still writes `: Parent` and the enum's own values

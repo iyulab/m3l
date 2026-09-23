@@ -68,14 +68,17 @@ fn format_ast(ast: &m3l_core::M3lAst) -> String {
 
     // Interfaces
     for iface in &ast.interfaces {
-        lines.push(format!("## {} ::interface", iface.name));
+        lines.push(format!(
+            "## {} ::interface",
+            labelled(&iface.name, &iface.label)
+        ));
         format_model_body(&mut lines, iface);
         lines.push(String::new());
     }
 
     // Views
     for view in &ast.views {
-        lines.push(format!("## {} ::view", view.name));
+        lines.push(format!("## {} ::view", labelled(&view.name, &view.label)));
         format_model_body(&mut lines, view);
         lines.push(String::new());
     }
@@ -83,7 +86,10 @@ fn format_ast(ast: &m3l_core::M3lAst) -> String {
     // Extend blocks — kept as blocks: the formatter resolves with `merge_extends: false`.
     if let Some(blocks) = ast.extensions.get("extend") {
         for block in blocks {
-            lines.push(format!("## {} ::extend", block.name));
+            lines.push(format!(
+                "## {} ::extend",
+                labelled(&block.name, &block.label)
+            ));
             format_model_body(&mut lines, block);
             lines.push(String::new());
         }
@@ -98,7 +104,7 @@ fn format_ast(ast: &m3l_core::M3lAst) -> String {
 }
 
 fn format_model(lines: &mut Vec<String>, model: &m3l_core::ModelNode) {
-    let mut header = format!("## {}", model.name);
+    let mut header = format!("## {}", labelled(&model.name, &model.label));
     if let Some(base) = &model.base {
         header.push_str(&format!(" ::{}({})", base.kind, base.model));
     }
@@ -115,6 +121,18 @@ fn format_model(lines: &mut Vec<String>, model: &m3l_core::ModelNode) {
     }
     lines.push(header);
     format_model_body(lines, model);
+}
+
+/// `Name(Label)` when the declaration carries a label, `Name` otherwise.
+///
+/// The label is the declaration's display name, written only in the header
+/// or field line — a format that dropped it would delete it from the file while
+/// leaving one that still parses.
+fn labelled(name: &str, label: &Option<String>) -> String {
+    match label {
+        Some(label) => format!("{name}({label})"),
+        None => name.to_string(),
+    }
 }
 
 /// Emit a description as blockquote lines, one per source line.
@@ -139,7 +157,7 @@ fn format_model_body(lines: &mut Vec<String>, model: &m3l_core::ModelNode) {
 
 fn format_field(lines: &mut Vec<String>, field: &m3l_core::FieldNode, indent: usize) {
     let prefix = "  ".repeat(indent);
-    let mut line = format!("{prefix}- {}", field.name);
+    let mut line = format!("{prefix}- {}", labelled(&field.name, &field.label));
 
     if let Some(ref ft) = field.field_type {
         line.push_str(&format!(": {ft}"));
@@ -216,7 +234,7 @@ fn format_field(lines: &mut Vec<String>, field: &m3l_core::FieldNode, indent: us
 }
 
 fn format_enum(lines: &mut Vec<String>, e: &m3l_core::EnumNode) {
-    let mut header = format!("## {} ::enum", e.name);
+    let mut header = format!("## {} ::enum", labelled(&e.name, &e.label));
     // The parent list, for the same reason `format_model` emits a model's: it is the only place
     // the inherited values are written down. Dropping it used to cost nothing, because inheritance
     // was recorded and never acted on; now that it resolves, a format that dropped it would delete
@@ -669,6 +687,142 @@ mod tests {
         assert_eq!(
             backtick, None,
             "paren-call expression must not gain backticks"
+        );
+    }
+}
+
+/// `m3l format` must not change what a file means: parse → format → parse has to give back the
+/// same AST, source positions aside.
+///
+/// It does not yet. The formatter re-emits declarations, fields and attributes, but not every
+/// construct the parser records — sections, cascade symbols, framework attributes and view
+/// sources among them — so formatting such a file deletes them and leaves one that still parses.
+/// [`KNOWN_LOSSES`] records how many AST differences each shared input produces today. The count
+/// is held exactly: a new loss fails the test, and so does a fix, until the table says so — the
+/// table is the remaining work, and it only goes down.
+#[cfg(test)]
+mod lossless {
+    use super::format_ast;
+    use serde_json::Value;
+
+    /// Shared conformance inputs whose round-trip still loses information, with the number of
+    /// differing AST paths. Every input not listed must round-trip exactly.
+    const KNOWN_LOSSES: &[(&str, usize)] = &[
+        ("01-ecommerce.m3l.md", 21),
+        ("02-blog-cms.m3l.md", 19),
+        ("03-types-showcase.m3l.md", 7),
+        ("attribute-registry.m3l.md", 2),
+        ("backtick-expression.m3l.md", 1),
+        ("framework-attrs.m3l.md", 1),
+        ("view-sql-block.m3l.md", 1),
+        ("view.m3l.md", 1),
+    ];
+
+    fn options() -> m3l_core::ResolveOptions {
+        m3l_core::ResolveOptions {
+            inline_inherited: false,
+            merge_extends: false,
+        }
+    }
+
+    /// Source positions legitimately move when a file is reformatted.
+    fn strip_positions(v: &mut Value) {
+        match v {
+            Value::Object(m) => {
+                for k in ["loc", "line", "col"] {
+                    m.remove(k);
+                }
+                m.values_mut().for_each(strip_positions);
+            }
+            Value::Array(a) => a.iter_mut().for_each(strip_positions),
+            _ => {}
+        }
+    }
+
+    fn diff(path: &str, a: &Value, b: &Value, out: &mut Vec<String>) {
+        if a == b {
+            return;
+        }
+        match (a, b) {
+            (Value::Object(x), Value::Object(y)) => {
+                let keys: std::collections::BTreeSet<&String> = x.keys().chain(y.keys()).collect();
+                for k in keys {
+                    let (l, r) = (
+                        x.get(k).unwrap_or(&Value::Null),
+                        y.get(k).unwrap_or(&Value::Null),
+                    );
+                    diff(&format!("{path}.{k}"), l, r, out);
+                }
+            }
+            (Value::Array(x), Value::Array(y)) if x.len() == y.len() => {
+                for (i, (l, r)) in x.iter().zip(y).enumerate() {
+                    diff(&format!("{path}[{i}]"), l, r, out);
+                }
+            }
+            _ => out.push(format!("{path}: {a} => {b}")),
+        }
+    }
+
+    /// The AST paths that differ after one format round-trip.
+    fn round_trip_losses(src: &str) -> Vec<String> {
+        let before =
+            m3l_core::resolve_with(&[m3l_core::parse_string(src, "t.m3l.md")], None, options());
+        let formatted = format_ast(&before);
+        let after = m3l_core::resolve_with(
+            &[m3l_core::parse_string(&formatted, "t.m3l.md")],
+            None,
+            options(),
+        );
+        let mut a = serde_json::to_value(&before).unwrap();
+        let mut b = serde_json::to_value(&after).unwrap();
+        strip_positions(&mut a);
+        strip_positions(&mut b);
+        let mut out = Vec::new();
+        diff("", &a, &b, &mut out);
+        out
+    }
+
+    #[test]
+    fn labels_survive_a_round_trip() {
+        let losses = round_trip_losses(
+            "# Namespace: t\n\n\
+             ## Status(Order Status) ::enum\n- open: \"Open\"\n\n\
+             ## Timestamped(Timestamps) ::interface\n- created_at: timestamp\n\n\
+             ## Order(Sales Order) : Timestamped\n- id(Order ID): identifier @pk\n\
+             - lines(Line Items): object[]\n  - sku(SKU): string\n\n\
+             ## OpenOrders(Open Orders) ::view\n- id: identifier\n",
+        );
+        assert!(losses.is_empty(), "{losses:#?}");
+    }
+
+    #[test]
+    fn shared_inputs_lose_no_more_than_recorded() {
+        let dir =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../spec/conformance/inputs");
+        let mut failures = Vec::new();
+        for entry in std::fs::read_dir(&dir).unwrap() {
+            let path = entry.unwrap().path();
+            if path.extension().is_none_or(|x| x != "md") {
+                continue;
+            }
+            let name = path.file_name().unwrap().to_string_lossy().into_owned();
+            let losses = round_trip_losses(&std::fs::read_to_string(&path).unwrap());
+            let known = KNOWN_LOSSES
+                .iter()
+                .find(|(n, _)| *n == name)
+                .map_or(0, |(_, c)| *c);
+            if losses.len() != known {
+                failures.push(format!(
+                    "{name}: recorded {known}, now {}\n  {}",
+                    losses.len(),
+                    losses.join("\n  ")
+                ));
+            }
+        }
+        assert!(
+            failures.is_empty(),
+            "update KNOWN_LOSSES only to record a fix:\n{}",
+            failures.join("\n")
         );
     }
 }

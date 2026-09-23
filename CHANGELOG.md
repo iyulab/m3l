@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Fixed
+- **`m3l format` kept every label.** A label written as `Name(Label)` — on a model, enum,
+  interface, view or `::extend` header, or on a field — was dropped from the output, so formatting
+  a file deleted its display names and left one that still parsed.
+
+### Known issue
+- **`m3l format` still drops some constructs.** Parsing a formatted file does not yet give back
+  the same AST for every input: sections (`### Indexes`, `### Relations`, `### Metadata`,
+  `### Behaviors` and custom sections), the `!`/`?`/`!!` cascade symbols on an attribute,
+  framework attributes, generic type parameters, multi-line backtick expressions, view
+  `### Source` definitions and the attribute registry are lost. A test now measures the loss on
+  the shared inputs and fails if it grows. Until it reaches zero, do not run `m3l format` over
+  files that use these constructs.
+
 ## [0.14.0] - 2026-09-23
 
 ### Added

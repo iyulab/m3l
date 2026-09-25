@@ -34,7 +34,7 @@ fn forbidden_shapes() -> Vec<(Regex, &'static str)> {
             "a reference into the maintainers' private issue queue",
         ),
         (
-            Regex::new(r"(?i)\bcycle-\d+\b").unwrap(),
+            Regex::new(r"(?i)\bcycle[-_ ]\d+\b").unwrap(),
             "a work-log iteration number",
         ),
         (

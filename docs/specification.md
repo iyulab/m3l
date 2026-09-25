@@ -24,7 +24,7 @@
    1. [Composite Key Definition](#41-composite-key-definition)
    2. [Comments and Documentation](#42-comments-and-documentation)
    3. [Behavior Definition](#43-behavior-definition)
-   4. [Computed Fields](#44-computed-fields)
+   4. [Computed Fields (Row-Level)](#44-computed-fields-row-level)
    5. [Lookup Fields](#45-lookup-fields)
    6. [Rollup Fields](#46-rollup-fields)
    7. [Derived Views](#47-derived-views)
@@ -49,11 +49,15 @@
    4. [Cascade Behavior for Foreign Keys](#84-cascade-behavior-for-foreign-keys)
 9. [Best Practices and Anti-patterns](#9-best-practices-and-anti-patterns)
    1. [Recommended Practices](#91-recommended-practices)
-   2. [Anti-patterns to Avoid](#92-anti-patterns-to-avoid)
-   3. [Naming Conventions](#93-naming-conventions)
 10. [Appendix](#10-appendix)
     1. [Terminology](#101-terminology)
     2. [Mapping to Implementation](#102-mapping-to-implementation)
+    3. [Formal Grammar (PEG)](#103-formal-grammar-peg)
+    4. [Type Catalog](#104-type-catalog)
+    5. [Error Catalog](#105-error-catalog)
+    6. [Import Resolution](#106-import-resolution)
+    7. [Platform-Specific Expressions](#107-platform-specific-expressions)
+    8. [Standard Attribute Catalog](#108-standard-attribute-catalog)
     3. [Formal Grammar (PEG)](#103-formal-grammar-peg)
     4. [Type Catalog](#104-type-catalog)
     5. [Error Catalog](#105-error-catalog)
@@ -1958,7 +1962,7 @@ A view can use another view as its data source by specifying it in the `from` di
 
 As an alternative to key-value Source definitions, views can use SQL code blocks directly:
 
-```markdown
+````markdown
 ## CustomerReport ::view
 
 ### Source
@@ -1971,7 +1975,7 @@ GROUP BY c.id, c.name
 
 - customer_name: string @from(Customer.name)
 - total_orders: integer @computed(`COUNT(o.id)`)
-```
+````
 
 The SQL block and key-value formats cannot be mixed within the same Source section. Field definitions follow after the code block.
 

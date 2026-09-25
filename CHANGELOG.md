@@ -25,6 +25,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Fixed
 - **The `M3L.Native` NuGet package carries the README and the project URL**, so its nuget.org page
   shows the usage documentation instead of an empty readme tab.
+- **The specification renders section 4.8 again, and its table of contents points at real
+  headings.** An example in 4.7.8 nested a `sql` block inside a `markdown` block with fences of
+  the same length, so the inner closing fence ended the outer block and the stray fence that
+  followed turned the 4.8 heading into code. Four contents entries named headings that had been
+  renamed or removed, and six appendix sections were missing from the list.
 
 ## [0.15.0] - 2026-09-24
 

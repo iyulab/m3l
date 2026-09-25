@@ -43,7 +43,7 @@ pub fn resolve_with(
     options: ResolveOptions,
 ) -> M3lAst {
     let mut errors: Vec<Diagnostic> = Vec::new();
-    let warnings: Vec<Diagnostic> = Vec::new();
+    let mut warnings: Vec<Diagnostic> = Vec::new();
 
     // Collect all elements from all files
     let mut all_models: Vec<ModelNode> = Vec::new();
@@ -57,6 +57,7 @@ pub fn resolve_with(
 
     check_prefix_headers(files, &mut errors);
     check_extend_kind_args(files, &mut errors);
+    check_unread_field_text(files, &mut warnings);
 
     for file in files {
         sources.push(file.source.clone());
@@ -406,6 +407,29 @@ pub fn resolve_with(
 /// is discarded. Reported because the silence is actively misleading rather than merely lossy: an
 /// author who writes `## Other ::extend(Base)` intending to extend `Base` gets `M3L-E011` naming
 /// *`Other`* — a target they never wrote — and nothing connects that message to the parentheses.
+/// `M3L-W010`: text on a field line that the field syntax does not read (§2.5.8). A warning,
+/// not an error — the rest of the line is still a well-formed field — but never silence: the
+/// commonest instance is a default written after an attribute, which is otherwise lost whole.
+fn check_unread_field_text(files: &[ParsedFile], warnings: &mut Vec<Diagnostic>) {
+    for file in files {
+        for entry in &file.unread_field_text {
+            warnings.push(Diagnostic {
+                code: "M3L-W010".to_string(),
+                severity: DiagnosticSeverity::Warning,
+                file: entry.file.clone(),
+                line: entry.line,
+                col: 1,
+                message: format!(
+                    "Field \"{}\" in {}: \"{}\" is not read. A field line reads \
+                     `name: type = default @attributes \"description\"` in that order — \
+                     move a default next to the type, and put the description last.",
+                    entry.field, entry.element, entry.text
+                ),
+            });
+        }
+    }
+}
+
 fn check_extend_kind_args(files: &[ParsedFile], errors: &mut Vec<Diagnostic>) {
     for file in files {
         for entry in &file.extend_kind_args {

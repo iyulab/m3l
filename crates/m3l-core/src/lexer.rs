@@ -678,6 +678,17 @@ pub fn parse_type_and_attrs(rest: &str, data: &mut TokenData) {
     if !attrs.is_empty() {
         data.attributes = attrs;
     }
+
+    // Whatever is left was read by nothing above: `= 0` written after an attribute, a
+    // second description, an unclosed quote. It used to vanish with no diagnostic, taking
+    // the author's default or description with it — so it is kept for the resolver to name.
+    skip_ws(&mut pos);
+    if pos < len {
+        let text = rest[pos..].trim_end();
+        if !text.is_empty() {
+            data.unread = Some(text.to_string());
+        }
+    }
 }
 
 /// Scan a run of `@name` / `@name(args)` attributes (with `!`/`?`/`!!` cascade

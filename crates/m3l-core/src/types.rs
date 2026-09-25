@@ -90,6 +90,12 @@ pub struct TokenData {
     // Nested item key/value
     pub key: Option<String>,
     pub value: Option<String>,
+
+    /// Text left over on a field line once the field syntax has read everything it reads —
+    /// `name: type = default @attributes "description"`, in that order. Nothing reads it; the
+    /// resolver reports it (`M3L-W010`) so that a default or description written out of order
+    /// is not dropped without a word.
+    pub unread: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -531,6 +537,18 @@ pub struct ExtendKindArg {
     pub file: String,
 }
 
+/// Text a field line carried that the field syntax does not read — recorded by the parser,
+/// reported by the resolver as `M3L-W010`, the same split [`ExtendKindArg`] uses.
+#[derive(Debug, Clone, PartialEq)]
+pub struct UnreadFieldText {
+    /// The model, interface or view the field belongs to.
+    pub element: String,
+    pub field: String,
+    pub text: String,
+    pub line: usize,
+    pub file: String,
+}
+
 /// Intermediate result from parsing a single file (not directly serialized as final output).
 #[derive(Debug, Clone)]
 pub struct ParsedFile {
@@ -553,6 +571,8 @@ pub struct ParsedFile {
     pub prefix_headers: Vec<PrefixHeader>,
     /// Every `::extend` header that carried a parenthesised argument, in source order.
     pub extend_kind_args: Vec<ExtendKindArg>,
+    /// Every field line with text the field syntax did not read, in source order.
+    pub unread_field_text: Vec<UnreadFieldText>,
 }
 
 /// Final AST — top-level JSON output.

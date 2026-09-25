@@ -663,6 +663,41 @@ These attributes are rendered as inline code in markdown viewers, visually disti
 
 > **Migration**: Existing `[Attr]` syntax (without backticks) remains supported for backward compatibility. The backtick-wrapped form is recommended for all new documents.
 
+#### 2.5.7 Field Line Syntax
+
+A field line is read left to right, and each part has one place:
+
+```ebnf
+field-line   = "- " , name , [ "(" , label , ")" ] , ":" , ws ,
+               ( description | field-spec ) ;
+field-spec   = type , [ ws , "=" , ws , default ] ,
+               { ws , attribute } ,
+               [ ws , description , { ws , attribute } ] ;
+type         = word , [ "<" , params , ">" ] , [ "(" , params , ")" ] ,
+               [ "?" ] , [ "[]" ] , [ "?" ] ;
+default      = quoted | backtick-expression | bare-value ;
+attribute    = "@" , word , [ "(" , arguments , ")" ] , [ "!" | "!!" | "?" ] ;
+description  = '"' , text , '"' ;
+```
+
+Inline comments (`# ...`) and backtick-wrapped framework attributes (§2.5.6) are removed before
+the line is read. **The default comes right after the type** — `= value` written after an
+attribute is not a default. Attributes may follow the description (the canonical enum-value
+shape, `- legacy: "이관 정리" @system`), and nothing else may.
+
+```markdown
+- amount: decimal(12,2) = 0 @not_null "Amount"    # read: default 0, attribute, description
+- amount: decimal(12,2) @not_null = 0 "Amount"    # M3L-W010: `= 0 "Amount"` is not read
+```
+
+#### 2.5.8 Text a Field Line Does Not Read
+
+Text left on a field line after §2.5.7 has read everything it reads — a default written after an
+attribute, a second description, an unclosed quote — is reported as warning **`M3L-W010`**, with
+the field, its model and the text. The rest of the field is kept as read, so the warning never
+changes the AST: it only makes sure that what the author wrote and the parser did not take is
+not dropped without a word.
+
 ## 3. Special Elements
 
 M3L uses type indicators after `::` to define special element types:
@@ -2919,6 +2954,7 @@ Conforming parsers should use these error codes for consistent diagnostics.
 | `M3L-W007` | Attribute `@{attr}` is declared for target `[{target}]` but used on `{subject}` | Custom registry attribute used on a field, model, or enum value that its declared `target` does not list |
 | `M3L-W008` | Attribute `@{attr}` is required but used without an explicit argument on `{subject}` | Custom registry attribute declared `required: true` was used bare (no argument) |
 | `M3L-W009` | Relationship notation `{notation}` in model `{model}` is written among the fields — it is read as a relationship, not a field, but `### Relations` is where it belongs | `>name`/`<name`/`<>name` (or an arrow spelling) written in the field list (§3.2.4) instead of `### Relations` (§3.2.3) — parsed either way, but flagged since the section is the documented home |
+| `M3L-W010` | Field `{field}` in `{model}`: `{text}` is not read | Text left on a field line after the field syntax (§2.5.7) has read everything it reads — most often a default written after an attribute (§2.5.8) |
 
 ### 10.6 Import Resolution
 

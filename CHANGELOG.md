@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **`M3L-W010` — text a field line does not read is reported.** A field line reads
+  `name: type = default @attributes "description"` in that order (specification §2.5.7, which
+  now states it as a grammar). `- amount: decimal(12,2) @not_null = 0 "Amount"` used to parse
+  with the default *and* the description gone and validate clean; the parser stopped at the
+  first token it did not expect and dropped the rest of the line. The dropped text is now a
+  warning naming the field, its model and the text. The AST is unchanged — move the default next
+  to the type to have it read.
+
 ### Changed
 - **The CLI reads `m3l.config.yaml` with `yaml_serde`** instead of `serde_yaml`, which is archived
   upstream and no longer receives fixes. `yaml_serde` is its maintained continuation; the accepted

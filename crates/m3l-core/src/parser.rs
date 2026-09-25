@@ -49,6 +49,7 @@ struct ParserState {
     prefix: Option<String>,
     prefix_headers: Vec<PrefixHeader>,
     extend_kind_args: Vec<ExtendKindArg>,
+    unread_field_text: Vec<UnreadFieldText>,
     current_element: CurrentElement,
     current_section: Option<String>,
     current_kind: FieldKind,
@@ -79,6 +80,7 @@ pub fn parse_tokens(tokens: &[Token], file: &str) -> ParsedFile {
         prefix: None,
         prefix_headers: Vec::new(),
         extend_kind_args: Vec::new(),
+        unread_field_text: Vec::new(),
         current_element: CurrentElement::None,
         current_section: None,
         current_kind: FieldKind::Stored,
@@ -115,6 +117,7 @@ pub fn parse_tokens(tokens: &[Token], file: &str) -> ParsedFile {
         imports: state.imports,
         prefix_headers: state.prefix_headers,
         extend_kind_args: state.extend_kind_args,
+        unread_field_text: state.unread_field_text,
     }
 }
 
@@ -543,6 +546,15 @@ fn handle_field(token: &Token, state: &mut ParserState) {
             }
 
             // Regular field
+            if let Some(ref text) = token.data.unread {
+                state.unread_field_text.push(UnreadFieldText {
+                    element: model.name.clone(),
+                    field: token.data.name.clone().unwrap_or_default(),
+                    text: text.clone(),
+                    line: token.line,
+                    file: state.file.clone(),
+                });
+            }
             let field = build_field_node(&token.data, token, &state.file, &state.current_kind);
             model.fields.push(field);
             state.last_field_idx = Some(model.fields.len() - 1);

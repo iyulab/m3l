@@ -27,5 +27,8 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/iyulab/m3l"
+  },
+  "engines": {
+    "node": ">= 22"
   }
 }

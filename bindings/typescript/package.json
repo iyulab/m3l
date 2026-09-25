@@ -13,7 +13,7 @@
     "@iyulab/m3l-napi": "0.15.0"
   },
   "engines": {
-    "node": ">= 18"
+    "node": ">= 22"
   },
   "repository": {
     "type": "git",

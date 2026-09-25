@@ -71,7 +71,7 @@ pub fn read_project_config(dir_path: &Path) -> Option<M3lConfig> {
     }
 
     let content = fs::read_to_string(&config_path).ok()?;
-    serde_yaml::from_str(&content).ok()
+    yaml_serde::from_str(&content).ok()
 }
 
 fn scan_directory(dir_path: &Path) -> Result<Vec<M3lFile>, String> {
@@ -124,7 +124,7 @@ fn read_from_config(config_path: &Path, base_dir: &Path) -> Result<Vec<M3lFile>,
         fs::read_to_string(config_path).map_err(|e| format!("Failed to read config: {}", e))?;
 
     let config: M3lConfig =
-        serde_yaml::from_str(&yaml_content).map_err(|e| format!("Invalid YAML config: {}", e))?;
+        yaml_serde::from_str(&yaml_content).map_err(|e| format!("Invalid YAML config: {}", e))?;
 
     let source_patterns = match config.sources {
         Some(ref s) if !s.is_empty() => s.clone(),

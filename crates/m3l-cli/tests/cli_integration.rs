@@ -1158,3 +1158,76 @@ fn parse_empty_dir() {
     );
     std::fs::remove_dir_all(&tmp).ok();
 }
+
+/// A scratch directory under the system temp dir, unique per test, removed on drop.
+struct ScratchDir(PathBuf);
+
+impl ScratchDir {
+    fn new(name: &str) -> Self {
+        let dir = std::env::temp_dir().join(format!("m3l-cli-{}-{}", name, std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        ScratchDir(dir)
+    }
+}
+
+impl Drop for ScratchDir {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.0);
+    }
+}
+
+#[test]
+fn cli_parse_directory_follows_project_config_sources() {
+    let dir = ScratchDir::new("config-sources");
+    std::fs::write(
+        dir.0.join("m3l.config.yaml"),
+        "name: demo\nversion: \"1.0\"\nsources:\n  - \"included.m3l.md\"\n",
+    )
+    .unwrap();
+    std::fs::write(
+        dir.0.join("included.m3l.md"),
+        "# Namespace: t\n\n## Included\n- id: identifier @pk\n",
+    )
+    .unwrap();
+    std::fs::write(
+        dir.0.join("excluded.m3l.md"),
+        "# Namespace: t\n\n## Excluded\n- id: identifier @pk\n",
+    )
+    .unwrap();
+
+    let output = m3l_bin()
+        .arg("parse")
+        .arg(&dir.0)
+        .output()
+        .expect("failed to run");
+    assert!(
+        output.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let ast: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("invalid JSON output");
+    let names: Vec<&str> = ast["models"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|m| m["name"].as_str().unwrap())
+        .collect();
+    assert_eq!(names, ["Included"]);
+}
+
+#[test]
+fn cli_parse_directory_reports_an_invalid_project_config() {
+    let dir = ScratchDir::new("config-invalid");
+    std::fs::write(dir.0.join("m3l.config.yaml"), "sources: [unclosed\n").unwrap();
+
+    let output = m3l_bin()
+        .arg("parse")
+        .arg(&dir.0)
+        .output()
+        .expect("failed to run");
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("Invalid YAML config"), "stderr: {stderr}");
+}

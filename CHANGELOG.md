@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Changed
+- **The CLI reads `m3l.config.yaml` with `yaml_serde`** instead of `serde_yaml`, which is archived
+  upstream and no longer receives fixes. `yaml_serde` is its maintained continuation; the accepted
+  configuration syntax is unchanged.
+- **The npm packages declare `node >= 22`** (`@iyulab/m3l` said `>= 18`, `@iyulab/m3l-napi` said
+  nothing). Node 18 and 20 are past end of life.
+
+### Fixed
+- **The `M3L.Native` NuGet package carries the README and the project URL**, so its nuget.org page
+  shows the usage documentation instead of an empty readme tab.
+
 ## [0.15.0] - 2026-09-24
 
 ### Added

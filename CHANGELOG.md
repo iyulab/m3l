@@ -23,6 +23,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   nothing). Node 18 and 20 are past end of life.
 
 ### Fixed
+- **The CLI warns about a key `m3l.config.yaml` does not define.** A misspelt `source:` was dropped
+  without a word: `sources` stayed unset, the directory scan it falls back to picked up every file,
+  and the result looked like the setting had worked. The key is still ignored, but `parse` and
+  `validate` now print `Warning: …: unknown key 'source' is ignored (did you mean 'sources'?)` to
+  stderr. The known keys are `name`, `version` and `sources`.
+- **An invalid `m3l.config.yaml` is reported with its path** — `Invalid project configuration
+  <path>: <parser message>`; the parser's message says where in the file, not which file. The
+  configuration is now read once per command; it used to be read a second time for the project
+  name, and that read discarded any error.
 - **The `M3L.Native` NuGet package carries the README and the project URL**, so its nuget.org page
   shows the usage documentation instead of an empty readme tab.
 - **The specification renders section 4.8 again, and its table of contents points at real

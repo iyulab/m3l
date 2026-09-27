@@ -1229,5 +1229,91 @@ fn cli_parse_directory_reports_an_invalid_project_config() {
         .expect("failed to run");
     assert!(!output.status.success());
     let stderr = String::from_utf8_lossy(&output.stderr);
-    assert!(stderr.contains("Invalid YAML config"), "stderr: {stderr}");
+    // The message names the file; the parser's own text only says where in it.
+    assert!(
+        stderr.contains("Invalid project configuration"),
+        "stderr: {stderr}"
+    );
+    assert!(stderr.contains("m3l.config.yaml"), "stderr: {stderr}");
+}
+
+/// A misspelt key used to be dropped without a word: `source:` left `sources` unset, the
+/// directory scan it fell back to picked up every file, and the output looked like the setting
+/// had worked. It is still ignored — a key this version does not know may be one a later version
+/// does — but it is said out loud, on both paths that read the configuration.
+#[test]
+fn cli_warns_about_an_unknown_project_config_key() {
+    let dir = ScratchDir::new("config-typo");
+    std::fs::write(
+        dir.0.join("m3l.config.yaml"),
+        "name: demo
+source:
+  - \"only.m3l.md\"
+",
+    )
+    .unwrap();
+    std::fs::write(
+        dir.0.join("only.m3l.md"),
+        "# Namespace: t
+
+## Only
+- id: identifier @pk
+",
+    )
+    .unwrap();
+
+    for command in ["parse", "validate"] {
+        let output = m3l_bin()
+            .arg(command)
+            .arg(&dir.0)
+            .output()
+            .expect("failed to run");
+        assert!(
+            output.status.success(),
+            "{command} stderr: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        assert!(
+            stderr.contains("unknown key 'source'"),
+            "{command} stderr: {stderr}"
+        );
+        assert!(
+            stderr.contains("did you mean 'sources'"),
+            "{command} stderr: {stderr}"
+        );
+    }
+}
+
+#[test]
+fn cli_is_silent_about_a_project_config_with_only_known_keys() {
+    let dir = ScratchDir::new("config-clean");
+    std::fs::write(
+        dir.0.join("m3l.config.yaml"),
+        "name: demo
+version: \"1.0\"
+",
+    )
+    .unwrap();
+    std::fs::write(
+        dir.0.join("a.m3l.md"),
+        "# Namespace: t
+
+## A
+- id: identifier @pk
+",
+    )
+    .unwrap();
+
+    let output = m3l_bin()
+        .arg("parse")
+        .arg(&dir.0)
+        .output()
+        .expect("failed to run");
+    assert!(output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(!stderr.contains("Warning"), "stderr: {stderr}");
+    let ast: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("invalid JSON output");
+    assert_eq!(ast["project"]["name"], "demo");
 }

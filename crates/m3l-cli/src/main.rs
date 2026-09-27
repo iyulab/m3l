@@ -7,7 +7,7 @@ use std::process;
 use clap::{Parser, Subcommand};
 
 use m3l_core::{parse_string, resolve, validate, ProjectInfo, ValidateOptions};
-use reader::{read_m3l_files, read_project_config};
+use reader::read_project;
 
 #[derive(Parser)]
 #[command(
@@ -167,7 +167,11 @@ pub fn build_ast_with(
     input_path: &Path,
     options: m3l_core::ResolveOptions,
 ) -> Result<m3l_core::M3lAst, String> {
-    let files = read_m3l_files(input_path)?;
+    let input = read_project(input_path)?;
+    for warning in &input.warnings {
+        eprintln!("Warning: {warning}");
+    }
+    let files = input.files;
 
     if files.is_empty() {
         return Err(format!(
@@ -181,15 +185,10 @@ pub fn build_ast_with(
         .map(|f| parse_string(&f.content, &f.path))
         .collect();
 
-    // Read project config if input is a directory
-    let project_info = if input_path.is_dir() {
-        read_project_config(input_path).map(|c| ProjectInfo {
-            name: c.name,
-            version: c.version,
-        })
-    } else {
-        None
-    };
+    let project_info = input.config.map(|c| ProjectInfo {
+        name: c.name,
+        version: c.version,
+    });
 
     let ast = m3l_core::resolve_with(&parsed_files, project_info, options);
 
@@ -332,7 +331,11 @@ fn run_diff(left_path: &Path, right_path: &Path) -> Result<String, String> {
 }
 
 fn run_validate(input_path: &Path, strict: bool, format: &str) -> Result<(String, usize), String> {
-    let files = read_m3l_files(input_path)?;
+    let input = read_project(input_path)?;
+    for warning in &input.warnings {
+        eprintln!("Warning: {warning}");
+    }
+    let files = input.files;
 
     if files.is_empty() {
         return Err(format!(
@@ -346,14 +349,10 @@ fn run_validate(input_path: &Path, strict: bool, format: &str) -> Result<(String
         .map(|f| parse_string(&f.content, &f.path))
         .collect();
 
-    let project_info = if input_path.is_dir() {
-        read_project_config(input_path).map(|c| ProjectInfo {
-            name: c.name,
-            version: c.version,
-        })
-    } else {
-        None
-    };
+    let project_info = input.config.map(|c| ProjectInfo {
+        name: c.name,
+        version: c.version,
+    });
 
     let ast = resolve(&parsed_files, project_info);
     let result = validate(&ast, &ValidateOptions { strict });

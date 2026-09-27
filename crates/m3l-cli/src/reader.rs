@@ -15,6 +15,22 @@ pub struct M3lConfig {
     pub name: Option<String>,
     pub version: Option<String>,
     pub sources: Option<Vec<String>>,
+    /// Keys the configuration does not define. Collected rather than refused, and reported as
+    /// warnings: a misspelt `source:` used to be dropped without a word, and the directory scan it
+    /// fell back to looked like the setting had worked.
+    #[serde(flatten)]
+    unknown: std::collections::BTreeMap<String, yaml_serde::Value>,
+}
+
+const CONFIG_FILE: &str = "m3l.config.yaml";
+const CONFIG_KEYS: [&str; 3] = ["name", "version", "sources"];
+
+/// What a path reads as: its M3L files, the project configuration that selected them (when the
+/// path is a directory carrying one), and warnings about that configuration.
+pub struct ProjectInput {
+    pub files: Vec<M3lFile>,
+    pub config: Option<M3lConfig>,
+    pub warnings: Vec<String>,
 }
 
 /// The path recorded as a file's `source` in the AST, with `/` separators on every platform.
@@ -31,8 +47,14 @@ fn source_path(path: &Path) -> String {
     }
 }
 
-/// Read M3L files from a path (file or directory).
-pub fn read_m3l_files(input_path: &Path) -> Result<Vec<M3lFile>, String> {
+/// Read M3L files from a path (file or directory), with the project configuration that selected
+/// them.
+///
+/// The configuration is read once, here, and handed back with the files. It used to be read twice —
+/// once to select the files, which reported a malformed file, and once more for the project name,
+/// which discarded any error — so the same file could be both refused and silently ignored
+/// depending on which read looked at it.
+pub fn read_project(input_path: &Path) -> Result<ProjectInput, String> {
     if !input_path.exists() {
         return Err(format!("Path does not exist: {}", input_path.display()));
     }
@@ -40,21 +62,35 @@ pub fn read_m3l_files(input_path: &Path) -> Result<Vec<M3lFile>, String> {
     if input_path.is_file() {
         let content = fs::read_to_string(input_path)
             .map_err(|e| format!("Failed to read {}: {}", input_path.display(), e))?;
-        return Ok(vec![M3lFile {
-            path: source_path(input_path),
-            content,
-        }]);
+        return Ok(ProjectInput {
+            files: vec![M3lFile {
+                path: source_path(input_path),
+                content,
+            }],
+            config: None,
+            warnings: Vec::new(),
+        });
     }
 
     if input_path.is_dir() {
-        // Check for m3l.config.yaml
-        let config_path = input_path.join("m3l.config.yaml");
+        let config_path = input_path.join(CONFIG_FILE);
         if config_path.exists() {
-            return read_from_config(&config_path, input_path);
+            let config = read_config(&config_path)?;
+            let warnings = unknown_key_warnings(&config_path, &config);
+            let files = read_from_config(&config, input_path)?;
+            return Ok(ProjectInput {
+                files,
+                config: Some(config),
+                warnings,
+            });
         }
 
         // Default: scan for *.m3l.md and *.m3l files
-        return scan_directory(input_path);
+        return Ok(ProjectInput {
+            files: scan_directory(input_path)?,
+            config: None,
+            warnings: Vec::new(),
+        });
     }
 
     Err(format!(
@@ -63,15 +99,61 @@ pub fn read_m3l_files(input_path: &Path) -> Result<Vec<M3lFile>, String> {
     ))
 }
 
-/// Read project config from m3l.config.yaml if it exists.
-pub fn read_project_config(dir_path: &Path) -> Option<M3lConfig> {
-    let config_path = dir_path.join("m3l.config.yaml");
-    if !config_path.exists() {
-        return None;
-    }
+/// Parses the configuration file, naming the file in the error — the parser's own message says
+/// where in the file, not which file.
+fn read_config(config_path: &Path) -> Result<M3lConfig, String> {
+    let yaml = fs::read_to_string(config_path)
+        .map_err(|e| format!("Failed to read {}: {}", config_path.display(), e))?;
+    yaml_serde::from_str(&yaml).map_err(|e| {
+        format!(
+            "Invalid project configuration {}: {}",
+            config_path.display(),
+            e
+        )
+    })
+}
 
-    let content = fs::read_to_string(&config_path).ok()?;
-    yaml_serde::from_str(&content).ok()
+fn unknown_key_warnings(config_path: &Path, config: &M3lConfig) -> Vec<String> {
+    config
+        .unknown
+        .keys()
+        .map(|key| {
+            let hint = CONFIG_KEYS
+                .iter()
+                .find(|known| is_near(key, known))
+                .map(|known| format!(" (did you mean '{known}'?)"))
+                .unwrap_or_default();
+            format!(
+                "{}: unknown key '{key}' is ignored{hint}; known keys are {}",
+                config_path.display(),
+                CONFIG_KEYS.join(", ")
+            )
+        })
+        .collect()
+}
+
+/// A likely misspelling: equal ignoring case, one a prefix of the other, or one edit apart.
+fn is_near(key: &str, known: &str) -> bool {
+    let (a, b) = (key.to_ascii_lowercase(), known.to_ascii_lowercase());
+    if a == b || a.starts_with(&b) || b.starts_with(&a) {
+        return true;
+    }
+    let (a, b): (Vec<char>, Vec<char>) = (a.chars().collect(), b.chars().collect());
+    let mut row: Vec<usize> = (0..=b.len()).collect();
+    for (i, ca) in a.iter().enumerate() {
+        let mut prev = row[0];
+        row[0] = i + 1;
+        for (j, cb) in b.iter().enumerate() {
+            let cur = row[j + 1];
+            row[j + 1] = if ca == cb {
+                prev
+            } else {
+                1 + prev.min(row[j]).min(row[j + 1])
+            };
+            prev = cur;
+        }
+    }
+    row[b.len()] <= 1
 }
 
 fn scan_directory(dir_path: &Path) -> Result<Vec<M3lFile>, String> {
@@ -119,13 +201,7 @@ fn scan_directory(dir_path: &Path) -> Result<Vec<M3lFile>, String> {
     Ok(files)
 }
 
-fn read_from_config(config_path: &Path, base_dir: &Path) -> Result<Vec<M3lFile>, String> {
-    let yaml_content =
-        fs::read_to_string(config_path).map_err(|e| format!("Failed to read config: {}", e))?;
-
-    let config: M3lConfig =
-        yaml_serde::from_str(&yaml_content).map_err(|e| format!("Invalid YAML config: {}", e))?;
-
+fn read_from_config(config: &M3lConfig, base_dir: &Path) -> Result<Vec<M3lFile>, String> {
     let source_patterns = match config.sources {
         Some(ref s) if !s.is_empty() => s.clone(),
         _ => return scan_directory(base_dir),

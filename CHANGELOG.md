@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Changed
+- **`M3L.Native` targets .NET 10** (was .NET 8). .NET 8 reaches end of support on 2026-11-10;
+  .NET 10 is the current long-term-support release. An application on .NET 8 or 9 stays on
+  `M3L.Native` 0.16.x until it moves to .NET 10.
+- **`@iyulab/m3l-napi` is built with napi-rs 3** (was 2). The exported functions, their arguments
+  and their JSON output are unchanged — the same inputs produce byte-identical results.
+
 ## [0.16.0] - 2026-09-28
 
 ### Added

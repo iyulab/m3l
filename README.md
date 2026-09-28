@@ -78,7 +78,7 @@ All bindings share the same Rust core parser (`m3l-core`), ensuring identical be
 |---------|----------|---------|
 | CLI | Any (native binary) | `m3l parse`, `validate`, `lint`, `format`, `diff`, `analyze` |
 | Node.js | NAPI native addon | `@iyulab/m3l` |
-| C# | P/Invoke (.NET 8.0+) | `M3L.Native` |
+| C# | P/Invoke (.NET 10.0+) | `M3L.Native` |
 | WASM | Browser / Node.js | `@iyulab/m3l-wasm` |
 
 ## Quick Start

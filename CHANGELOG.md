@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [0.17.0] - 2026-09-28
 
 ### Changed
 - **`M3L.Native` targets .NET 10** (was .NET 8). .NET 8 reaches end of support on 2026-11-10;

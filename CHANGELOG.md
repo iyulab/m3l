@@ -13,6 +13,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`@iyulab/m3l-napi` is built with napi-rs 3** (was 2). The exported functions, their arguments
   and their JSON output are unchanged — the same inputs produce byte-identical results.
 
+### Fixed
+- **An empty options string is no options.** `validate` and `validateMulti` in every binding
+  (Node, WASM, C ABI, .NET) refused `""` with a JSON parse error, while `lint` already read an empty
+  config as the defaults. Empty or blank options now mean `{}` in all three; malformed JSON is still
+  refused.
+- **The CLI names a file it cannot read as UTF-8, and says what to do.** The directory scan reads
+  every `.md` file, so one non-UTF-8 README stopped the run with `stream did not contain valid
+  UTF-8`. The error now names the file and, for a scanned one, says to list the model files under
+  `sources` in `m3l.config.yaml`; a file named directly is to be saved as UTF-8.
+- **`parse -o` into a directory that does not exist** says so, instead of the operating system's
+  `The system cannot find the path specified. (os error 3)`.
+
 ## [0.16.0] - 2026-09-28
 
 ### Added

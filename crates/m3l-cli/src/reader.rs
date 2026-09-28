@@ -60,8 +60,7 @@ pub fn read_project(input_path: &Path) -> Result<ProjectInput, String> {
     }
 
     if input_path.is_file() {
-        let content = fs::read_to_string(input_path)
-            .map_err(|e| format!("Failed to read {}: {}", input_path.display(), e))?;
+        let content = read_m3l_text(input_path, Selected::Named)?;
         return Ok(ProjectInput {
             files: vec![M3lFile {
                 path: source_path(input_path),
@@ -156,6 +155,39 @@ fn is_near(key: &str, known: &str) -> bool {
     row[b.len()] <= 1
 }
 
+/// How a file came to be read — which decides what the reader is told to do when it cannot be.
+#[derive(Clone, Copy)]
+enum Selected {
+    /// Named on the command line or matched by the configuration's `sources`.
+    Named,
+    /// Picked up by the directory scan, which reads every `.md` file under the directory.
+    ByScan,
+}
+
+/// Reads a model file as UTF-8 text. A file that is not UTF-8 is named with what to do about it:
+/// re-save it, or — when the directory scan picked it up (a README, notes) — keep it out of the
+/// model by listing the model files under `sources`.
+fn read_m3l_text(path: &Path, selected: Selected) -> Result<String, String> {
+    fs::read_to_string(path).map_err(|e| match e.kind() {
+        std::io::ErrorKind::InvalidData => match selected {
+            Selected::Named => format!(
+                "{} is not UTF-8 text — M3L files are read as UTF-8; save it as UTF-8",
+                path.display()
+            ),
+            Selected::ByScan => format!(
+                "{} is not UTF-8 text — M3L files are read as UTF-8. The directory scan reads every .md \
+                 file; if this one is not part of the model, list the model files under `sources` in {}",
+                path.display(),
+                CONFIG_FILE
+            ),
+        },
+        std::io::ErrorKind::PermissionDenied => {
+            format!("Failed to read {}: permission denied", path.display())
+        }
+        _ => format!("Failed to read {}: {}", path.display(), e),
+    })
+}
+
 fn scan_directory(dir_path: &Path) -> Result<Vec<M3lFile>, String> {
     // Scan *.m3l.md, *.m3l, and *.md — all three extensions are valid M3L files.
     let patterns = [
@@ -190,8 +222,7 @@ fn scan_directory(dir_path: &Path) -> Result<Vec<M3lFile>, String> {
 
     let mut files = Vec::new();
     for path in paths {
-        let content = fs::read_to_string(&path)
-            .map_err(|e| format!("Failed to read {}: {}", path.display(), e))?;
+        let content = read_m3l_text(&path, Selected::ByScan)?;
         files.push(M3lFile {
             path: source_path(&path),
             content,
@@ -231,8 +262,7 @@ fn read_from_config(config: &M3lConfig, base_dir: &Path) -> Result<Vec<M3lFile>,
         matched.sort();
 
         for path in matched {
-            let content = fs::read_to_string(&path)
-                .map_err(|e| format!("Failed to read {}: {}", path.display(), e))?;
+            let content = read_m3l_text(&path, Selected::Named)?;
             files.push(M3lFile {
                 path: source_path(&path),
                 content,

@@ -201,12 +201,31 @@ fn run_parse(input_path: &Path, output_file: Option<&Path>) -> Result<String, St
         serde_json::to_string_pretty(&ast).map_err(|e| format!("JSON serialization error: {e}"))?;
 
     if let Some(out_path) = output_file {
-        std::fs::write(out_path, &json)
-            .map_err(|e| format!("Failed to write {}: {e}", out_path.display()))?;
+        std::fs::write(out_path, &json).map_err(|e| describe_write_error(out_path, &e))?;
         return Ok(format!("Written to {}", out_path.display()));
     }
 
     Ok(json)
+}
+
+/// A failed write in words: the missing directory or the permission, instead of the OS text alone.
+fn describe_write_error(out_path: &Path, e: &std::io::Error) -> String {
+    match e.kind() {
+        std::io::ErrorKind::NotFound => {
+            match out_path.parent().filter(|p| !p.as_os_str().is_empty()) {
+                Some(dir) if !dir.exists() => format!(
+                    "Failed to write {}: the directory {} does not exist — create it first",
+                    out_path.display(),
+                    dir.display()
+                ),
+                _ => format!("Failed to write {}: {e}", out_path.display()),
+            }
+        }
+        std::io::ErrorKind::PermissionDenied => {
+            format!("Failed to write {}: permission denied", out_path.display())
+        }
+        _ => format!("Failed to write {}: {e}", out_path.display()),
+    }
 }
 
 fn run_diff(left_path: &Path, right_path: &Path) -> Result<String, String> {

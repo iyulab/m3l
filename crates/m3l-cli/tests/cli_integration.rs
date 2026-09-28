@@ -1317,3 +1317,65 @@ version: \"1.0\"
         serde_json::from_slice(&output.stdout).expect("invalid JSON output");
     assert_eq!(ast["project"]["name"], "demo");
 }
+
+/// The directory scan reads every `.md` file, so a non-UTF-8 README in the tree stops the whole
+/// run. The error names the file and how to keep it out, instead of the runtime's words alone.
+#[test]
+fn cli_names_a_non_utf8_file_the_directory_scan_picked_up() {
+    let dir = ScratchDir::new("non-utf8-scan");
+    std::fs::write(
+        dir.0.join("model.m3l.md"),
+        "# Namespace: t\n## A\n- id: identifier @pk\n",
+    )
+    .unwrap();
+    std::fs::write(dir.0.join("README.md"), b"caf\xe9 latin-1 notes\n").unwrap();
+
+    let output = m3l_bin()
+        .arg("parse")
+        .arg(&dir.0)
+        .output()
+        .expect("failed to run");
+
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("README.md"), "stderr: {stderr}");
+    assert!(stderr.contains("is not UTF-8 text"), "stderr: {stderr}");
+    assert!(stderr.contains("sources"), "stderr: {stderr}");
+    assert!(stderr.contains("m3l.config.yaml"), "stderr: {stderr}");
+}
+
+#[test]
+fn cli_says_to_re_save_a_non_utf8_file_named_directly() {
+    let dir = ScratchDir::new("non-utf8-file");
+    let file = dir.0.join("model.m3l.md");
+    std::fs::write(&file, b"# Namespace: t\n## A\n- caf\xe9: string\n").unwrap();
+
+    let output = m3l_bin()
+        .arg("parse")
+        .arg(&file)
+        .output()
+        .expect("failed to run");
+
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("is not UTF-8 text"), "stderr: {stderr}");
+    assert!(stderr.contains("save it as UTF-8"), "stderr: {stderr}");
+}
+
+#[test]
+fn cli_parse_output_into_a_missing_directory_says_so() {
+    let dir = ScratchDir::new("parse-out-missing");
+    let out = dir.0.join("nowhere").join("ast.json");
+
+    let output = m3l_bin()
+        .args(["parse", "samples/01-ecommerce.m3l.md", "-o"])
+        .arg(&out)
+        .output()
+        .expect("failed to run");
+
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("does not exist"), "stderr: {stderr}");
+    assert!(stderr.contains("nowhere"), "stderr: {stderr}");
+    assert!(!stderr.contains("os error"), "stderr: {stderr}");
+}

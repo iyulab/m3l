@@ -32,6 +32,15 @@ pub struct ValidateJsonOptions {
     pub filename: String,
 }
 
+/// Validation options from JSON. An empty (or blank) string means no options — the same as `{}`,
+/// and the same as the lint config reads it — rather than a JSON parse error.
+fn parse_validate_options(options_json: &str) -> Result<ValidateJsonOptions, serde_json::Error> {
+    if options_json.trim().is_empty() {
+        return Ok(ValidateJsonOptions::default());
+    }
+    serde_json::from_str(options_json)
+}
+
 // ---------------------------------------------------------------------------
 // Result types (serialized to JSON output)
 // ---------------------------------------------------------------------------
@@ -139,7 +148,7 @@ pub fn parse_multi_to_json(files_json: &str) -> String {
 /// Input: M3L markdown text + options JSON
 /// Output: JSON string containing validation results
 pub fn validate_to_json(content: &str, options_json: &str) -> String {
-    let opts: ValidateJsonOptions = match serde_json::from_str(options_json) {
+    let opts: ValidateJsonOptions = match parse_validate_options(options_json) {
         Ok(o) => o,
         Err(e) => {
             return serde_json::to_string(&FfiResult::<()> {
@@ -217,7 +226,7 @@ pub fn validate_multi_to_json(files_json: &str, options_json: &str) -> String {
         }
     };
 
-    let opts: ValidateJsonOptions = match serde_json::from_str(options_json) {
+    let opts: ValidateJsonOptions = match parse_validate_options(options_json) {
         Ok(o) => o,
         Err(e) => {
             return serde_json::to_string(&FfiResult::<()> {

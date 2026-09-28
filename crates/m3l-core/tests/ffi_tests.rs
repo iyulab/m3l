@@ -292,3 +292,23 @@ fn ffi_validate_multi_resolves_a_cross_file_type_reference() {
         "a type defined in a sibling file is defined"
     );
 }
+
+/// An empty options string means "no options", the same as `lint`'s config — not a JSON parse error.
+#[test]
+fn ffi_validate_accepts_empty_options_as_defaults() {
+    let content = "# Namespace: t\n## A\n- id: identifier @pk\n";
+    for options in ["", "   "] {
+        assert_success(&validate_to_json(content, options));
+        let files = r##"[{"content":"# Namespace: t\n## A\n- id: identifier @pk\n","filename":"a.m3l.md"}]"##;
+        assert_success(&validate_multi_to_json(files, options));
+    }
+}
+
+#[test]
+fn ffi_validate_still_refuses_malformed_options() {
+    let v = assert_failure(&validate_to_json("# Namespace: t\n", "{not json"));
+    assert!(v["error"]
+        .as_str()
+        .unwrap()
+        .starts_with("Invalid options JSON"));
+}

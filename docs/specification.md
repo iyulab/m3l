@@ -2754,7 +2754,8 @@ FieldName      ← Identifier ('(' Label ')')?
 TypeExpr       ← BaseType TypeParams? Nullable? Array?
 BaseType       ← 'string' / 'integer' / 'decimal' / 'boolean' / 'text' / 'timestamp'
                / 'date' / 'time' / 'identifier' / 'enum' / 'object' / 'json' / 'binary'
-               / 'long' / 'short' / 'byte' / 'float' / 'double' / 'email' / 'phone' / 'url' / 'money' / 'percentage'
+               / 'long' / 'short' / 'byte' / 'float' / 'double' / 'rowversion'
+               / 'email' / 'phone' / 'url' / 'money' / 'percentage'
                / 'map' '<' TypeExpr ',' _ TypeExpr '>'
                / Identifier
 TypeParams     ← '(' Number (',' _ Number)* ')'
@@ -2838,6 +2839,7 @@ The following table defines all official M3L types. Types not listed here are tr
 | `timestamp` | — | Date + time + timezone | `timestamp` |
 | `identifier` | — | Unique ID (UUID or platform-specific) | `identifier` |
 | `binary` | `(maxSize)?` | Binary data | `binary(1048576)` |
+| `rowversion` | — | Row version maintained by the database engine — see below | `rowversion` |
 
 **Numeric widths.** Every integer and floating-point type states its width, so each maps to one
 native type without the consumer having to guess. The integer ladder is `byte` (8, unsigned) →
@@ -2848,6 +2850,27 @@ floating-point types are approximate.
 > `float` carried no stated width before `short`, `byte` and `double` were added, and consumers
 > were free to read it as either width. It is now 32-bit. A model that meant a 64-bit value
 > should say `double`.
+
+**Row versions.** A `rowversion` field holds a value the database engine changes on every write to
+the row. It is the model's optimistic-concurrency token: a client that read version *v* can ask for
+its update to apply only while the row is still at *v*, so a write based on stale data is refused
+instead of silently overwriting the one before it. The value is opaque — compare it for equality,
+never order or compute with it.
+
+The value belongs to the engine, which is what the rules below follow from:
+
+- A model has **at most one** `rowversion` field, counting inherited ones (`M3L-E023`) — a row has
+  one version.
+- A `rowversion` field is never nullable, an array, or given a default, and never carries `@pk`,
+  `@primary`, `@unique`, `@reference` or `@fk` (`M3L-E024`). It changes on every write, so it can
+  identify neither the row nor another one.
+- Applications read it and send it back; they do not write it. Consumers treat it as read-only on
+  every write path.
+
+How the version is stored is a consumer mapping, not part of the language. An engine with a row
+version column type uses it (SQL Server `rowversion`); an engine without one maps the field to the
+mechanism it has instead (PostgreSQL's `xmin` system column), and may then create no column for it
+at all.
 
 #### 10.4.2 Semantic Types (Shorthands)
 
@@ -2944,6 +2967,8 @@ Conforming parsers should use these error codes for consistent diagnostics.
 | `M3L-E020` | Duplicate enum value `{value}` in enum `{enum}` | The same value name appears twice after inheritance is resolved — declared twice in one block, declared by both a parent and the enum itself, or declared by two parents with different labels (§3.1.6). Two parents declaring it identically is the diamond case and is not an error |
 | `M3L-E021` | `::extend({arg})` takes no argument | An extend block names its target with the declaration name (`## Target ::extend`), so a parenthesised argument has nowhere to go. Reported rather than ignored because the silence misleads: `## Other ::extend(Base)` is read as extending `Other`, and the resulting `M3L-E011` names a target the author never wrote. Empty parentheses are reported too — they merge correctly, which is why the mistake is only discovered once a name is put inside them |
 | `M3L-E022` | Lookup path segment `{segment}` is not a field of `{model}` | A segment of an `@lookup` path names no field on the model reached at that point (§4.5.4 Path resolution). The walk follows each key's `@reference`/`@fk`; a segment after a reference to a model the document does not define is not checked |
+| `M3L-E023` | `{model}` declares more than one rowversion field ({fields}) | A model has more than one `rowversion` field (§10.4.1), counting fields it inherits. Reported at the second one |
+| `M3L-E024` | rowversion field `{field}` in `{model}` cannot {contradiction} | A `rowversion` field (§10.4.1) is nullable, an array, or given a default, or carries `@pk`, `@primary`, `@unique`, `@reference` or `@fk` — each gives someone other than the engine a say in a value the engine sets on every write |
 
 #### 10.5.2 Warnings
 

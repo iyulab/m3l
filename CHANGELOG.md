@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+- **`rowversion` — a row version the database engine maintains** (specification §10.4.1). The
+  value changes on every write to the row, which makes it the model's optimistic-concurrency
+  token: an update can be made conditional on the row still being at the version the client read.
+  Its storage is a consumer mapping — an engine with a row-version column type uses it, one without
+  maps the field to the mechanism it has.
+- **`M3L-E023`** — a model declares more than one `rowversion` field, counting inherited ones.
+- **`M3L-E024`** — a `rowversion` field is nullable, an array or given a default, or carries `@pk`,
+  `@primary`, `@unique`, `@reference` or `@fk`. The engine sets the value on every write, so none
+  of these can hold.
+
 ## [0.17.0] - 2026-09-28
 
 ### Changed

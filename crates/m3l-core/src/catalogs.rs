@@ -21,6 +21,7 @@ pub static TYPE_CATALOG: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
     s.insert("timestamp");
     s.insert("identifier");
     s.insert("binary");
+    s.insert("rowversion");
     // Semantic types / shorthands (§10.4.2)
     s.insert("email");
     s.insert("phone");

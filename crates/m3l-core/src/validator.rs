@@ -109,6 +109,14 @@ pub fn validate(ast: &M3lAst, options: &ValidateOptions) -> ValidateResult {
         validate_field_types(&model.fields, model, &defined_names, &mut errors);
     }
 
+    // M3L-E023/E024: Row versions — at most one per model, and nothing that contradicts the engine
+    // owning the value. Interfaces first: their fields are copied into every model that inherits
+    // them, so a field-level problem is reported once, where it is written.
+    let mut reported_row_versions: HashSet<(String, usize)> = HashSet::new();
+    for model in ast.interfaces.iter().chain(all_models.iter().copied()) {
+        validate_row_versions(model, &mut reported_row_versions, &mut errors);
+    }
+
     // M3L-W003: Deprecated syntax warning
     for model in &all_models {
         check_deprecated_syntax(&model.fields, &mut warnings);
@@ -254,6 +262,90 @@ fn check_deprecated_syntax(fields: &[FieldNode], warnings: &mut Vec<Diagnostic>)
         if let Some(ref sub_fields) = field.fields {
             check_deprecated_syntax(sub_fields, warnings);
         }
+    }
+}
+
+/// The type the database engine maintains as the row's version (§10.4.1).
+const ROW_VERSION_TYPE: &str = "rowversion";
+
+/// Attributes that would give someone other than the engine a say in a row version's value or
+/// identity. A row version changes on every update, so it can be neither a key nor a reference.
+const NOT_ALLOWED_ON_ROW_VERSION: [&str; 5] = ["pk", "primary", "unique", "reference", "fk"];
+
+/// M3L-E023 — more than one row version in a model. M3L-E024 — a row version that is nullable,
+/// an array, defaulted, or carries an attribute from [`NOT_ALLOWED_ON_ROW_VERSION`].
+fn validate_row_versions(
+    model: &ModelNode,
+    reported: &mut HashSet<(String, usize)>,
+    errors: &mut Vec<Diagnostic>,
+) {
+    let row_versions: Vec<&FieldNode> = model
+        .fields
+        .iter()
+        .filter(|f| f.field_type.as_deref() == Some(ROW_VERSION_TYPE))
+        .collect();
+
+    if row_versions.len() > 1 {
+        let names: Vec<&str> = row_versions.iter().map(|f| f.name.as_str()).collect();
+        let second = row_versions[1];
+        errors.push(Diagnostic {
+            code: "M3L-E023".into(),
+            severity: DiagnosticSeverity::Error,
+            file: second.loc.file.clone(),
+            line: second.loc.line,
+            col: 1,
+            message: format!(
+                "\"{}\" declares more than one rowversion field ({}) — a row has one version",
+                model.name,
+                names.join(", ")
+            ),
+        });
+    }
+
+    for field in row_versions {
+        if !reported.insert((field.loc.file.clone(), field.loc.line)) {
+            continue;
+        }
+        let mut modifiers: Vec<&str> = Vec::new();
+        if field.nullable {
+            modifiers.push("nullable");
+        }
+        if field.array {
+            modifiers.push("an array");
+        }
+        if field.default_value.is_some() {
+            modifiers.push("given a default");
+        }
+        let attributes: Vec<String> = field
+            .attributes
+            .iter()
+            .filter(|a| NOT_ALLOWED_ON_ROW_VERSION.contains(&a.name.as_str()))
+            .map(|a| format!("@{}", a.name))
+            .collect();
+
+        let mut contradictions: Vec<String> = Vec::new();
+        if !modifiers.is_empty() {
+            contradictions.push(format!("be {}", modifiers.join(", ")));
+        }
+        if !attributes.is_empty() {
+            contradictions.push(format!("carry {}", attributes.join(", ")));
+        }
+        if contradictions.is_empty() {
+            continue;
+        }
+        errors.push(Diagnostic {
+            code: "M3L-E024".into(),
+            severity: DiagnosticSeverity::Error,
+            file: field.loc.file.clone(),
+            line: field.loc.line,
+            col: 1,
+            message: format!(
+                "rowversion field \"{}\" in \"{}\" cannot {} — the engine sets its value on every write",
+                field.name,
+                model.name,
+                contradictions.join(" or ")
+            ),
+        });
     }
 }
 

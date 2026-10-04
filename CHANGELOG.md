@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [0.19.0] - 2026-10-04
 
 ### Added
 - **`M3L-E025`** — a view's `@from(Relation.field)` names a relation that is not the view's `from`

@@ -3,7 +3,7 @@
 > **RFC Status**: Proposed
 > **Author**: UJ (iyulab)
 > **Date**: 2026-10-04
-> **M3L Version Target**: 0.19.0
+> **M3L Version Target**: 0.20.0
 > **Affects Sections**: 2.5.5, 4.2 (`@computed`), 4.4 (`@rollup` `where:`), 4.7 (view `### Source` `where`), 10.7, diagnostics table
 
 ---

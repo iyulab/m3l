@@ -123,7 +123,7 @@ expression reports it rather than emitting it unchanged.
 | Code | Severity | Condition |
 |---|---|---|
 | `M3L-W011` | warning | an expression in a portable context uses something outside the subset — names the construct (a function not in §3.4, a bracketed identifier, `+` next to a string literal) and suggests `@computed_raw`/`where_raw` |
-| `M3L-E025` | error | a `@computed_raw`/`where_raw` repeats a platform on the same field or view |
+| `M3L-E026` | error | a `@computed_raw`/`where_raw` repeats a platform on the same field or view |
 
 The warning is deliberately not an error: existing models keep building, and a model that
 targets one platform can silence it by declaring the expression raw.
@@ -139,7 +139,7 @@ in the same change.
 1. Specification: §10.7 rewritten around §3 above; §2.5.5, §4.2, §4.4, §4.7 examples brought into the
    subset; the diagnostics table. Conformance fixtures for portable and raw expressions.
 2. Parser/validator: tokenize expressions in the three contexts against the subset (`M3L-W011`),
-   repeatable `@computed_raw`, `where_raw` (`M3L-E025`).
+   repeatable `@computed_raw`, `where_raw` (`M3L-E026`).
 3. Consumers: translators per platform (out of this repository).
 
 ## 7. Alternatives considered

@@ -6,7 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **`M3L-E025`** — a view's `@from(Relation.field)` names a relation that is not the view's `from`
+  or a `join`, or a field that relation does not have. Views with a SQL code block source are not
+  checked.
+
 ### Fixed
+- **A view's `join` naming an undefined model passed validation.** `M3L-E004` is documented for
+  `from` and `join` alike but checked `from` only.
 - **A view's `### Source` directives written unquoted kept only their first word.** The spelling
   the specification uses (§4.7.1–4.7.4) — `join: Order on Order.customer_id = Customer.id`,
   `order_by: name asc`, `group_by: [Customer.id, Customer.name]` — reached the AST as a join with an

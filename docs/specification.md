@@ -1814,7 +1814,7 @@ Rollup results can be referenced by other Rollup or Computed fields:
 - `@persisted` Rollup requires a materialization strategy; update triggers must be defined in the implementation layer.
 
 ### 4.7 Derived Views
-> **Status: Implemented** — Fully supported in `m3l-core` parser and validator (`::view`, Source section, E004).
+> **Status: Implemented** — Fully supported in `m3l-core` parser and validator (`::view`, Source section, E004, E025).
 > Views reach the AST; whether a consumer emits a database view from them is outside this marker (§1.6.1).
 
 Derived Views are virtual models composed from multiple models. They correspond to database Views and use the `::view` type indicator.
@@ -2969,6 +2969,7 @@ Conforming parsers should use these error codes for consistent diagnostics.
 | `M3L-E022` | Lookup path segment `{segment}` is not a field of `{model}` | A segment of an `@lookup` path names no field on the model reached at that point (§4.5.4 Path resolution). The walk follows each key's `@reference`/`@fk`; a segment after a reference to a model the document does not define is not checked |
 | `M3L-E023` | `{model}` declares more than one rowversion field ({fields}) | A model has more than one `rowversion` field (§10.4.1), counting fields it inherits. Reported at the second one |
 | `M3L-E024` | rowversion field `{field}` in `{model}` cannot {contradiction} | A `rowversion` field (§10.4.1) is nullable, an array, or given a default, or carries `@pk`, `@primary`, `@unique`, `@reference` or `@fk` — each gives someone other than the engine a say in a value the engine sets on every write |
+| `M3L-E025` | View `{view}` field `{field}`: `@from({target})` — {problem} | An `@from(Relation.field)` in a view names a relation that is not the view's `from` or a `join`, or a field that relation does not have (§4.7.1). A relation that is itself undefined is reported once, as `M3L-E004`; a view whose source is a SQL code block (§4.7.8) is not checked |
 
 #### 10.5.2 Warnings
 

@@ -42,23 +42,66 @@ pub fn validate(ast: &M3lAst, options: &ValidateOptions) -> ValidateResult {
         }
     }
 
-    // M3L-E004: View source_def.from references undefined model
+    // M3L-E004: a view's `from` or `join` names an undefined model (or view).
+    // M3L-E025: an `@from(Relation.field)` names a relation the view does not read, or a field that
+    // relation does not have. A relation that is itself undefined is reported once, as E004.
     for view in &ast.views {
-        if let Some(ref sd) = view.source_def {
-            if let Some(ref from) = sd.from {
-                if !model_map.contains_key(from.as_str()) {
-                    errors.push(Diagnostic {
-                        code: "M3L-E004".into(),
-                        severity: DiagnosticSeverity::Error,
-                        file: view.source.clone(),
-                        line: view.line,
-                        col: 1,
-                        message: format!(
-                            "View \"{}\" references model \"{}\" which is not defined",
-                            view.name, from
-                        ),
-                    });
-                }
+        let Some(ref sd) = view.source_def else {
+            continue;
+        };
+        let mut relations: Vec<&str> = Vec::new();
+        for name in sd
+            .from
+            .iter()
+            .map(String::as_str)
+            .chain(sd.joins.iter().flatten().map(|j| j.model.as_str()))
+        {
+            relations.push(name);
+            if !model_map.contains_key(name) {
+                errors.push(Diagnostic {
+                    code: "M3L-E004".into(),
+                    severity: DiagnosticSeverity::Error,
+                    file: view.source.clone(),
+                    line: view.line,
+                    col: 1,
+                    message: format!(
+                        "View \"{}\" references model \"{}\" which is not defined",
+                        view.name, name
+                    ),
+                });
+            }
+        }
+        // A SQL code block source names its relations inside the SQL, which is not read here.
+        if sd.raw_sql.is_some() {
+            continue;
+        }
+        for field in &view.fields {
+            let Some(target) = from_argument(field) else {
+                continue;
+            };
+            let Some((relation, column)) = target.split_once('.') else {
+                continue;
+            };
+            let problem = if !relations.contains(&relation) {
+                Some(format!("\"{relation}\" is not the view's from or join"))
+            } else if let Some(model) = model_map.get(relation) {
+                (!model.fields.iter().any(|f| f.name == column))
+                    .then(|| format!("\"{relation}\" has no field \"{column}\""))
+            } else {
+                None // undefined relation: already E004
+            };
+            if let Some(problem) = problem {
+                errors.push(Diagnostic {
+                    code: "M3L-E025".into(),
+                    severity: DiagnosticSeverity::Error,
+                    file: field.loc.file.clone(),
+                    line: field.loc.line,
+                    col: field.loc.col,
+                    message: format!(
+                        "View \"{}\" field \"{}\": @from({target}) — {problem}",
+                        view.name, field.name
+                    ),
+                });
             }
         }
     }
@@ -183,6 +226,15 @@ pub fn validate(ast: &M3lAst, options: &ValidateOptions) -> ValidateResult {
     }
 
     ValidateResult { errors, warnings }
+}
+
+/// The single `Relation.field` argument of a field's `@from`, if it has one.
+fn from_argument(field: &FieldNode) -> Option<String> {
+    let attribute = field.attributes.iter().find(|a| a.name == "from")?;
+    match attribute.args.as_ref()?.first()? {
+        AttrArgValue::String(text) => Some(text.trim().to_string()),
+        _ => None,
+    }
 }
 
 fn validate_field_types(

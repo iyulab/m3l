@@ -846,7 +846,7 @@ fn handle_section_item(
                 raw_sql: None,
                 language_hint: None,
             });
-            set_source_directive(sd, data);
+            set_source_directive(sd, data, &token.raw);
             return;
         }
 
@@ -1197,7 +1197,8 @@ fn handle_nested_item(token: &Token, state: &mut ParserState) {
                     sub_data.name = Some(k.to_string());
                     sub_data.type_name = value.map(|v| v.to_string());
                     if let Some(ref mut sd) = model.source_def {
-                        set_source_directive(sd, &sub_data);
+                        let line = format!("{k}: {}", value.unwrap_or(""));
+                        set_source_directive(sd, &sub_data, &line);
                     }
                 }
             }
@@ -1786,13 +1787,9 @@ fn is_source_directive(name: &str) -> bool {
     matches!(name, "from" | "where" | "order_by" | "group_by" | "join")
 }
 
-fn set_source_directive(def: &mut ViewSourceDef, data: &TokenData) {
+fn set_source_directive(def: &mut ViewSourceDef, data: &TokenData, raw: &str) {
     let name = data.name.as_deref().unwrap_or("");
-    let value = data
-        .description
-        .clone()
-        .or_else(|| data.type_name.clone())
-        .unwrap_or_default();
+    let value = source_directive_value(data, raw);
 
     match name {
         "from" => def.from = Some(value),
@@ -1805,6 +1802,30 @@ fn set_source_directive(def: &mut ViewSourceDef, data: &TokenData) {
         }
         _ => {}
     }
+}
+
+/// A directive's value is everything after its colon. The line is lexed as a field line, so for an
+/// unquoted value the lexer's type slot holds only the first token — `Order` of
+/// `join: Order on Order.customer_id = Customer.id`, `name` of `order_by: name asc` — and the rest
+/// was lost. A quoted value is read as the lexer read it (the text inside the quotes); an unquoted
+/// one is taken from the line itself, up to an end-of-line comment.
+fn source_directive_value(data: &TokenData, raw: &str) -> String {
+    let after_colon = raw
+        .split_once(':')
+        .map(|(_, rest)| rest.trim())
+        .unwrap_or("");
+    if after_colon.starts_with(['"', '\'', '`']) {
+        return data
+            .description
+            .clone()
+            .or_else(|| data.type_name.clone())
+            .unwrap_or_default();
+    }
+    let without_comment = after_colon
+        .find(" #")
+        .or_else(|| after_colon.find("\t#"))
+        .map_or(after_colon, |at| &after_colon[..at]);
+    without_comment.trim().to_string()
 }
 
 fn parse_join_value(value: &str) -> JoinDef {

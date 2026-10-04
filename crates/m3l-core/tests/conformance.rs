@@ -158,6 +158,77 @@ fn conformance_view() {
     assert_eq!(src.order_by.as_deref(), Some("name asc"));
 }
 
+/// The spec writes `### Source` directives unquoted (§4.7.1–4.7.4): `join: Model on condition`,
+/// `order_by: field direction`, `group_by: [list]`. Each value is everything after the directive's
+/// colon — not the first token of it, which is what a field line's type would be.
+#[test]
+fn conformance_view_unquoted_directives() {
+    let input = r#"## Customer
+- id: identifier @pk
+- name: string(100)
+
+## Order
+- id: identifier @pk
+- customer_id: identifier @reference(Customer)
+
+## CustomerOrders ::view
+### Source
+- from: Customer
+- join: Order on Order.customer_id = Customer.id   # explicit condition
+- group_by: [Customer.id, Customer.name]
+- order_by: name desc
+
+- customer_name: string @from(Customer.name)"#;
+
+    let ast = full_pipeline(input, "view-unquoted.m3l.md");
+
+    assert!(ast.errors.is_empty(), "{:?}", ast.errors);
+    let src = ast.views[0].source_def.as_ref().unwrap();
+    assert_eq!(src.from.as_deref(), Some("Customer"));
+    let joins = src.joins.as_ref().unwrap();
+    assert_eq!(joins.len(), 1);
+    assert_eq!(joins[0].model, "Order");
+    assert_eq!(joins[0].on, "Order.customer_id = Customer.id");
+    assert_eq!(
+        src.group_by.as_deref(),
+        Some(&["Customer.id".to_string(), "Customer.name".to_string()][..])
+    );
+    assert_eq!(src.order_by.as_deref(), Some("name desc"));
+    // The directives stay out of the field list.
+    assert_eq!(ast.views[0].fields.len(), 1);
+}
+
+/// The quoted spelling `m3l format` writes keeps meaning the same thing.
+#[test]
+fn conformance_view_quoted_directives_are_unchanged() {
+    let input = r#"## Customer
+- id: identifier @pk
+- name: string(100)
+
+## Order
+- id: identifier @pk
+- customer_id: identifier @reference(Customer)
+
+## CustomerOrders ::view
+### Source
+- from: Customer
+- join: "Order on Order.customer_id = Customer.id"
+- group_by: "[Customer.id, Customer.name]"
+- order_by: "name desc"
+
+- customer_name: string @from(Customer.name)"#;
+
+    let ast = full_pipeline(input, "view-quoted.m3l.md");
+
+    let src = ast.views[0].source_def.as_ref().unwrap();
+    assert_eq!(
+        src.joins.as_ref().unwrap()[0].on,
+        "Order.customer_id = Customer.id"
+    );
+    assert_eq!(src.group_by.as_ref().unwrap().len(), 2);
+    assert_eq!(src.order_by.as_deref(), Some("name desc"));
+}
+
 #[test]
 fn conformance_framework_attrs() {
     let input = r#"## Account

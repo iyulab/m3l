@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.14.0",
+  "parserVersion": "0.18.0",
   "astVersion": "1.0",
   "project": {
     "name": "sample.multi"
@@ -1934,7 +1934,7 @@
         "joins": [
           {
             "model": "Item",
-            "on": ""
+            "on": "StockItem.item_id = Item.id"
           }
         ],
         "where": "StockItem.quantity <= Item.min_stock AND Item.is_active = true",
@@ -2101,10 +2101,14 @@
         "joins": [
           {
             "model": "Warehouse",
-            "on": ""
+            "on": "StockItem.warehouse_id = Warehouse.id"
           }
         ],
-        "group_by": []
+        "group_by": [
+          "Warehouse.id",
+          "Warehouse.name",
+          "Warehouse.code"
+        ]
       },
       "refresh": {
         "strategy": "incremental",

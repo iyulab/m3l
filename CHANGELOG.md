@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Fixed
+- **A view's `### Source` directives written unquoted kept only their first word.** The spelling
+  the specification uses (§4.7.1–4.7.4) — `join: Order on Order.customer_id = Customer.id`,
+  `order_by: name asc`, `group_by: [Customer.id, Customer.name]` — reached the AST as a join with an
+  empty `on`, an `order_by` without its direction and an empty `group_by`. Each directive's value is
+  now everything after its colon, up to an end-of-line comment. The quoted spelling `m3l format`
+  writes (`join: "Order on …"`) is read as before. The `multi-file` conformance fixture recorded the
+  truncated values as correct and is corrected.
+
 ## [0.18.0] - 2026-10-04
 
 ### Added

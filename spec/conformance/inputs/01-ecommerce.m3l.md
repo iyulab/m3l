@@ -128,7 +128,7 @@
 
 ### Computed
 - profit_margin: decimal(5,2) @computed(`(price - cost) / price * 100`)
-- display_price: string @computed("FORMAT(price, '$#,##0.00')")
+- display_price: string @computed_raw("FORMAT(price, '$#,##0.00')", platform: "sqlserver")
 
 ### Indexes
 - idx_category

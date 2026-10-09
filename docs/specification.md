@@ -2985,6 +2985,7 @@ Conforming parsers should use these error codes for consistent diagnostics.
 | `M3L-W008` | Attribute `@{attr}` is required but used without an explicit argument on `{subject}` | Custom registry attribute declared `required: true` was used bare (no argument) |
 | `M3L-W009` | Relationship notation `{notation}` in model `{model}` is written among the fields — it is read as a relationship, not a field, but `### Relations` is where it belongs | `>name`/`<name`/`<>name` (or an arrow spelling) written in the field list (§3.2.4) instead of `### Relations` (§3.2.3) — parsed either way, but flagged since the section is the documented home |
 | `M3L-W010` | Field `{field}` in `{model}`: `{text}` is not read | Text left on a field line after the field syntax (§2.5.7) has read everything it reads — most often a default written after an attribute (§2.5.8) |
+| `M3L-W011` | `{context}` `"{expression}"` is not a portable expression (§10.7): {constructs} | An expression in a portable context — `@computed`, a rollup's `where:`, a view's `where` — uses something outside the subset: a function not in §10.7.4, a bracketed or quoted identifier, `\|\|`, a `::` cast, a JSON operator, or `+` next to text. Each construct is named once. `@computed_raw` and a view whose source is a SQL code block (§4.7.8) are not checked |
 
 ### 10.6 Import Resolution
 
@@ -3024,8 +3025,8 @@ If the same file is imported through multiple paths, it is loaded only once (de-
 ### 10.7 Expressions
 
 > **Status: Partial** — the portable subset below defines what `@computed`, a rollup's `where:` and a view's `where`
-> mean. The parser stores each expression as text and does not yet check it against the subset; the checks
-> (`M3L-W011`, `M3L-E026`), a `@computed_raw` per platform and `where_raw` arrive with the validator
+> mean. The parser stores each expression as text; the validator reports an expression outside the subset as
+> `M3L-W011`. A `@computed_raw` per platform and `where_raw` (`M3L-E026`) are still to come
 > ([RFC-0005](../rfcs/RFC-0005-portable-expressions.md)).
 
 Three places in a model hold an expression:

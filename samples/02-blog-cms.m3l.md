@@ -52,7 +52,7 @@
 - is_active: boolean = true
 
 ### Computed
-- full_profile_url: string @computed("'/users/' + username")
+- full_profile_url: string @computed("concat('/users/', username)")
 
 ### Rollup
 - post_count: integer @rollup(Post.author_id, count)

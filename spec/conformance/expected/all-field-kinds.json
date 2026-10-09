@@ -214,7 +214,7 @@
             {
               "name": "computed",
               "args": [
-                "status + ' #' + id"
+                "concat(status, ' #', id)"
               ],
               "argsQuoted": [
                 true
@@ -223,7 +223,7 @@
             }
           ],
           "computed": {
-            "expression": "status + ' #' + id"
+            "expression": "concat(status, ' #', id)"
           },
           "loc": {
             "file": "spec/conformance/inputs/all-field-kinds.m3l.md",

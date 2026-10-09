@@ -276,7 +276,7 @@
             {
               "name": "computed",
               "args": [
-                "'/users/' + username"
+                "concat('/users/', username)"
               ],
               "argsQuoted": [
                 true
@@ -285,7 +285,7 @@
             }
           ],
           "computed": {
-            "expression": "'/users/' + username"
+            "expression": "concat('/users/', username)"
           },
           "loc": {
             "file": "spec/conformance/inputs/02-blog-cms.m3l.md",

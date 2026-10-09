@@ -17,8 +17,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Examples throughout the specification that used SQL Server syntax in a neutral context (`DATEDIFF`, `GETDATE`,
   `ISNULL`, bracketed identifiers, `+` between strings, `= 1` for a boolean) are rewritten in the subset; the samples and
   the conformance input that did the same follow.
-- No parser change: expressions are still stored as text. Checking them against the subset (`M3L-W011`), a
-  `@computed_raw` per platform and `where_raw` (`M3L-E026`) come with the validator.
+- Expressions are still stored as text. A `@computed_raw` per platform and `where_raw` (`M3L-E026`) are still to come.
+
+### Added
+
+- **`M3L-W011`** (warning) — an expression in a portable context (`@computed`, a rollup's `where:`, a view's `where`) uses
+  something outside the subset, and the warning names it: a function not in the list, a bracketed or quoted identifier,
+  `||`, a `::` cast, a JSON operator, or `+` next to text (a string literal or a text field). A warning, not an error —
+  the model still builds, and an expression meant for one platform says so with `@computed_raw`. `@computed_raw` and a
+  view whose source is a SQL code block are not checked; a field an interface declares is reported once.
+- The samples and conformance inputs that used `+` between strings or SQL Server's `FORMAT` in a portable context are
+  rewritten (`concat(…)`, `@computed_raw`).
 
 ## [0.19.0] - 2026-10-04
 

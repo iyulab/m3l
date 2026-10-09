@@ -1096,18 +1096,21 @@
           "kind": "computed",
           "attributes": [
             {
-              "name": "computed",
+              "name": "computed_raw",
               "args": [
-                "FORMAT(price, '$#,##0.00')"
+                "FORMAT(price, '$#,##0.00')",
+                "platform: \"sqlserver\""
               ],
               "argsQuoted": [
-                true
+                true,
+                false
               ],
               "isStandard": true
             }
           ],
           "computed": {
-            "expression": "FORMAT(price, '$#,##0.00')"
+            "expression": "FORMAT(price, '$#,##0.00')",
+            "platform": "sqlserver"
           },
           "loc": {
             "file": "spec/conformance/inputs/01-ecommerce.m3l.md",

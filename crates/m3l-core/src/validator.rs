@@ -160,6 +160,13 @@ pub fn validate(ast: &M3lAst, options: &ValidateOptions) -> ValidateResult {
         validate_row_versions(model, &mut reported_row_versions, &mut errors);
     }
 
+    // M3L-W011: An expression outside the portable subset (§10.7). Interfaces first, for the same reason
+    // as row versions: a computed field an interface declares is reported once, where it is written.
+    let mut reported_expressions: HashSet<(String, usize)> = HashSet::new();
+    for model in ast.interfaces.iter().chain(all_models.iter().copied()) {
+        validate_portable_expressions(model, &model_map, &mut reported_expressions, &mut warnings);
+    }
+
     // M3L-W003: Deprecated syntax warning
     for model in &all_models {
         check_deprecated_syntax(&model.fields, &mut warnings);
@@ -898,6 +905,120 @@ fn check_nesting_depth(
                 }
                 check_nesting_depth(sub_fields, depth + 1, model, warnings);
             }
+        }
+    }
+}
+
+/// Field types whose values are text — `+` next to one of them is concatenation, not arithmetic.
+fn is_text_field(field: &FieldNode) -> bool {
+    matches!(
+        field.field_type.as_deref(),
+        Some("string" | "text" | "email" | "phone" | "url")
+    )
+}
+
+/// M3L-W011 — an expression in a portable context (`@computed`, a rollup's `where:`, a view's `where`)
+/// uses something outside the subset §10.7 defines. A warning: the model still builds, and an expression
+/// meant for one platform says so with `@computed_raw`.
+fn validate_portable_expressions(
+    model: &ModelNode,
+    model_map: &HashMap<&str, &ModelNode>,
+    reported: &mut HashSet<(String, usize)>,
+    warnings: &mut Vec<Diagnostic>,
+) {
+    let text_in = |owner: Option<&ModelNode>, name: &str| {
+        owner.is_some_and(|m| m.fields.iter().any(|f| f.name == name && is_text_field(f)))
+    };
+    let mut warn = |file: &str,
+                    line: usize,
+                    context: &str,
+                    expression: &str,
+                    constructs: Vec<String>| {
+        if constructs.is_empty() || !reported.insert((file.to_string(), line)) {
+            return;
+        }
+        warnings.push(Diagnostic {
+            code: "M3L-W011".into(),
+            severity: DiagnosticSeverity::Warning,
+            file: file.to_string(),
+            line,
+            col: 1,
+            message: format!(
+                "{context} \"{expression}\" is not a portable expression (§10.7): {} — write it in the portable subset, or declare it platform-specific with @computed_raw",
+                constructs.join(", ")
+            ),
+        });
+    };
+
+    // A view whose source is a SQL code block (§4.7.8) is platform SQL as a whole — its fields compute over
+    // the block's aliases — so none of its expressions is held to the subset.
+    if model
+        .source_def
+        .as_ref()
+        .is_some_and(|s| s.raw_sql.is_some())
+    {
+        return;
+    }
+
+    for field in &model.fields {
+        let is_raw = field.attributes.iter().any(|a| a.name == "computed_raw");
+        if let (Some(computed), false) = (&field.computed, is_raw) {
+            let constructs =
+                crate::expressions::non_portable_constructs(&computed.expression, &|name| {
+                    text_in(Some(model), name)
+                });
+            warn(
+                &field.loc.file,
+                field.loc.line,
+                &format!("\"{}.{}\" @computed", model.name, field.name),
+                &computed.expression,
+                constructs,
+            );
+        }
+        if let Some(where_clause) = field
+            .rollup
+            .as_ref()
+            .and_then(|r| r.where_clause.as_ref().map(|w| (r, w)))
+        {
+            let (rollup, expression) = where_clause;
+            let target = model_map.get(rollup.target.as_str()).copied();
+            let constructs =
+                crate::expressions::non_portable_constructs(expression, &|name| match name
+                    .strip_prefix("$parent.")
+                {
+                    Some(own) => text_in(Some(model), own),
+                    None => text_in(target, name),
+                });
+            warn(
+                &field.loc.file,
+                field.loc.line,
+                &format!("\"{}.{}\" @rollup where", model.name, field.name),
+                expression,
+                constructs,
+            );
+        }
+    }
+
+    if let Some(source) = &model.source_def {
+        if let Some(expression) = &source.where_clause {
+            let from = source
+                .from
+                .as_deref()
+                .and_then(|f| model_map.get(f).copied());
+            let constructs =
+                crate::expressions::non_portable_constructs(expression, &|name| match name
+                    .split_once('.')
+                {
+                    Some((relation, field)) => text_in(model_map.get(relation).copied(), field),
+                    None => text_in(from, name),
+                });
+            warn(
+                &model.loc.file,
+                model.loc.line,
+                &format!("View \"{}\" where", model.name),
+                expression,
+                constructs,
+            );
         }
     }
 }

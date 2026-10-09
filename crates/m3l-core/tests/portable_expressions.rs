@@ -211,3 +211,121 @@ fn different_platforms_are_not_e026() {
     );
     assert!(!found.iter().any(|e| e.code == "M3L-E026"), "{found:?}");
 }
+
+// ---- where_raw: platform filters for a view's Source and a rollup (§10.7.5) ----
+
+fn ast_of(input: &str) -> m3l_core::M3lAst {
+    let parsed = parse_string(input, "where_raw.m3l.md");
+    m3l_core::resolve(&[parsed], None)
+}
+
+#[test]
+fn a_view_carries_one_where_raw_per_platform_beside_its_where() {
+    let ast = ast_of(&format!(
+        "{MODELS}## Recent ::view\n### Source\n- from: Order\n- where: \"Order.total > 0\"\n\
+         - where_raw: \"Order.ordered_at > DATEADD(DAY, -30, GETDATE())\" platform: sqlserver\n\
+         - where_raw: \"Order.ordered_at > now() - interval '30 days'\" platform: \"postgresql\"\n\n\
+         - status: string @from(Order.status)"
+    ));
+    let view = ast.views.iter().find(|v| v.name == "Recent").expect("view");
+    let source = view.source_def.as_ref().expect("source");
+    assert_eq!(source.where_clause.as_deref(), Some("Order.total > 0"));
+    let raw: Vec<_> = source
+        .where_raw
+        .iter()
+        .map(|r| (r.platform.as_deref(), r.expression.as_str()))
+        .collect();
+    assert_eq!(
+        raw,
+        [
+            (
+                Some("sqlserver"),
+                "Order.ordered_at > DATEADD(DAY, -30, GETDATE())"
+            ),
+            (
+                Some("postgresql"),
+                "Order.ordered_at > now() - interval '30 days'"
+            ),
+        ]
+    );
+    assert_eq!(
+        view.fields.len(),
+        1,
+        "where_raw lines are directives, not fields"
+    );
+
+    let result = validate(&ast, &ValidateOptions::default());
+    assert!(result.errors.is_empty(), "{:?}", result.errors);
+    assert!(
+        !result
+            .warnings
+            .iter()
+            .any(|w| w.code == "M3L-W010" || w.code == "M3L-W011"),
+        "{:?}",
+        result.warnings
+    );
+}
+
+#[test]
+fn a_rollup_pairs_each_where_raw_with_the_platform_after_it() {
+    let ast = ast_of(&format!(
+        "{MODELS}## Summary\n- id: identifier @pk\n\
+         - recent: integer @rollup(Order.customer_id, count, where: \"status = 'paid'\", where_raw: \"ordered_at > GETDATE() - 30\", platform: \"sqlserver\", where_raw: \"ordered_at > now() - interval '30 days'\", platform: \"postgresql\")"
+    ));
+    let rollup = ast
+        .models
+        .iter()
+        .find(|m| m.name == "Summary")
+        .unwrap()
+        .fields
+        .iter()
+        .find(|f| f.name == "recent")
+        .unwrap()
+        .rollup
+        .clone()
+        .expect("rollup");
+    assert_eq!(rollup.where_clause.as_deref(), Some("status = 'paid'"));
+    let raw: Vec<_> = rollup
+        .where_raw
+        .iter()
+        .map(|r| r.platform.as_deref())
+        .collect();
+    assert_eq!(raw, [Some("sqlserver"), Some("postgresql")]);
+    assert_eq!(
+        rollup.where_raw[0].expression,
+        "ordered_at > GETDATE() - 30"
+    );
+}
+
+#[test]
+fn the_same_platform_twice_in_a_view_or_a_rollup_is_e026() {
+    let view = errors_of(&format!(
+        "{MODELS}## Recent ::view\n### Source\n- from: Order\n\
+         - where_raw: \"a = 1\" platform: sqlserver\n- where_raw: \"a = 2\" platform: sqlserver\n\n\
+         - status: string @from(Order.status)"
+    ));
+    let e = view
+        .iter()
+        .find(|e| e.code == "M3L-E026")
+        .expect("E026 view");
+    assert!(
+        e.message.contains("View \"Recent\" declares where_raw"),
+        "{}",
+        e.message
+    );
+
+    let rollup = errors_of(&format!(
+        "{MODELS}## Summary\n- id: identifier @pk\n\
+         - n: integer @rollup(Order.customer_id, count, where_raw: \"a = 1\", platform: \"sqlserver\", where_raw: \"a = 2\", platform: \"sqlserver\")"
+    ));
+    let e = rollup
+        .iter()
+        .find(|e| e.code == "M3L-E026")
+        .expect("E026 rollup");
+    assert!(
+        e.message
+            .contains("\"Summary.n\" declares @rollup where_raw"),
+        "{}",
+        e.message
+    );
+}

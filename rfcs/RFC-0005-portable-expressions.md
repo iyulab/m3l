@@ -1,6 +1,6 @@
 # M3L RFC-0005: Portable Expressions
 
-> **RFC Status**: Accepted — specification text in 0.20.0 (§10.7); validator pending (§6 step 2)
+> **RFC Status**: Accepted — implemented in 0.20.0 (specification §10.7, `M3L-W011`, `M3L-E026`); translators are each consumer's (§6 step 3)
 > **Author**: UJ (iyulab)
 > **Date**: 2026-10-04
 > **M3L Version Target**: 0.20.0
@@ -107,11 +107,13 @@ reader and an implementation both know the expression will not travel:
 - year_created: integer @computed_raw("EXTRACT(YEAR FROM created_at)::int", platform: "postgresql")
 ```
 
-- `@computed_raw` may appear **once per platform** on a field; an implementation uses the one for
-  its platform and reports a field with none for its platform.
+- `@computed_raw` may appear **once per platform** on a field, beside a portable `@computed` or
+  instead of it; an implementation uses the one for its platform, the portable one otherwise, and
+  reports a field with neither.
 - The same form becomes available to the two other contexts: a view's `### Source` takes
-  `- where_raw: "…" platform: <name>` (once per platform, instead of `where`), and a rollup takes
-  `where_raw:` with `platform:` in place of `where:`.
+  `- where_raw: "…" platform: <name>` lines (once per platform, beside or instead of `where`), and a
+  rollup takes `where_raw:` arguments, each followed by the `platform:` it is for — the pair may
+  repeat, so a rollup is not limited to one platform.
 - `platform` names: `sqlserver`, `postgresql`, `mysql`, `sqlite`. Other names are recorded, not
   checked.
 

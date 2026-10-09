@@ -17,7 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Examples throughout the specification that used SQL Server syntax in a neutral context (`DATEDIFF`, `GETDATE`,
   `ISNULL`, bracketed identifiers, `+` between strings, `= 1` for a boolean) are rewritten in the subset; the samples and
   the conformance input that did the same follow.
-- Expressions are still stored as text. `where_raw` for a view's and a rollup's filter is still to come.
+- Expressions are still stored as text; translating the subset is each implementation's.
 
 ### Changed — AST
 
@@ -32,7 +32,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- **`M3L-E026`** (error) — a field declares `@computed_raw` twice for the same platform.
+- **`where_raw`** — a platform filter beside or instead of the portable `where`: a view's `### Source` takes
+  `- where_raw: "…" platform: name` lines, a rollup takes `where_raw:` arguments each followed by its `platform:`. AST:
+  `source_def.where_raw` and `rollup.where_raw` (`[{ "platform", "expression" }]`, omitted when empty); bindings
+  `WhereRaw` (C#) / `where_raw?` (TypeScript). The formatter writes the view lines back.
+- **`M3L-E026`** (error) — a platform declared twice for one expression: two `@computed_raw` on a field, two
+  `where_raw:` in a rollup, or two `- where_raw:` lines in a view.
 - **`M3L-W011`** (warning) — an expression in a portable context (`@computed`, a rollup's `where:`, a view's `where`) uses
   something outside the subset, and the warning names it: a function not in the list, a bracketed or quoted identifier,
   `||`, a `::` cast, a JSON operator, or `+` next to text (a string literal or a text field). A warning, not an error —

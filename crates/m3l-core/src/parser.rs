@@ -23,6 +23,8 @@ static RE_AGG: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(\w+)(?:\((\w+)\
 // required. Requiring them unconditionally silently dropped every `where:`
 // clause a rollup ever declared.
 static RE_WHERE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"^where:\s*"?(.*?)"?$"#).unwrap());
+static RE_WHERE_RAW: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"^where_raw:\s*"?(.*?)"?$"#).unwrap());
 static RE_PLATFORM: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r#"platform\s*:\s*["']?([^"'\s]+)["']?"#).unwrap());
 // Same optional-quote shape as `RE_WHERE`, same reason: by the time this sees the
@@ -418,6 +420,7 @@ fn handle_section(token: &Token, state: &mut ParserState) {
                         from: None,
                         joins: None,
                         where_clause: None,
+                        where_raw: Vec::new(),
                         order_by: None,
                         group_by: None,
                         raw_sql: None,
@@ -841,6 +844,7 @@ fn handle_section_item(
                 from: None,
                 joins: None,
                 where_clause: None,
+                where_raw: Vec::new(),
                 order_by: None,
                 group_by: None,
                 raw_sql: None,
@@ -1692,11 +1696,25 @@ fn parse_rollup_args(args_str: &str) -> RollupDef {
         (String::new(), None)
     };
 
+    // `where:` is the portable filter; each `where_raw:` is a platform filter, and the `platform:` that
+    // follows it names its platform (§10.7.5) — the pair may repeat, one per platform.
     let mut where_clause = None;
+    let mut where_raw: Vec<PlatformExpression> = Vec::new();
     for p in parts.iter().skip(2) {
         let part = p.trim();
         if let Some(caps) = RE_WHERE.captures(part) {
             where_clause = Some(caps[1].to_string());
+        } else if let Some(caps) = RE_WHERE_RAW.captures(part) {
+            where_raw.push(PlatformExpression {
+                platform: None,
+                expression: caps[1].to_string(),
+            });
+        } else if part.starts_with("platform") {
+            if let (Some(caps), Some(last)) = (RE_PLATFORM.captures(part), where_raw.last_mut()) {
+                if last.platform.is_none() {
+                    last.platform = Some(caps[1].to_string());
+                }
+            }
         }
     }
 
@@ -1706,6 +1724,7 @@ fn parse_rollup_args(args_str: &str) -> RollupDef {
         aggregate,
         field,
         where_clause,
+        where_raw,
     }
 }
 
@@ -1784,7 +1803,10 @@ fn split_computed_raw_args(raw: &str) -> (String, Option<String>) {
 }
 
 fn is_source_directive(name: &str) -> bool {
-    matches!(name, "from" | "where" | "order_by" | "group_by" | "join")
+    matches!(
+        name,
+        "from" | "where" | "where_raw" | "order_by" | "group_by" | "join"
+    )
 }
 
 fn set_source_directive(def: &mut ViewSourceDef, data: &TokenData, raw: &str) {
@@ -1794,6 +1816,15 @@ fn set_source_directive(def: &mut ViewSourceDef, data: &TokenData, raw: &str) {
     match name {
         "from" => def.from = Some(value),
         "where" => def.where_clause = Some(value),
+        // `- where_raw: "…" platform: x` — the quoted filter, then its platform (§10.7.5).
+        "where_raw" => {
+            let after_colon = raw.split_once(':').map_or("", |(_, rest)| rest.trim());
+            let (expression, platform) = split_computed_raw_args(after_colon);
+            def.where_raw.push(PlatformExpression {
+                platform,
+                expression: unwrap_delimiters(&expression, &['"', '\'', '`']).to_string(),
+            });
+        }
         "order_by" => def.order_by = Some(value),
         "group_by" => def.group_by = Some(parse_array_value(&value)),
         "join" => {

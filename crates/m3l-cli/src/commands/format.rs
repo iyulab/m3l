@@ -218,6 +218,14 @@ fn format_view(lines: &mut Vec<String>, view: &m3l_core::ModelNode) {
         if let Some(ref w) = source.where_clause {
             lines.push(format!("- where: \"{w}\""));
         }
+        for raw in &source.where_raw {
+            let platform = raw
+                .platform
+                .as_deref()
+                .map(|p| format!(" platform: {p}"))
+                .unwrap_or_default();
+            lines.push(format!("- where_raw: \"{}\"{platform}", raw.expression));
+        }
         if let Some(ref g) = source.group_by {
             lines.push(format!("- group_by: \"[{}]\"", g.join(", ")));
         }

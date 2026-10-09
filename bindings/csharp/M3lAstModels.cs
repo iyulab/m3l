@@ -205,6 +205,9 @@ public class RollupDef
 
     [JsonPropertyName("where")]
     public string? Where { get; set; }
+
+    [JsonPropertyName("where_raw")]
+    public List<PlatformExpression> WhereRaw { get; set; } = [];
 }
 
 /// <summary>
@@ -359,6 +362,9 @@ public class ViewSourceDef
 
     [JsonPropertyName("where")]
     public string? Where { get; set; }
+
+    [JsonPropertyName("where_raw")]
+    public List<PlatformExpression> WhereRaw { get; set; } = [];
 
     [JsonPropertyName("order_by")]
     public string? OrderBy { get; set; }

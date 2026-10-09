@@ -1824,7 +1824,8 @@ Derived Views are virtual models composed from multiple models. They correspond 
 ### Source
 - from: PrimaryModel
 - join: TargetModel on JoinCondition   # optional
-- where: "filter condition"             # optional
+- where: "filter condition"             # optional — portable expression (§10.7)
+- where_raw: "filter" platform: name    # optional, once per platform (§10.7.5)
 - order_by: field direction             # optional
 - group_by: [fields]                    # optional (aggregate views)
 
@@ -2970,7 +2971,7 @@ Conforming parsers should use these error codes for consistent diagnostics.
 | `M3L-E023` | `{model}` declares more than one rowversion field ({fields}) | A model has more than one `rowversion` field (§10.4.1), counting fields it inherits. Reported at the second one |
 | `M3L-E024` | rowversion field `{field}` in `{model}` cannot {contradiction} | A `rowversion` field (§10.4.1) is nullable, an array, or given a default, or carries `@pk`, `@primary`, `@unique`, `@reference` or `@fk` — each gives someone other than the engine a say in a value the engine sets on every write |
 | `M3L-E025` | View `{view}` field `{field}`: `@from({target})` — {problem} | An `@from(Relation.field)` in a view names a relation that is not the view's `from` or a `join`, or a field that relation does not have (§4.7.1). A relation that is itself undefined is reported once, as `M3L-E004`; a view whose source is a SQL code block (§4.7.8) is not checked |
-| `M3L-E026` | `"{model}.{field}"` declares @computed_raw twice for platform `{platform}` — one expression per platform | A field carries two `@computed_raw` for the same platform (§10.7.5). One expression per platform is what lets an implementation pick its own without guessing |
+| `M3L-E026` | `{what}` twice for platform `{platform}` — one expression per platform | A platform declared twice for one expression — two `@computed_raw` on a field, two `where_raw:` in a rollup, or two `- where_raw:` lines in a view's Source (§10.7.5). One expression per platform is what lets an implementation pick its own without guessing |
 
 #### 10.5.2 Warnings
 
@@ -3025,10 +3026,11 @@ If the same file is imported through multiple paths, it is loaded only once (de-
 
 ### 10.7 Expressions
 
-> **Status: Partial** — the portable subset below defines what `@computed`, a rollup's `where:` and a view's `where`
+> **Status: Implemented** — the portable subset below defines what `@computed`, a rollup's `where:` and a view's `where`
 > mean. The parser stores each expression as text; the validator reports an expression outside the subset as
-> `M3L-W011`, and a field carries one `@computed_raw` per platform (`M3L-E026`). `where_raw` for a view's and a rollup's
-> filter is still to come ([RFC-0005](../rfcs/RFC-0005-portable-expressions.md)).
+> `M3L-W011`, and every expression context carries one platform expression per platform — `@computed_raw`, a rollup's
+> `where_raw:`, a view's `- where_raw:` (`M3L-E026`). Translating the subset is each implementation's
+> ([RFC-0005](../rfcs/RFC-0005-portable-expressions.md)).
 
 Three places in a model hold an expression:
 
@@ -3137,8 +3139,20 @@ block under the field, with the attribute carrying only `platform:`:
 In the AST, `computed.expression` is the portable expression and `computed.raw` the platform expressions
 (`[{ "platform": "…", "expression": "…" }]`); either may be absent, not both.
 
-The same declaration is to reach the other two contexts (RFC-0005): a view's `### Source` taking `- where_raw: "…"` with
-`platform:` in place of `where`, and a rollup taking `where_raw:` with `platform:` in place of `where:`.
+The two filter contexts take the same declaration. A view's `### Source` takes `- where_raw:` lines, one per platform,
+beside or instead of `where`; a rollup takes `where_raw:` arguments, each followed by the `platform:` it is for:
+
+```markdown
+### Source
+- from: Order
+- where: "Order.total > 0"
+- where_raw: "Order.ordered_at > DATEADD(DAY, -30, GETDATE())" platform: sqlserver
+- where_raw: "Order.ordered_at > now() - interval '30 days'" platform: postgresql
+
+- recent: integer @rollup(Order.customer_id, count, where_raw: "ordered_at > DATEADD(DAY, -30, GETDATE())", platform: "sqlserver", where_raw: "ordered_at > now() - interval '30 days'", platform: "postgresql")
+```
+
+In the AST they are `source_def.where_raw` and `rollup.where_raw`, the same `[{ "platform", "expression" }]` shape.
 
 #### 10.7.6 What Implementations Do
 

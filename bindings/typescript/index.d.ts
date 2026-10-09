@@ -106,6 +106,7 @@ export interface RollupDef {
   aggregate: string;
   field?: string;
   where?: string;
+  where_raw?: PlatformExpression[];
 }
 
 /** The portable expression `@computed` declares, and one expression per platform from `@computed_raw`. */
@@ -158,6 +159,7 @@ export interface ViewSourceDef {
   from?: string;
   joins?: JoinDef[];
   where?: string;
+  where_raw?: PlatformExpression[];
   order_by?: string;
   group_by?: string[];
   raw_sql?: string;

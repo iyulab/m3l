@@ -915,42 +915,63 @@ fn check_nesting_depth(
     }
 }
 
-/// M3L-E026 — a field declares `@computed_raw` twice for the same platform. One platform expression per
-/// platform is what lets an implementation pick its own without guessing; two leave the choice open.
+/// M3L-E026 — a platform declared twice for one expression: `@computed_raw` on a field, `where_raw:` in a
+/// rollup, `- where_raw:` in a view's Source. One platform expression per platform is what lets an
+/// implementation pick its own without guessing; two leave the choice open.
 fn validate_platform_expressions(
     model: &ModelNode,
     reported: &mut HashSet<(String, usize)>,
     errors: &mut Vec<Diagnostic>,
 ) {
-    for field in &model.fields {
-        let Some(computed) = &field.computed else {
-            continue;
-        };
+    let mut check = |raw: &[PlatformExpression], loc: &SourceLocation, what: String| {
         let mut seen: Vec<Option<&str>> = Vec::new();
-        for raw in &computed.raw {
-            let platform = raw.platform.as_deref();
+        for r in raw {
+            let platform = r.platform.as_deref();
             if !seen.contains(&platform) {
                 seen.push(platform);
                 continue;
             }
-            if !reported.insert((field.loc.file.clone(), field.loc.line)) {
-                break;
+            if reported.insert((loc.file.clone(), loc.line)) {
+                errors.push(Diagnostic {
+                    code: "M3L-E026".into(),
+                    severity: DiagnosticSeverity::Error,
+                    file: loc.file.clone(),
+                    line: loc.line,
+                    col: 1,
+                    message: format!(
+                        "{what} twice for platform {} — one expression per platform",
+                        platform.map_or("(none)".to_string(), |p| format!("\"{p}\""))
+                    ),
+                });
             }
-            errors.push(Diagnostic {
-                code: "M3L-E026".into(),
-                severity: DiagnosticSeverity::Error,
-                file: field.loc.file.clone(),
-                line: field.loc.line,
-                col: 1,
-                message: format!(
-                    "\"{}.{}\" declares @computed_raw twice for platform {} — one expression per platform",
-                    model.name,
-                    field.name,
-                    platform.map_or("(none)".to_string(), |p| format!("\"{p}\""))
-                ),
-            });
-            break;
+            return;
         }
+    };
+    for field in &model.fields {
+        if let Some(computed) = &field.computed {
+            check(
+                &computed.raw,
+                &field.loc,
+                format!("\"{}.{}\" declares @computed_raw", model.name, field.name),
+            );
+        }
+        if let Some(rollup) = &field.rollup {
+            check(
+                &rollup.where_raw,
+                &field.loc,
+                format!(
+                    "\"{}.{}\" declares @rollup where_raw",
+                    model.name, field.name
+                ),
+            );
+        }
+    }
+    if let Some(source) = &model.source_def {
+        check(
+            &source.where_raw,
+            &model.loc,
+            format!("View \"{}\" declares where_raw", model.name),
+        );
     }
 }
 

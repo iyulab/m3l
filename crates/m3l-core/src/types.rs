@@ -226,6 +226,9 @@ pub struct RollupDef {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "where")]
     pub where_clause: Option<String>,
+    /// Platform-specific filters (`where_raw:` with `platform:`, §10.7.5), one per platform.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub where_raw: Vec<PlatformExpression>,
 }
 
 /// A computed field's expressions (§4.4, §10.7): the portable one `@computed` declares, and one
@@ -363,6 +366,9 @@ pub struct ViewSourceDef {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "where")]
     pub where_clause: Option<String>,
+    /// Platform-specific filters (`- where_raw: "…" platform: …`, §10.7.5), one per platform.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub where_raw: Vec<PlatformExpression>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub order_by: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]

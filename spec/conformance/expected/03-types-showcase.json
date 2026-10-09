@@ -2299,7 +2299,7 @@
             {
               "name": "computed",
               "args": [
-                "first_name + ' ' + last_name"
+                "concat(first_name, ' ', last_name)"
               ],
               "argsQuoted": [
                 true
@@ -2308,7 +2308,7 @@
             }
           ],
           "computed": {
-            "expression": "first_name + ' ' + last_name"
+            "expression": "concat(first_name, ' ', last_name)"
           },
           "loc": {
             "file": "spec/conformance/inputs/03-types-showcase.m3l.md",

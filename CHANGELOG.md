@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Specification — portable expressions (RFC-0005, text)
+
+- §10.7 is rewritten as **Expressions**: the portable subset `@computed`, a rollup's `where:` and a view's `where` are
+  written in — literals (`true`/`false`/`null`), field references, numeric operators, comparisons, `AND`/`OR`/`NOT`,
+  `IS NULL`, `IN`, `BETWEEN`, `LIKE`, `CASE`, and a closed list of functions (`concat`, `coalesce`, `date_add`,
+  `date_diff`, …). String concatenation is `concat(…)`, not `+`. Anything else is platform-specific and declared with
+  `@computed_raw`. The section said both that `@computed` is platform-neutral and that M3L defines no expression
+  language; it now says what neutral is.
+- Examples throughout the specification that used SQL Server syntax in a neutral context (`DATEDIFF`, `GETDATE`,
+  `ISNULL`, bracketed identifiers, `+` between strings, `= 1` for a boolean) are rewritten in the subset; the samples and
+  the conformance input that did the same follow.
+- No parser change: expressions are still stored as text. Checking them against the subset (`M3L-W011`), a
+  `@computed_raw` per platform and `where_raw` (`M3L-E026`) come with the validator.
+
 ## [0.19.0] - 2026-10-04
 
 ### Added

@@ -56,13 +56,7 @@
     4. [Type Catalog](#104-type-catalog)
     5. [Error Catalog](#105-error-catalog)
     6. [Import Resolution](#106-import-resolution)
-    7. [Platform-Specific Expressions](#107-platform-specific-expressions)
-    8. [Standard Attribute Catalog](#108-standard-attribute-catalog)
-    3. [Formal Grammar (PEG)](#103-formal-grammar-peg)
-    4. [Type Catalog](#104-type-catalog)
-    5. [Error Catalog](#105-error-catalog)
-    6. [Import Resolution](#106-import-resolution)
-    7. [Platform-Specific Expressions](#107-platform-specific-expressions)
+    7. [Expressions](#107-expressions)
     8. [Standard Attribute Catalog](#108-standard-attribute-catalog)
 
 ## 1. Introduction
@@ -1475,17 +1469,17 @@ Computed fields derive their values from expressions and other fields **within t
 
 **Simple Format (Recommended):**
 ```markdown
-- full_name: string @computed("first_name + ' ' + last_name")
-- age: integer @computed("DATEDIFF(YEAR, birth_date, GETDATE())")
+- full_name: string @computed("concat(first_name, ' ', last_name)")
+- age: integer @computed("date_diff('year', birth_date, today())")
 - total_amount: decimal(12,2) @computed("quantity * unit_price")
-- DisplayName: string @computed("ISNULL([Name], 'Anonymous User')")
+- DisplayName: string @computed("coalesce(Name, 'Anonymous User')")
 ```
 
 **With Persistence (Performance Optimization):**
 ```markdown
 - total_amount: decimal(12,2) @computed("quantity * unit_price") @persisted
-- search_vector: string @computed("name + ' ' + description") @persisted
-- display_name: string @computed("COALESCE([nickname], [first_name] + ' ' + [last_name])") @persisted
+- search_vector: string @computed("concat(name, ' ', description)") @persisted
+- display_name: string @computed("coalesce(nickname, concat(first_name, ' ', last_name))") @persisted
 ```
 
 **Practical Example:**
@@ -1494,8 +1488,8 @@ Computed fields derive their values from expressions and other fields **within t
 - Id: identifier @primary
 - Name: string(100)
 - Email: string(320) @unique
-- DisplayName: string @computed("ISNULL([Name], 'Anonymous User')")
-- SearchText: string @computed("[Name] + ' ' + [Email]") @persisted @index
+- DisplayName: string @computed("coalesce(Name, 'Anonymous User')")
+- SearchText: string @computed("concat(Name, ' ', Email)") @persisted @index
 ```
 
 #### 4.4.2 Advanced Computed Fields
@@ -1513,8 +1507,8 @@ Computed fields derive their values from expressions and other fields **within t
 
 **String Operations:**
 ```markdown
-- display_name: string @computed("COALESCE(nickname, first_name + ' ' + last_name)")
-- slug: string @computed("LOWER(REPLACE(title, ' ', '-'))") @persisted
+- display_name: string @computed("coalesce(nickname, concat(first_name, ' ', last_name))")
+- slug: string @computed("lower(replace(title, ' ', '-'))") @persisted
 ```
 
 **Numeric Calculations:**
@@ -1526,14 +1520,14 @@ Computed fields derive their values from expressions and other fields **within t
 
 **Date/Time Calculations:**
 ```markdown
-- age: integer @computed("DATEDIFF(YEAR, birth_date, GETDATE())")
-- days_since_created: integer @computed("DATEDIFF(DAY, created_at, GETDATE())")
-- is_recent: boolean @computed("created_at > DATEADD(DAY, -30, GETDATE())")
+- age: integer @computed("date_diff('year', birth_date, today())")
+- days_since_created: integer @computed("date_diff('day', created_at, now())")
+- is_recent: boolean @computed("created_at > date_add(now(), -30, 'day')")
 ```
 
 **Conditional Calculations:**
 ```markdown
-- status_label: string @computed("CASE WHEN is_active = 1 THEN 'Active' ELSE 'Inactive' END")
+- status_label: string @computed("CASE WHEN is_active = true THEN 'Active' ELSE 'Inactive' END")
 - discount_tier: string @computed("CASE WHEN total_purchases > 1000 THEN 'Gold' WHEN total_purchases > 500 THEN 'Silver' ELSE 'Bronze' END")
 ```
 
@@ -1542,10 +1536,10 @@ Computed fields derive their values from expressions and other fields **within t
 **Performance Considerations:**
 ```markdown
 # Frequently queried complex calculations: use @persisted
-- search_text: string @computed("title + ' ' + description + ' ' + tags") @persisted
+- search_text: string @computed("concat(title, ' ', description, ' ', tags)") @persisted
 
 # Simple calculations: keep as runtime computed
-- full_name: string @computed("first_name + ' ' + last_name")
+- full_name: string @computed("concat(first_name, ' ', last_name)")
 
 # Computed fields that need indexing: @persisted + @index
 - age_group: string @computed("CASE WHEN age < 18 THEN 'Minor' WHEN age < 65 THEN 'Adult' ELSE 'Senior' END") @persisted @index
@@ -1553,18 +1547,20 @@ Computed fields derive their values from expressions and other fields **within t
 
 **Type Inference:**
 ```markdown
-- age: integer @computed("DATEDIFF(YEAR, birth_date, GETDATE())")  # integer type auto-inferred
+- age: integer @computed("date_diff('year', birth_date, today())")  # integer type auto-inferred
 - total: decimal @computed("price * quantity")                     # decimal type auto-inferred
 - is_adult: boolean @computed("age >= 18")                         # boolean type auto-inferred
 ```
 
 #### 4.4.5 Platform-Specific Expressions
 
-For expressions that require platform-specific syntax, use `@computed_raw` to explicitly mark the platform dependency:
+`@computed` is written in the portable expression subset (§10.7) — literals, field references, operators, `CASE` and a
+closed list of functions — which every implementation translates into its own platform's syntax. For anything the subset
+does not cover, use `@computed_raw` to declare the platform dependency:
 
 ```markdown
-# Platform-neutral (recommended — use @computed)
-- full_name: string @computed("first_name + ' ' + last_name")
+# Portable (recommended — use @computed)
+- full_name: string @computed("concat(first_name, ' ', last_name)")
 - total: decimal(12,2) @computed("quantity * unit_price")
 
 # Platform-specific (use @computed_raw)
@@ -1573,7 +1569,7 @@ For expressions that require platform-specific syntax, use `@computed_raw` to ex
 - json_extract: string @computed_raw("JSON_EXTRACT(metadata, '$.category')", platform: "mysql")
 ```
 
-> **Note**: `@computed` expressions are opaque strings passed through to the implementation layer. M3L does not define an expression language. `@computed_raw` provides an explicit signal that the expression is not portable. See [10.7 Platform-Specific Expressions](#107-platform-specific-expressions) for details.
+> **Note**: The parser stores an expression as text; what it means is defined by the portable subset. `@computed_raw` is the explicit signal that an expression is not portable. See [10.7 Expressions](#107-expressions).
 
 #### 4.4.6 Multi-line Computed Expressions
 
@@ -1922,11 +1918,15 @@ Physically stored views for performance optimization:
 - strategy: scheduled
 - interval: "daily 02:00"
 
-- year_month: string @computed("FORMAT(ordered_at, 'yyyy-MM')")
+- year_month: integer @computed("year(ordered_at) * 100 + month(ordered_at)")
 - order_count: integer @rollup(Order.customer_id, count)
 - total_revenue: decimal(12,2) @rollup(Order.customer_id, sum(total_amount))
 - unique_customers: integer @computed("COUNT(DISTINCT customer_id)")
 ```
+
+`unique_customers` aggregates the group's own rows. The portable subset (§10.7) has no aggregate functions — an aggregate
+over related rows is a `@rollup` — so this expression is platform SQL; how a grouped view states an aggregate of its own
+rows portably is an open question of RFC-0005.
 
 #### 4.7.6 View Nesting
 
@@ -2121,7 +2121,7 @@ Defining reusable templates with generic parameters.
 ```markdown
 ## List<T>
 - items: T[]
-- count: integer @computed("items.length")
+- count: integer
 ```
 
 #### 4.11.2 Using Generic Types
@@ -2280,7 +2280,7 @@ Defining changes between schema versions.
   - suspended: "Suspended"
   - inactive: "Inactive account"
 - last_login: timestamp?
-- full_name: string @computed("first_name + ' ' + last_name")
+- full_name: string @computed("concat(first_name, ' ', last_name)")
 
 - @index(email, username, name: "login_info")
 
@@ -2410,7 +2410,7 @@ Defining changes between schema versions.
 - total_amount: decimal(12,2) @rollup(OrderItem.order_id, sum(subtotal))
 
 ### Computed
-- days_since_order: integer @computed("DATEDIFF(DAY, ordered_at, GETDATE())")
+- days_since_order: integer @computed("date_diff('day', ordered_at, now())")
 
 - @relation(customer, -> Customer, from: customer_id) "Customer who placed this order"
 - @relation(items, <- OrderItem.order_id) "Items in this order"
@@ -3021,22 +3021,115 @@ Parsers must build an import graph and raise `M3L-E003` if a cycle is detected.
 
 If the same file is imported through multiple paths, it is loaded only once (de-duplication).
 
-### 10.7 Platform-Specific Expressions
+### 10.7 Expressions
 
-For cases where `@computed` expressions require platform-specific functions, use `@computed_raw` to explicitly mark platform dependency:
+> **Status: Partial** — the portable subset below defines what `@computed`, a rollup's `where:` and a view's `where`
+> mean. The parser stores each expression as text and does not yet check it against the subset; the checks
+> (`M3L-W011`, `M3L-E026`), a `@computed_raw` per platform and `where_raw` arrive with the validator
+> ([RFC-0005](../rfcs/RFC-0005-portable-expressions.md)).
+
+Three places in a model hold an expression:
+
+| Context | Example |
+|---|---|
+| `@computed("…")` (§4.4) | `@computed("quantity * unit_price")` |
+| a rollup's `where:` (§4.6) | `@rollup(Order.customer_id, count, where: "status = 'paid'")` |
+| a view's `### Source` `where` (§4.7) | `- where: "status <> 'cancelled'"` |
+
+An expression written in the **portable subset** means the same thing on every platform, and every implementation
+translates it into its own syntax. One that uses anything else is **platform-specific** and says so (§10.7.5).
+Default values (`= now()`, §2.5.5) are single calls to the functions listed in §10.7.4.
+
+#### 10.7.1 Lexical Elements
+
+- **Field references** — a field name as declared (`unit_price`). In a view, a field of one of the view's relations is
+  written `Relation.field` (`Order.status`). A rollup's `where:` refers to the rolled-up model's fields; `$parent.field`
+  refers to the row the rollup is computed for.
+- **Literals** — numbers (`42`, `3.5`, `-1`); strings in single quotes, with a quote doubled to escape it (`'it''s'`);
+  `true`, `false`, `null`.
+- **Identifiers are not bracketed or quoted.** `[Name]`, `"Name"` and `` `Name` `` are platform syntax.
+- Keywords and function names are matched without regard to case. This specification writes keywords in upper case
+  and functions in lower case.
+
+#### 10.7.2 Operators and Forms
+
+| Kind | Portable form |
+|---|---|
+| Arithmetic | `+ - * / %` — **numbers only** |
+| Comparison | `= <> != < <= > >=` |
+| Logic | `AND OR NOT` |
+| Null tests | `IS NULL`, `IS NOT NULL` |
+| Membership / range | `IN ( … )`, `NOT IN ( … )`, `BETWEEN … AND …` |
+| Pattern | `LIKE`, with `%` and `_` (case sensitivity follows the platform's collation) |
+| Conditional | `CASE WHEN … THEN … [ELSE …] END` |
+| Grouping | `( … )` |
+
+String concatenation is the function `concat(…)`, not an operator: `+` joins strings on one platform and fails on
+another, and `||` the reverse.
+
+#### 10.7.3 Examples
 
 ```markdown
-# Platform-neutral (recommended)
-- full_name: string @computed("first_name + ' ' + last_name")
+- full_name: string @computed("concat(first_name, ' ', last_name)")
+- display_name: string @computed("coalesce(nickname, concat(first_name, ' ', last_name))")
+- is_recent: boolean @computed("created_at > date_add(now(), -30, 'day')")
+- tier: string @computed("CASE WHEN total_spent > 10000 THEN 'Gold' WHEN total_spent > 5000 THEN 'Silver' ELSE 'Bronze' END")
+- active_orders: integer @rollup(Order.customer_id, count, where: "status IN ('pending', 'paid')")
+```
 
-# Platform-specific (escape hatch)
+```markdown
+### Source
+- from: Product
+- where: "is_active = true AND stock_quantity > 0"
+```
+
+#### 10.7.4 Functions
+
+A closed list. Arguments are expressions.
+
+| Function | Meaning |
+|---|---|
+| `coalesce(a, b, …)` | the first argument that is not null |
+| `nullif(a, b)` | null when `a = b`, otherwise `a` |
+| `concat(a, b, …)` | the arguments as text, joined; a null argument contributes nothing |
+| `lower(s)` · `upper(s)` · `trim(s)` | case and surrounding whitespace |
+| `length(s)` | number of characters |
+| `substring(s, start, count)` | `count` characters from `start` (1-based) |
+| `replace(s, from, to)` | `s` with every occurrence of `from` replaced by `to` |
+| `abs(x)` · `round(x, digits)` · `floor(x)` · `ceiling(x)` | numeric |
+| `today()` | the current date |
+| `now()` | the current date and time, with offset |
+| `date_add(d, amount, unit)` | `d` moved by `amount` units; `unit` is one of `'year'`, `'month'`, `'day'`, `'hour'`, `'minute'`, `'second'` |
+| `date_diff(unit, start, end)` | the number of `unit` boundaries crossed from `start` to `end` |
+| `year(d)` · `month(d)` · `day(d)` | date parts |
+| `generate_uuid()` | a new unique identifier (default values) |
+
+Aggregates (`count`, `sum`, …) are not expression functions: an aggregate over related rows is a `@rollup` (§4.6).
+
+#### 10.7.5 Platform-Specific Expressions
+
+An expression that uses anything outside §10.7.1–10.7.4 is platform-specific. That is allowed — it is how a model
+reaches a platform feature the subset does not cover — and it is declared, so that a reader and an implementation both
+know the expression will not travel:
+
+```markdown
 - json_val: string @computed_raw("metadata->>'category'", platform: "postgresql")
 - year_created: integer @computed_raw("YEAR(created_at)", platform: "sqlserver")
 ```
 
-`@computed_raw` expressions are not guaranteed to be portable across platforms. The `platform` parameter is informational metadata for code generators.
+`platform` names: `sqlserver`, `postgresql`, `mysql`, `sqlite`. Other names are recorded, not checked.
 
-> **Note**: `@computed` expressions are treated as opaque strings by the parser. M3L does not define an expression language — the expression content is passed through to the implementation layer. `@computed_raw` provides an explicit signal that the expression is platform-specific.
+With the validator (RFC-0005), `@computed_raw` may appear once per platform on a field — an implementation uses the one
+for its platform and reports a field with none for it — and the same declaration reaches the other two contexts: a
+view's `### Source` takes `- where_raw: "…"` with `platform:` in place of `where`, and a rollup takes `where_raw:` with
+`platform:` in place of `where:`.
+
+#### 10.7.6 What Implementations Do
+
+An implementation that emits a portable expression translates it into its platform's syntax — `true` becomes `1` on
+SQL Server, `concat(a, b)` becomes `CONCAT(a, b)`, `date_add(d, -30, 'day')` becomes `DATEADD(DAY, -30, d)` there and
+`d + INTERVAL '-30 day'` on PostgreSQL. The mapping is the implementation's; the meaning is the language's. An
+implementation that cannot translate an expression reports it rather than emitting it unchanged.
 
 ### 10.8 Standard Attribute Catalog
 

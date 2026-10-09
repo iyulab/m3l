@@ -1,6 +1,6 @@
 # M3L RFC-0005: Portable Expressions
 
-> **RFC Status**: Proposed
+> **RFC Status**: Accepted — specification text in 0.20.0 (§10.7); validator pending (§6 step 2)
 > **Author**: UJ (iyulab)
 > **Date**: 2026-10-04
 > **M3L Version Target**: 0.20.0
@@ -56,6 +56,8 @@ they use are listed in §3.4 so the two stay consistent.
 - **Literals**: numbers (`42`, `3.5`, `-1`); strings in single quotes, a quote doubled to escape it
   (`'it''s'`); `true`, `false`, `null`.
 - Identifiers are not bracketed or quoted. `[Name]`, `"Name"` and `` `Name` `` are platform syntax.
+- Keywords and function names are matched without regard to case (SQL's own rule); the
+  specification writes keywords in upper case and functions in lower case.
 
 ### 3.3 Operators and forms
 | Kind | Portable form |
@@ -83,6 +85,7 @@ A closed list, written in lower case. Arguments are expressions.
 | `lower(s)` · `upper(s)` · `trim(s)` | case and surrounding whitespace |
 | `length(s)` | number of characters |
 | `substring(s, start, count)` | `count` characters from `start` (1-based) |
+| `replace(s, from, to)` | `s` with every occurrence of `from` replaced by `to` |
 | `abs(x)` · `round(x, digits)` · `floor(x)` · `ceiling(x)` | numeric |
 | `today()` | the current date |
 | `now()` | the current date and time, with offset |
@@ -142,7 +145,12 @@ in the same change.
    repeatable `@computed_raw`, `where_raw` (`M3L-E026`).
 3. Consumers: translators per platform (out of this repository).
 
-## 7. Alternatives considered
+## 7. Open questions
+- **A grouped view's aggregate over its own rows.** A view with `group_by` may want
+  `count(distinct customer_id)` over the group — not a `@rollup` (no related model) and not in the
+  subset, which has no aggregates. Until the language states it, such an expression is platform SQL.
+
+## 8. Alternatives considered
 - **Leave expressions undefined (status quo).** Every consumer keeps guessing a dialect, and
   multi-platform output stays impossible for any model that computes or filters.
 - **Platform SQL only, declared per platform everywhere.** Correct, but turns the common case —

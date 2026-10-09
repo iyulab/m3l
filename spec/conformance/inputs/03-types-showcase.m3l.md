@@ -227,7 +227,7 @@
 - birth_date: date
 
 ### Computed
-- full_name: string @computed("first_name + ' ' + last_name")
+- full_name: string @computed("concat(first_name, ' ', last_name)")
 - tax_amount: decimal(10,2) @computed(`price * tax_rate`)
 - total_price: decimal(10,2) @computed("price + tax_amount") @persisted
 - age: integer @computed_raw("DATEDIFF(year, birth_date, GETDATE())", platform: "sqlserver")

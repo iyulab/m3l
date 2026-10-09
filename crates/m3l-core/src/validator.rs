@@ -167,6 +167,12 @@ pub fn validate(ast: &M3lAst, options: &ValidateOptions) -> ValidateResult {
         validate_portable_expressions(model, &model_map, &mut reported_expressions, &mut warnings);
     }
 
+    // M3L-E026: A platform declared twice for one expression (§10.7.5). Interfaces first, reported once.
+    let mut reported_platforms: HashSet<(String, usize)> = HashSet::new();
+    for model in ast.interfaces.iter().chain(all_models.iter().copied()) {
+        validate_platform_expressions(model, &mut reported_platforms, &mut errors);
+    }
+
     // M3L-W003: Deprecated syntax warning
     for model in &all_models {
         check_deprecated_syntax(&model.fields, &mut warnings);
@@ -909,6 +915,45 @@ fn check_nesting_depth(
     }
 }
 
+/// M3L-E026 — a field declares `@computed_raw` twice for the same platform. One platform expression per
+/// platform is what lets an implementation pick its own without guessing; two leave the choice open.
+fn validate_platform_expressions(
+    model: &ModelNode,
+    reported: &mut HashSet<(String, usize)>,
+    errors: &mut Vec<Diagnostic>,
+) {
+    for field in &model.fields {
+        let Some(computed) = &field.computed else {
+            continue;
+        };
+        let mut seen: Vec<Option<&str>> = Vec::new();
+        for raw in &computed.raw {
+            let platform = raw.platform.as_deref();
+            if !seen.contains(&platform) {
+                seen.push(platform);
+                continue;
+            }
+            if !reported.insert((field.loc.file.clone(), field.loc.line)) {
+                break;
+            }
+            errors.push(Diagnostic {
+                code: "M3L-E026".into(),
+                severity: DiagnosticSeverity::Error,
+                file: field.loc.file.clone(),
+                line: field.loc.line,
+                col: 1,
+                message: format!(
+                    "\"{}.{}\" declares @computed_raw twice for platform {} — one expression per platform",
+                    model.name,
+                    field.name,
+                    platform.map_or("(none)".to_string(), |p| format!("\"{p}\""))
+                ),
+            });
+            break;
+        }
+    }
+}
+
 /// Field types whose values are text — `+` next to one of them is concatenation, not arithmetic.
 fn is_text_field(field: &FieldNode) -> bool {
     matches!(
@@ -961,17 +1006,17 @@ fn validate_portable_expressions(
     }
 
     for field in &model.fields {
-        let is_raw = field.attributes.iter().any(|a| a.name == "computed_raw");
-        if let (Some(computed), false) = (&field.computed, is_raw) {
-            let constructs =
-                crate::expressions::non_portable_constructs(&computed.expression, &|name| {
-                    text_in(Some(model), name)
-                });
+        // Only the portable expression is held to the subset — `@computed_raw` is platform-specific by
+        // declaration.
+        if let Some(expression) = field.computed.as_ref().and_then(|c| c.expression.as_ref()) {
+            let constructs = crate::expressions::non_portable_constructs(expression, &|name| {
+                text_in(Some(model), name)
+            });
             warn(
                 &field.loc.file,
                 field.loc.line,
                 &format!("\"{}.{}\" @computed", model.name, field.name),
-                &computed.expression,
+                expression,
                 constructs,
             );
         }

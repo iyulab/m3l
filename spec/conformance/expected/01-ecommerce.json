@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.14.0",
+  "parserVersion": "0.19.0",
   "astVersion": "1.0",
   "project": {
     "name": "sample.ecommerce"
@@ -1109,8 +1109,12 @@
             }
           ],
           "computed": {
-            "expression": "FORMAT(price, '$#,##0.00')",
-            "platform": "sqlserver"
+            "raw": [
+              {
+                "platform": "sqlserver",
+                "expression": "FORMAT(price, '$#,##0.00')"
+              }
+            ]
           },
           "loc": {
             "file": "spec/conformance/inputs/01-ecommerce.m3l.md",

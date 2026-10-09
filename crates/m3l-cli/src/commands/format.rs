@@ -521,15 +521,25 @@ fn format_field(lines: &mut Vec<String>, field: &m3l_core::FieldNode, indent: us
     // A multi-line `@computed` expression is written as a fenced block under the field, the one
     // place the parser takes an argument-less `@computed`'s expression from. It must come before
     // the description: the block attaches only to the line directly above it.
+    // The block belongs to the attribute that has no expression argument: `@computed` alone, or
+    // `@computed_raw` with only `platform:`.
     if let Some(ref computed) = field.computed {
-        let from_block = field
-            .attributes
-            .iter()
-            .any(|a| (a.name == "computed" || a.name == "computed_raw") && a.args.is_none());
-        if from_block {
+        let block = field.attributes.iter().find_map(|a| match a.name.as_str() {
+            "computed" if a.args.is_none() => computed.expression.as_deref(),
+            "computed_raw" => match platform_only(a) {
+                Some(platform) => computed
+                    .raw
+                    .iter()
+                    .find(|r| r.platform.as_deref() == platform)
+                    .map(|r| r.expression.as_str()),
+                None => None,
+            },
+            _ => None,
+        });
+        if let Some(block) = block {
             let indent = format!("{prefix}  ");
             lines.push(format!("{indent}```"));
-            lines.extend(computed.expression.lines().map(|l| format!("{indent}{l}")));
+            lines.extend(block.lines().map(|l| format!("{indent}{l}")));
             lines.push(format!("{indent}```"));
         }
     }
@@ -1242,4 +1252,21 @@ mod lossless {
         }
         assert!(failures.is_empty(), "{}", failures.join("\n"));
     }
+}
+
+/// For a `@computed_raw` that carries no expression argument — none at all, or only `platform:` — the
+/// platform it names (`Some(None)` when it names none). `None` when the attribute has an expression.
+fn platform_only(attr: &m3l_core::FieldAttribute) -> Option<Option<&str>> {
+    let first = match attr.args.as_deref() {
+        None | Some([]) => return Some(None),
+        Some([m3l_core::AttrArgValue::String(first), ..]) => first.trim_start(),
+        Some(_) => return None,
+    };
+    let rest = first
+        .strip_prefix("platform")?
+        .trim_start()
+        .strip_prefix(':')?
+        .trim();
+    Some(Some(rest.trim_matches(|c| c == '"' || c == '\'')))
+        .filter(|p| p.is_some_and(|p| !p.is_empty()))
 }

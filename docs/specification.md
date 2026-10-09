@@ -2970,6 +2970,7 @@ Conforming parsers should use these error codes for consistent diagnostics.
 | `M3L-E023` | `{model}` declares more than one rowversion field ({fields}) | A model has more than one `rowversion` field (§10.4.1), counting fields it inherits. Reported at the second one |
 | `M3L-E024` | rowversion field `{field}` in `{model}` cannot {contradiction} | A `rowversion` field (§10.4.1) is nullable, an array, or given a default, or carries `@pk`, `@primary`, `@unique`, `@reference` or `@fk` — each gives someone other than the engine a say in a value the engine sets on every write |
 | `M3L-E025` | View `{view}` field `{field}`: `@from({target})` — {problem} | An `@from(Relation.field)` in a view names a relation that is not the view's `from` or a `join`, or a field that relation does not have (§4.7.1). A relation that is itself undefined is reported once, as `M3L-E004`; a view whose source is a SQL code block (§4.7.8) is not checked |
+| `M3L-E026` | `"{model}.{field}"` declares @computed_raw twice for platform `{platform}` — one expression per platform | A field carries two `@computed_raw` for the same platform (§10.7.5). One expression per platform is what lets an implementation pick its own without guessing |
 
 #### 10.5.2 Warnings
 
@@ -3026,8 +3027,8 @@ If the same file is imported through multiple paths, it is loaded only once (de-
 
 > **Status: Partial** — the portable subset below defines what `@computed`, a rollup's `where:` and a view's `where`
 > mean. The parser stores each expression as text; the validator reports an expression outside the subset as
-> `M3L-W011`. A `@computed_raw` per platform and `where_raw` (`M3L-E026`) are still to come
-> ([RFC-0005](../rfcs/RFC-0005-portable-expressions.md)).
+> `M3L-W011`, and a field carries one `@computed_raw` per platform (`M3L-E026`). `where_raw` for a view's and a rollup's
+> filter is still to come ([RFC-0005](../rfcs/RFC-0005-portable-expressions.md)).
 
 Three places in a model hold an expression:
 
@@ -3120,10 +3121,24 @@ know the expression will not travel:
 
 `platform` names: `sqlserver`, `postgresql`, `mysql`, `sqlite`. Other names are recorded, not checked.
 
-With the validator (RFC-0005), `@computed_raw` may appear once per platform on a field — an implementation uses the one
-for its platform and reports a field with none for it — and the same declaration reaches the other two contexts: a
-view's `### Source` takes `- where_raw: "…"` with `platform:` in place of `where`, and a rollup takes `where_raw:` with
-`platform:` in place of `where:`.
+`@computed_raw` appears **once per platform** on a field, and may sit beside a portable `@computed` — an implementation
+uses the expression for its platform when there is one, the portable expression otherwise, and reports a field with
+neither. A second `@computed_raw` for the same platform is `M3L-E026`. The expression may also come from the fenced
+block under the field, with the attribute carrying only `platform:`:
+
+````markdown
+- full_name: string @computed("concat(first_name, ' ', last_name)") @computed_raw("first_name || ' ' || last_name", platform: "postgresql")
+- tier: string @computed_raw(platform: "sqlserver")
+  ```
+  IIF(total > 1000, 'Gold', 'Bronze')
+  ```
+````
+
+In the AST, `computed.expression` is the portable expression and `computed.raw` the platform expressions
+(`[{ "platform": "…", "expression": "…" }]`); either may be absent, not both.
+
+The same declaration is to reach the other two contexts (RFC-0005): a view's `### Source` taking `- where_raw: "…"` with
+`platform:` in place of `where`, and a rollup taking `where_raw:` with `platform:` in place of `where:`.
 
 #### 10.7.6 What Implementations Do
 

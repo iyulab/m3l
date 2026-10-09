@@ -49,7 +49,7 @@ fn a_computed_expression_ending_in_a_string_literal_keeps_its_closing_quote() {
         .computed
         .as_ref()
         .expect("label is a computed field");
-    assert_eq!(computed.expression, "name || '-'");
+    assert_eq!(computed.expression.as_deref(), Some("name || '-'"));
 }
 
 /// Same for the raw variant, whose expression is the one the generator emits
@@ -71,8 +71,9 @@ fn a_raw_computed_expression_ending_in_a_string_literal_keeps_its_closing_quote(
         .computed
         .as_ref()
         .expect("json_val is a computed field");
-    assert_eq!(computed.expression, "metadata->>'category'");
-    assert_eq!(computed.platform.as_deref(), Some("postgresql"));
+    assert_eq!(computed.raw.len(), 1);
+    assert_eq!(computed.raw[0].expression, "metadata->>'category'");
+    assert_eq!(computed.raw[0].platform.as_deref(), Some("postgresql"));
 }
 
 /// A metadata string carries whatever the document quoted, inner quotes and all.

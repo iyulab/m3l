@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.14.0",
+  "parserVersion": "0.19.0",
   "astVersion": "1.0",
   "project": {},
   "sources": [
@@ -97,8 +97,12 @@
             }
           ],
           "computed": {
-            "expression": "metadata->>'category'",
-            "platform": "postgresql"
+            "raw": [
+              {
+                "platform": "postgresql",
+                "expression": "metadata->>'category'"
+              }
+            ]
           },
           "loc": {
             "file": "spec/conformance/inputs/backtick-expression.m3l.md",

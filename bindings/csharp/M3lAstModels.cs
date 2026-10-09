@@ -208,15 +208,28 @@ public class RollupDef
 }
 
 /// <summary>
-/// Computed field definition.
+/// Computed field definition: the portable expression <c>@computed</c> declares, and one
+/// platform-specific expression per platform from <c>@computed_raw</c>. Either may be absent, not both.
 /// </summary>
 public class ComputedDef
 {
     [JsonPropertyName("expression")]
-    public string Expression { get; set; } = "";
+    public string? Expression { get; set; }
 
+    [JsonPropertyName("raw")]
+    public List<PlatformExpression> Raw { get; set; } = [];
+}
+
+/// <summary>
+/// An expression declared for one platform (<c>@computed_raw(…, platform: …)</c>).
+/// </summary>
+public class PlatformExpression
+{
     [JsonPropertyName("platform")]
     public string? Platform { get; set; }
+
+    [JsonPropertyName("expression")]
+    public string Expression { get; set; } = "";
 }
 
 /// <summary>

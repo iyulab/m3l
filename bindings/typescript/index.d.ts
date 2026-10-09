@@ -108,9 +108,16 @@ export interface RollupDef {
   where?: string;
 }
 
+/** The portable expression `@computed` declares, and one expression per platform from `@computed_raw`. */
 export interface ComputedDef {
-  expression: string;
+  expression?: string;
+  raw?: PlatformExpression[];
+}
+
+/** An expression declared for one platform (`@computed_raw(…, platform: …)`). */
+export interface PlatformExpression {
   platform?: string;
+  expression: string;
 }
 
 // --- Field node ---

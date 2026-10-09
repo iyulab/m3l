@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.14.0",
+  "parserVersion": "0.19.0",
   "astVersion": "1.0",
   "project": {
     "name": "sample.types"
@@ -2403,8 +2403,12 @@
             }
           ],
           "computed": {
-            "expression": "DATEDIFF(year, birth_date, GETDATE())",
-            "platform": "sqlserver"
+            "raw": [
+              {
+                "platform": "sqlserver",
+                "expression": "DATEDIFF(year, birth_date, GETDATE())"
+              }
+            ]
           },
           "loc": {
             "file": "spec/conformance/inputs/03-types-showcase.m3l.md",
@@ -2434,8 +2438,12 @@
             }
           ],
           "computed": {
-            "expression": "EXTRACT(YEAR FROM AGE(birth_date))",
-            "platform": "postgresql"
+            "raw": [
+              {
+                "platform": "postgresql",
+                "expression": "EXTRACT(YEAR FROM AGE(birth_date))"
+              }
+            ]
           },
           "loc": {
             "file": "spec/conformance/inputs/03-types-showcase.m3l.md",

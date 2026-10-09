@@ -5,7 +5,8 @@
 //! `parserVersion` is the one field left out of the comparison: it changes with every release and
 //! says nothing about what a document means.
 //!
-//! After an intended change to the AST, regenerate the expected files and review the diff:
+//! After an intended change to the AST, regenerate the expected files and review the diff (only the
+//! files whose AST differs are rewritten):
 //!
 //! ```text
 //! M3L_BLESS=1 cargo test -p m3l-cli --test conformance_expected
@@ -123,20 +124,27 @@ fn every_input_produces_its_expected_ast() {
         let expected_path = suite_dir().join(t["expected"].as_str().unwrap());
 
         let (text, actual) = parse(&format!("spec/conformance/{input}"));
+        let expected: Option<Value> = std::fs::read_to_string(&expected_path)
+            .ok()
+            .and_then(|t| serde_json::from_str(&t).ok());
+        let mut out = Vec::new();
+        match expected {
+            Some(expected) => diff(
+                "",
+                &without_version(actual),
+                &without_version(expected),
+                &mut out,
+            ),
+            None => out.push("no readable expected file".to_string()),
+        }
+        // Bless rewrites only what differs: an unchanged AST keeps its file, `parserVersion` included,
+        // so a regeneration's diff is the change and nothing else.
         if bless {
-            std::fs::write(&expected_path, text).unwrap();
+            if !out.is_empty() {
+                std::fs::write(&expected_path, text).unwrap();
+            }
             continue;
         }
-
-        let expected: Value =
-            serde_json::from_str(&std::fs::read_to_string(&expected_path).unwrap()).unwrap();
-        let mut out = Vec::new();
-        diff(
-            "",
-            &without_version(actual),
-            &without_version(expected),
-            &mut out,
-        );
         if !out.is_empty() {
             failures.push(format!("{name}:\n  {}", out.join("\n  ")));
         }

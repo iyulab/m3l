@@ -121,3 +121,93 @@ fn a_computed_field_an_interface_declares_is_reported_once() {
     );
     assert_eq!(found.len(), 1, "{found:?}");
 }
+
+// ---- platform expressions: one per platform, alongside or instead of the portable one (§10.7.5) ----
+
+fn computed_of(input: &str, model: &str, field: &str) -> m3l_core::ComputedDef {
+    let parsed = parse_string(input, "platform_expressions.m3l.md");
+    let ast = m3l_core::resolve(&[parsed], None);
+    ast.models
+        .iter()
+        .find(|m| m.name == model)
+        .and_then(|m| m.fields.iter().find(|f| f.name == field))
+        .and_then(|f| f.computed.clone())
+        .expect("computed field")
+}
+
+fn errors_of(input: &str) -> Vec<Diagnostic> {
+    let parsed = parse_string(input, "platform_expressions.m3l.md");
+    let ast = m3l_core::resolve(&[parsed], None);
+    validate(&ast, &ValidateOptions::default()).errors
+}
+
+#[test]
+fn a_field_carries_one_raw_expression_per_platform() {
+    let c = computed_of(
+        "## T\n- id: identifier @pk\n- created_at: timestamp\n\
+         - y: integer @computed_raw(\"YEAR(created_at)\", platform: \"sqlserver\") @computed_raw(\"EXTRACT(YEAR FROM created_at)::int\", platform: \"postgresql\")",
+        "T",
+        "y",
+    );
+    assert_eq!(c.expression, None);
+    let platforms: Vec<_> = c
+        .raw
+        .iter()
+        .map(|r| (r.platform.as_deref(), r.expression.as_str()))
+        .collect();
+    assert_eq!(
+        platforms,
+        [
+            (Some("sqlserver"), "YEAR(created_at)"),
+            (Some("postgresql"), "EXTRACT(YEAR FROM created_at)::int")
+        ]
+    );
+}
+
+#[test]
+fn a_portable_expression_and_a_platform_override_live_side_by_side() {
+    let c = computed_of(
+        "## T\n- id: identifier @pk\n- a: string(10)\n- b: string(10)\n\
+         - ab: string @computed(\"concat(a, b)\") @computed_raw(\"a || b\", platform: \"postgresql\")",
+        "T",
+        "ab",
+    );
+    assert_eq!(c.expression.as_deref(), Some("concat(a, b)"));
+    assert_eq!(c.raw.len(), 1);
+    assert_eq!(c.raw[0].platform.as_deref(), Some("postgresql"));
+}
+
+#[test]
+fn a_raw_expression_can_come_from_the_block_under_the_field() {
+    let c = computed_of(
+        "## T\n- id: identifier @pk\n- n: integer\n- tier: string @computed_raw(platform: \"sqlserver\")\n  ```\n  IIF(n > 5, 'big', 'small')\n  ```",
+        "T",
+        "tier",
+    );
+    assert_eq!(c.raw.len(), 1, "{c:?}");
+    assert_eq!(c.raw[0].platform.as_deref(), Some("sqlserver"));
+    assert_eq!(c.raw[0].expression.trim(), "IIF(n > 5, 'big', 'small')");
+}
+
+#[test]
+fn the_same_platform_twice_is_e026() {
+    let found = errors_of(
+        "## T\n- id: identifier @pk\n- created_at: timestamp\n\
+         - y: integer @computed_raw(\"YEAR(created_at)\", platform: \"sqlserver\") @computed_raw(\"DATEPART(year, created_at)\", platform: \"sqlserver\")",
+    );
+    let e = found.iter().find(|e| e.code == "M3L-E026").expect("E026");
+    assert!(
+        e.message.contains("\"T.y\"") && e.message.contains("\"sqlserver\""),
+        "{}",
+        e.message
+    );
+}
+
+#[test]
+fn different_platforms_are_not_e026() {
+    let found = errors_of(
+        "## T\n- id: identifier @pk\n- created_at: timestamp\n\
+         - y: integer @computed_raw(\"YEAR(created_at)\", platform: \"sqlserver\") @computed_raw(\"EXTRACT(YEAR FROM created_at)\", platform: \"postgresql\")",
+    );
+    assert!(!found.iter().any(|e| e.code == "M3L-E026"), "{found:?}");
+}

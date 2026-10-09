@@ -17,10 +17,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Examples throughout the specification that used SQL Server syntax in a neutral context (`DATEDIFF`, `GETDATE`,
   `ISNULL`, bracketed identifiers, `+` between strings, `= 1` for a boolean) are rewritten in the subset; the samples and
   the conformance input that did the same follow.
-- Expressions are still stored as text. A `@computed_raw` per platform and `where_raw` (`M3L-E026`) are still to come.
+- Expressions are still stored as text. `where_raw` for a view's and a rollup's filter is still to come.
+
+### Changed — AST
+
+- 🔴 **`computed` holds the portable expression and the platform expressions apart.** `computed.expression` is the
+  `@computed` expression, now optional; `computed.platform` is gone, and each `@computed_raw` becomes an entry of
+  `computed.raw` (`[{ "platform", "expression" }]`). A field may carry one `@computed_raw` per platform beside a portable
+  `@computed`: before, a second `@computed_raw` was dropped and a `@computed_raw` replaced the `@computed`. A field with
+  only `@computed` serialises exactly as before. Bindings: C# `ComputedDef.Expression` is `string?` and `Raw` is a
+  `List<PlatformExpression>`; TypeScript `ComputedDef.expression?` and `raw?: PlatformExpression[]`.
+- `@computed_raw(platform: "…")` with the expression in the fenced block under the field is read as a platform expression;
+  before, the `platform:` text was taken for the expression.
 
 ### Added
 
+- **`M3L-E026`** (error) — a field declares `@computed_raw` twice for the same platform.
 - **`M3L-W011`** (warning) — an expression in a portable context (`@computed`, a rollup's `where:`, a view's `where`) uses
   something outside the subset, and the warning names it: a function not in the list, a bracketed or quoted identifier,
   `||`, a `::` cast, a JSON operator, or `+` next to text (a string literal or a text field). A warning, not an error —

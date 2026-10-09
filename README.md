@@ -19,7 +19,7 @@ Markdown-based data modeling language. Write data models in readable Markdown, p
 - department_name: string @lookup(department_id.name)
 
 # Computed
-- display_name: string @computed(`name + ' <' + email + '>'`)
+- display_name: string @computed(`concat(name, ' <', email, '>')`)
 ```
 
 ## Design Principles

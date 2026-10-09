@@ -1388,7 +1388,8 @@ fn build_field_node(
     let lookup_attr = attrs.iter().find(|a| a.name == "lookup");
     let rollup_attr = attrs.iter().find(|a| a.name == "rollup");
     let computed_attr = attrs.iter().find(|a| a.name == "computed");
-    let computed_raw_attr = attrs.iter().find(|a| a.name == "computed_raw");
+    let computed_raw_attrs: Vec<_> = attrs.iter().filter(|a| a.name == "computed_raw").collect();
+    let computed_raw_attr = computed_raw_attrs.first().copied();
 
     if lookup_attr.is_some() {
         kind = FieldKind::Lookup;
@@ -1481,65 +1482,64 @@ fn build_field_node(
         }
     }
 
-    // Parse computed
-    if let Some(ca) = computed_attr {
-        if let Some(arg) = ca.args.as_ref().and_then(|a| a.first()) {
-            if let AttrArgValue::String(expr) = arg {
-                let cleaned = unwrap_delimiters(expr, &['"', '\'', '`']);
-                field.computed = Some(ComputedDef {
-                    expression: cleaned.to_string(),
-                    platform: None,
-                });
+    // Parse computed: the portable expression from `@computed`, and one platform expression per
+    // `@computed_raw` (§10.7.5). An argument-less attribute takes its expression from the fenced
+    // block under the field — `@computed` alone, or `@computed_raw(platform: …)`.
+    if computed_attr.is_some() || computed_raw_attr.is_some() {
+        let mut computed = ComputedDef {
+            expression: None,
+            raw: Vec::new(),
+        };
+        let block = data.code_block.as_ref().map(|cb| cb.content.clone());
+        let mut block_used = false;
+
+        if let Some(ca) = computed_attr {
+            match ca.args.as_ref().and_then(|a| a.first()) {
+                Some(AttrArgValue::String(expr)) => {
+                    computed.expression =
+                        Some(unwrap_delimiters(expr, &['"', '\'', '`']).to_string());
+                }
+                _ if block.is_some() => {
+                    computed.expression = block.clone();
+                    block_used = true;
+                }
+                _ => {}
             }
         }
-    }
 
-    // Parse computed_raw — args may be split by the lexer
-    if let Some(cra) = computed_raw_attr {
-        if let Some(args) = cra.args.as_ref() {
-            if let Some(AttrArgValue::String(expr_raw)) = args.first() {
-                let parts = split_computed_raw_args(expr_raw);
-                let cleaned = unwrap_delimiters(&parts.0, &['"', '\'', '`']);
-                let mut platform = parts.1;
-                // If platform not found in the first arg, check remaining args
-                if platform.is_none() {
-                    for arg in args.iter().skip(1) {
-                        if let AttrArgValue::String(s) = arg {
-                            if let Some(caps) = RE_PLATFORM.captures(s) {
-                                platform = Some(caps[1].to_string());
-                                break;
-                            }
-                        }
-                    }
+        for cra in &computed_raw_attrs {
+            let args = cra.args.as_deref().unwrap_or(&[]);
+            let mut platform = None;
+            let mut expression = None;
+            if let Some(AttrArgValue::String(first)) = args.first() {
+                if first.trim_start().starts_with("platform") && RE_PLATFORM.is_match(first) {
+                    platform = RE_PLATFORM.captures(first).map(|c| c[1].to_string());
+                } else {
+                    let (expr, inline_platform) = split_computed_raw_args(first);
+                    expression = Some(unwrap_delimiters(&expr, &['"', '\'', '`']).to_string());
+                    platform = inline_platform;
                 }
-                field.computed = Some(ComputedDef {
-                    expression: cleaned.to_string(),
+            }
+            if platform.is_none() {
+                platform = args.iter().skip(1).find_map(|arg| match arg {
+                    AttrArgValue::String(s) => RE_PLATFORM.captures(s).map(|c| c[1].to_string()),
+                    _ => None,
+                });
+            }
+            if expression.is_none() && !block_used {
+                expression = block.clone();
+                block_used = expression.is_some();
+            }
+            if let Some(expression) = expression {
+                computed.raw.push(PlatformExpression {
                     platform,
+                    expression,
                 });
             }
         }
-    }
 
-    // Code block computed
-    if field.computed.is_none() {
-        if let Some(ref cb) = data.code_block {
-            if computed_attr.is_some() || computed_raw_attr.is_some() {
-                let mut computed = ComputedDef {
-                    expression: cb.content.clone(),
-                    platform: None,
-                };
-                // Check for platform in attr args
-                if let Some(cra) = computed_raw_attr {
-                    if let Some(arg) = cra.args.as_ref().and_then(|a| a.first()) {
-                        if let AttrArgValue::String(s) = arg {
-                            if let Some(caps) = RE_PLATFORM.captures(s) {
-                                computed.platform = Some(caps[1].to_string());
-                            }
-                        }
-                    }
-                }
-                field.computed = Some(computed);
-            }
+        if computed.expression.is_some() || !computed.raw.is_empty() {
+            field.computed = Some(computed);
         }
     }
 
@@ -2486,7 +2486,10 @@ mod tests {
         let field = &result.models[0].fields[0];
         assert_eq!(field.kind, FieldKind::Computed);
         assert!(field.computed.is_some());
-        assert_eq!(field.computed.as_ref().unwrap().expression, "price * qty");
+        assert_eq!(
+            field.computed.as_ref().unwrap().expression.as_deref(),
+            Some("price * qty")
+        );
     }
 
     #[test]

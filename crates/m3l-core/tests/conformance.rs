@@ -361,7 +361,10 @@ fn conformance_computed_field() {
         .unwrap();
     assert_eq!(tv.kind, m3l_core::FieldKind::Computed);
     assert!(tv.computed.is_some());
-    assert_eq!(tv.computed.as_ref().unwrap().expression, "price * quantity");
+    assert_eq!(
+        tv.computed.as_ref().unwrap().expression.as_deref(),
+        Some("price * quantity")
+    );
 }
 
 #[test]
@@ -402,8 +405,8 @@ fn conformance_backtick_expression() {
     assert_eq!(profit.kind, m3l_core::FieldKind::Computed);
     assert!(profit.computed.is_some());
     assert_eq!(
-        profit.computed.as_ref().unwrap().expression,
-        "(price - cost) / price * 100"
+        profit.computed.as_ref().unwrap().expression.as_deref(),
+        Some("(price - cost) / price * 100")
     );
 
     // created_at - expression default
@@ -551,6 +554,8 @@ fn conformance_all_field_kinds() {
         .as_ref()
         .unwrap()
         .expression
+        .as_deref()
+        .unwrap()
         .contains("status"));
 }
 
@@ -887,6 +892,8 @@ fn sample_01_ecommerce_product_detail() {
         .as_ref()
         .unwrap()
         .expression
+        .as_deref()
+        .unwrap()
         .contains("price - cost"));
 
     // Indexes section
@@ -1176,6 +1183,8 @@ fn sample_03_computed_variants() {
         .as_ref()
         .unwrap()
         .expression
+        .as_deref()
+        .unwrap()
         .contains("first_name"));
 
     // Backtick computed
@@ -1190,13 +1199,15 @@ fn sample_03_computed_variants() {
         .as_ref()
         .unwrap()
         .expression
+        .as_deref()
+        .unwrap()
         .contains("price * tax_rate"));
 
     // computed_raw with platform
     let age = model.fields.iter().find(|f| f.name == "age").unwrap();
     assert_eq!(age.kind, m3l_core::FieldKind::Computed);
     assert_eq!(
-        age.computed.as_ref().unwrap().platform.as_deref(),
+        age.computed.as_ref().unwrap().raw[0].platform.as_deref(),
         Some("sqlserver")
     );
 }

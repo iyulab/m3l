@@ -228,11 +228,23 @@ pub struct RollupDef {
     pub where_clause: Option<String>,
 }
 
+/// A computed field's expressions (§4.4, §10.7): the portable one `@computed` declares, and one
+/// platform-specific expression per platform from `@computed_raw`. Either may be absent, not both — an
+/// implementation uses the raw expression for its platform when there is one, otherwise the portable one.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ComputedDef {
-    pub expression: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expression: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub raw: Vec<PlatformExpression>,
+}
+
+/// An expression declared for one platform (`@computed_raw(…, platform: …)`, §10.7.5).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PlatformExpression {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub platform: Option<String>,
+    pub expression: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

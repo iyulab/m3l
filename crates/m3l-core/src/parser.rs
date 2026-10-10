@@ -282,7 +282,7 @@ fn handle_view_start(token: &Token, state: &mut ParserState) {
         line: token.line,
         inherits: Vec::new(),
         description: None,
-        attributes: Vec::new(),
+        attributes: parse_raw_attributes(&token.data.attributes),
         materialized: Some(materialized),
         fields: Vec::new(),
         sections: Sections::default(),
@@ -2283,6 +2283,27 @@ mod tests {
         assert_eq!(result.views.len(), 1);
         assert_eq!(result.views[0].name, "SalesSummary");
         assert_eq!(result.views[0].materialized, Some(true));
+    }
+
+    /// A view header's attributes reach the AST like a model header's. They used to be
+    /// dropped — a generator asked to keep `@internal` models off a surface never saw it
+    /// on a view.
+    #[test]
+    fn parse_view_header_attributes() {
+        let input = "## SalesSummary ::view @materialized @internal\n- total: decimal\n\n## Plain ::view\n- total: decimal";
+        let result = parse_string(input, "test.m3l.md");
+        assert_eq!(result.views.len(), 2);
+
+        let attrs = &result.views[0].attributes;
+        assert_eq!(
+            attrs.len(),
+            1,
+            "@materialized is the flag, not an attribute"
+        );
+        assert_eq!(attrs[0].name, "internal");
+        assert_eq!(result.views[0].materialized, Some(true));
+
+        assert!(result.views[1].attributes.is_empty());
     }
 
     #[test]

@@ -193,6 +193,12 @@ fn format_view(lines: &mut Vec<String>, view: &m3l_core::ModelNode) {
     if view.materialized == Some(true) {
         header.push_str(" @materialized");
     }
+    for attr in &view.attributes {
+        header.push_str(&format!(" @{}", attr.name));
+        if let Some(args_str) = format_attr_args(attr) {
+            header.push_str(&args_str);
+        }
+    }
     lines.push(header);
     if let Some(ref desc) = view.description {
         push_description(lines, desc, "");
@@ -746,6 +752,18 @@ mod tests {
         let src = "# Namespace: ex.insp\n# Prefix: insp\n\n## ActiveAssets ::view\n### Source\n- from: Asset\n- name_label: string @from(Asset.name)\n";
         let out = format_source(src);
         assert!(out.contains("# Prefix: insp"), "{out}");
+        assert_eq!(format_source(&out), out, "formatting must be idempotent");
+    }
+
+    /// A view header's attributes survive formatting, after `@materialized` and once each.
+    #[test]
+    fn format_keeps_view_header_attributes() {
+        let src = "# Namespace: ex\n\n## Asset\n- id: identifier @pk\n\n## ActiveAssets ::view @internal @materialized\n### Source\n- from: Asset\n- asset_id: identifier @from(Asset.id)\n";
+        let out = format_source(src);
+        assert!(
+            out.contains("## ActiveAssets ::view @materialized @internal"),
+            "{out}"
+        );
         assert_eq!(format_source(&out), out, "formatting must be idempotent");
     }
 

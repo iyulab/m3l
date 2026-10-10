@@ -1839,6 +1839,10 @@ Components:
 - `### Source` — Data source definition section, following the same H3 section pattern as `### Indexes`, `### Relations`, and `### Metadata`
 - `@from(Model.field)` — Maps a field from the source model
 
+A view header takes attributes the way a model header does — `## ViewName ::view @internal` — and they reach the AST as
+the view's `attributes`. `@materialized` (§4.7.5) is the one the language reads itself; it is reported as the view's
+`materialized` flag and is not repeated among the attributes.
+
 > **Section separation principle**: View directives (`from`, `join`, `where`, etc.) are placed inside a `### Source` section, separate from field definitions. This follows the existing M3L pattern where model-level meta information is always separated into H3 sections.
 
 > **`@from` vs `@lookup`**: Both reference fields from other models but work in different contexts. `@lookup` is an inline navigation — it declares an FK path and the runtime auto-joins. `@from` is an explicit projection — it selects from models already joined in `### Source`. Principle: **Lookup navigates, From projects.**
@@ -2739,7 +2743,7 @@ ViewDef        ← '## ' Identifier ('(' Label ')')? _ '::view' ViewAttrs? NL
 ModelName      ← Identifier ('(' Label ')')?
 Inheritance    ← _ ':' _ Identifier (',' _ Identifier)*
 ModelAttrs     ← (_ '@' Identifier ('(' AttrParams ')')?)+
-ViewAttrs      ← (_ '@materialized')?
+ViewAttrs      ← (_ '@' Identifier ('(' AttrParams ')')?)*
 ```
 
 #### 10.3.3 Field Definition

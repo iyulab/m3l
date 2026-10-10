@@ -324,6 +324,28 @@ pub fn lex(content: &str, _file: &str) -> Vec<Token> {
     tokens
 }
 
+/// The attributes written on a header line (`@name` or `@name(args)`), in order.
+fn header_attributes(text: &str) -> Vec<RawAttribute> {
+    RE_MODEL_ATTR
+        .captures_iter(text)
+        .map(|caps| {
+            let args_str = caps.get(2).map(|m| m.as_str().to_string());
+            let (args, args_quoted) = match args_str {
+                Some(s) if !s.is_empty() => {
+                    parse_attr_args_string_with_origin(&s).into_iter().unzip()
+                }
+                _ => (Vec::new(), Vec::new()),
+            };
+            RawAttribute {
+                name: caps[1].to_string(),
+                args,
+                args_quoted,
+                cascade: None,
+            }
+        })
+        .collect()
+}
+
 #[allow(clippy::field_reassign_with_default)]
 fn tokenize_h2(content: &str, raw: &str, line: usize) -> Token {
     // Normalize backtick-wrapped attributes (`` `@ledger` `` → `@ledger`) so the
@@ -356,6 +378,13 @@ fn tokenize_h2(content: &str, raw: &str, line: usize) -> Token {
 
         if type_indicator == "view" {
             data.materialized = Some(rest.contains("@materialized"));
+            // A view header takes attributes like a model header does (`## V ::view @internal`).
+            // `@materialized` is the one the language reads itself and already surfaces as a flag,
+            // so it is not repeated among the attributes.
+            data.attributes = header_attributes(rest)
+                .into_iter()
+                .filter(|a| a.name != "materialized")
+                .collect();
         }
 
         // Extract description
@@ -404,24 +433,7 @@ fn tokenize_h2(content: &str, raw: &str, line: usize) -> Token {
 
         // Parse model-level attributes
         if let Some(attrs_s) = attrs_str {
-            let mut attrs = Vec::new();
-            for caps in RE_MODEL_ATTR.captures_iter(attrs_s) {
-                let attr_name = caps[1].to_string();
-                let args_str = caps.get(2).map(|m| m.as_str().to_string());
-                let (args, args_quoted) = match args_str {
-                    Some(s) if !s.is_empty() => {
-                        parse_attr_args_string_with_origin(&s).into_iter().unzip()
-                    }
-                    _ => (Vec::new(), Vec::new()),
-                };
-                attrs.push(RawAttribute {
-                    name: attr_name,
-                    args,
-                    args_quoted,
-                    cascade: None,
-                });
-            }
-            data.attributes = attrs;
+            data.attributes = header_attributes(attrs_s);
         }
 
         return Token {
@@ -1153,6 +1165,29 @@ mod tests {
         let tokens = lex("## SalesSummary ::view @materialized", "test.m3l.md");
         assert_eq!(tokens[0].token_type, TokenType::View);
         assert_eq!(tokens[0].data.materialized, Some(true));
+    }
+
+    #[test]
+    fn lex_view_header_attributes() {
+        // Attributes on a view header are kept, as on a model header. `@materialized` is the
+        // flag above and is not repeated among them.
+        let tokens = lex(
+            "## SalesSummary ::view @materialized @internal @owner(finance)",
+            "test.m3l.md",
+        );
+        assert_eq!(tokens[0].data.materialized, Some(true));
+        let names: Vec<&str> = tokens[0]
+            .data
+            .attributes
+            .iter()
+            .map(|a| a.name.as_str())
+            .collect();
+        assert_eq!(names, ["internal", "owner"]);
+        assert_eq!(tokens[0].data.attributes[1].args.len(), 1);
+
+        let plain = lex("## SalesSummary ::view", "test.m3l.md");
+        assert!(plain[0].data.attributes.is_empty());
+        assert_eq!(plain[0].data.materialized, Some(false));
     }
 
     #[test]

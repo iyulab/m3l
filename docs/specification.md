@@ -2992,6 +2992,7 @@ Conforming parsers should use these error codes for consistent diagnostics.
 | `M3L-W009` | Relationship notation `{notation}` in model `{model}` is written among the fields — it is read as a relationship, not a field, but `### Relations` is where it belongs | `>name`/`<name`/`<>name` (or an arrow spelling) written in the field list (§3.2.4) instead of `### Relations` (§3.2.3) — parsed either way, but flagged since the section is the documented home |
 | `M3L-W010` | Field `{field}` in `{model}`: `{text}` is not read | Text left on a field line after the field syntax (§2.5.7) has read everything it reads — most often a default written after an attribute (§2.5.8) |
 | `M3L-W011` | `{context}` `"{expression}"` is not a portable expression (§10.7): {constructs} | An expression in a portable context — `@computed`, a rollup's `where:`, a view's `where` — uses something outside the subset: a function not in §10.7.4, a bracketed or quoted identifier, `\|\|`, a `::` cast, a JSON operator, or `+` next to text. Each construct is named once. `@computed_raw` and a view whose source is a SQL code block (§4.7.8) are not checked |
+| `M3L-W012` | `{what}` with no platform — an implementation picks a platform expression by its platform, so this one is never chosen | A platform expression — `@computed_raw`, a rollup's `where_raw:`, a view's `- where_raw:` — written without `platform:` (§10.7.5). In a rollup the `platform:` follows the `where_raw:` it is for; one written before it names nothing |
 
 ### 10.6 Import Resolution
 
@@ -3125,7 +3126,8 @@ know the expression will not travel:
 - year_created: integer @computed_raw("YEAR(created_at)", platform: "sqlserver")
 ```
 
-`platform` names: `sqlserver`, `postgresql`, `mysql`, `sqlite`. Other names are recorded, not checked.
+`platform` names: `sqlserver`, `postgresql`, `mysql`, `sqlite`. Other names are recorded, not checked. A platform
+expression that names no platform is never chosen, and is reported (`M3L-W012`).
 
 `@computed_raw` appears **once per platform** on a field, and may sit beside a portable `@computed` — an implementation
 uses the expression for its platform when there is one, the portable expression otherwise, and reports a field with

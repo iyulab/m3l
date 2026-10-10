@@ -173,6 +173,12 @@ pub fn validate(ast: &M3lAst, options: &ValidateOptions) -> ValidateResult {
         validate_platform_expressions(model, &mut reported_platforms, &mut errors);
     }
 
+    // M3L-W012: A platform expression that names no platform (§10.7.5). Interfaces first, reported once.
+    let mut reported_unnamed: HashSet<(String, usize)> = HashSet::new();
+    for model in ast.interfaces.iter().chain(all_models.iter().copied()) {
+        validate_platform_named(model, &mut reported_unnamed, &mut warnings);
+    }
+
     // M3L-W003: Deprecated syntax warning
     for model in &all_models {
         check_deprecated_syntax(&model.fields, &mut warnings);
@@ -971,6 +977,63 @@ fn validate_platform_expressions(
             &source.where_raw,
             &model.loc,
             format!("View \"{}\" declares where_raw", model.name),
+        );
+    }
+}
+
+/// M3L-W012 — a platform expression (`@computed_raw`, a rollup's `where_raw:`, a view's `- where_raw:`) that names
+/// no platform. It is platform syntax by declaration, so an implementation picks it by its platform; without one it
+/// cannot tell whether the expression is its own. A warning, like `M3L-W011`: the model still builds, and the
+/// expression is simply never chosen. In a rollup the `platform:` belongs after its `where_raw:` — one written before
+/// it names nothing, and leaves the `where_raw:` it was meant for without a platform.
+fn validate_platform_named(
+    model: &ModelNode,
+    reported: &mut HashSet<(String, usize)>,
+    warnings: &mut Vec<Diagnostic>,
+) {
+    let mut check = |raw: &[PlatformExpression], loc: &SourceLocation, what: String, hint: &str| {
+        if raw.iter().any(|r| r.platform.is_none()) && reported.insert((loc.file.clone(), loc.line))
+        {
+            warnings.push(Diagnostic {
+                code: "M3L-W012".into(),
+                severity: DiagnosticSeverity::Warning,
+                file: loc.file.clone(),
+                line: loc.line,
+                col: 1,
+                message: format!(
+                    "{what} with no platform — an implementation picks a platform expression by its platform, \
+                     so this one is never chosen. Name it: platform: \"sqlserver\" (§10.7.5){hint}"
+                ),
+            });
+        }
+    };
+    for field in &model.fields {
+        if let Some(computed) = &field.computed {
+            check(
+                &computed.raw,
+                &field.loc,
+                format!("\"{}.{}\" declares @computed_raw", model.name, field.name),
+                "",
+            );
+        }
+        if let Some(rollup) = &field.rollup {
+            check(
+                &rollup.where_raw,
+                &field.loc,
+                format!(
+                    "\"{}.{}\" declares @rollup where_raw",
+                    model.name, field.name
+                ),
+                ". In a rollup the platform: follows the where_raw: it is for",
+            );
+        }
+    }
+    if let Some(source) = &model.source_def {
+        check(
+            &source.where_raw,
+            &model.loc,
+            format!("View \"{}\" declares where_raw", model.name),
+            "",
         );
     }
 }

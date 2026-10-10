@@ -38,6 +38,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `WhereRaw` (C#) / `where_raw?` (TypeScript). The formatter writes the view lines back.
 - **`M3L-E026`** (error) — a platform declared twice for one expression: two `@computed_raw` on a field, two
   `where_raw:` in a rollup, or two `- where_raw:` lines in a view.
+- **`M3L-W012`** (warning) — a platform expression that names no platform: a `@computed_raw`, a rollup `where_raw:` or a
+  view `- where_raw:` without `platform:`. An implementation picks a platform expression by its platform, so one with
+  none is never chosen; before, it was kept without a word. In a rollup the `platform:` follows the `where_raw:` it is
+  for — one written before it leaves that `where_raw:` unnamed, and the warning says where it goes.
 - **Attributes on a view header** — `## ViewName ::view @internal` (§4.7.1; grammar `ViewAttrs`). They reach the AST as
   the view's `attributes`, like a model header's. Before, the header accepted `@materialized` only and anything else
   written there was dropped without a diagnostic, so a tool asked to treat an attribute on a view never saw it.

@@ -377,14 +377,16 @@ fn tokenize_h2(content: &str, raw: &str, line: usize) -> Token {
         }
 
         if type_indicator == "view" {
-            data.materialized = Some(rest.contains("@materialized"));
             // A view header takes attributes like a model header does (`## V ::view @internal`).
             // `@materialized` is the one the language reads itself and already surfaces as a flag,
-            // so it is not repeated among the attributes.
-            data.attributes = header_attributes(rest)
+            // so it is not repeated among the attributes. Quoted text on the line is prose, not
+            // attributes — an `@word` inside it names nothing.
+            let unquoted = RE_H2_DESC.replace_all(rest, "");
+            let (flags, attributes): (Vec<_>, Vec<_>) = header_attributes(&unquoted)
                 .into_iter()
-                .filter(|a| a.name != "materialized")
-                .collect();
+                .partition(|a| a.name == "materialized");
+            data.materialized = Some(!flags.is_empty());
+            data.attributes = attributes;
         }
 
         // Extract description
@@ -1188,6 +1190,14 @@ mod tests {
         let plain = lex("## SalesSummary ::view", "test.m3l.md");
         assert!(plain[0].data.attributes.is_empty());
         assert_eq!(plain[0].data.materialized, Some(false));
+
+        // Quoted text is prose: an `@word` inside it is neither an attribute nor the flag.
+        let quoted = lex(
+            "## SalesSummary ::view \"ask @finance, not @materialized\"",
+            "test.m3l.md",
+        );
+        assert!(quoted[0].data.attributes.is_empty());
+        assert_eq!(quoted[0].data.materialized, Some(false));
     }
 
     #[test]

@@ -2954,7 +2954,7 @@ Conforming parsers should use these error codes for consistent diagnostics.
 | `M3L-E002` | Lookup FK `{field}` missing `@reference` | Lookup references a FK field that lacks `@reference` |
 | `M3L-E003` | Circular import detected: {chain} | Import graph contains a cycle |
 | `M3L-E004` | View references non-existent model `{model}` | View `from` or `join` targets undefined model |
-| `M3L-E005` | Duplicate model/enum name `{name}` | Same name defined multiple times |
+| `M3L-E005` | Duplicate {kind} name `{name}` | Same name declared more than once — models, enums, interfaces, views and flows share one namespace of names |
 | `M3L-E006` | Duplicate field `{field}` in model `{model}` | Same field name within a model |
 | `M3L-E007` | Unresolved parent `{parent}` in inheritance | `## Child : Parent` where Parent is not defined |
 | `M3L-E008` | Ambiguous model reference `{name}` in namespaces {ns1}, {ns2} | Short name exists in multiple namespaces |

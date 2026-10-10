@@ -171,6 +171,14 @@ pub fn resolve_with(
     }
 
     for view in &all_views {
+        check_duplicate(
+            &view.name,
+            "view",
+            &view.source,
+            view.line,
+            &all_named,
+            &mut errors,
+        );
         all_named.insert(
             view.name.clone(),
             ("view".into(), view.source.clone(), view.line),
@@ -188,6 +196,14 @@ pub fn resolve_with(
     }
 
     for flow in &all_flows {
+        check_duplicate(
+            &flow.name,
+            "flow",
+            &flow.source,
+            flow.line,
+            &all_named,
+            &mut errors,
+        );
         all_named.insert(
             flow.name.clone(),
             ("flow".into(), flow.source.clone(), flow.line),
@@ -954,6 +970,58 @@ mod tests {
         let f2 = parse_string("## User\n- name: string", "b.m3l.md");
         let ast = resolve(&[f1, f2], None);
         assert!(ast.errors.iter().any(|e| e.code == "M3L-E005"));
+    }
+
+    /// A name is declared once, whatever is declared under it: a view named like a model (or
+    /// like another view) and a flow named like either are the same mistake as two models.
+    #[test]
+    fn resolve_duplicate_view_and_flow_names() {
+        let duplicates = |src: &str| {
+            let ast = resolve(&[parse_string(src, "a.m3l.md")], None);
+            ast.errors
+                .iter()
+                .filter(|e| e.code == "M3L-E005")
+                .map(|e| e.message.clone())
+                .collect::<Vec<_>>()
+        };
+
+        let view_over_model = duplicates(
+            "## User
+- id: identifier
+
+## User ::view
+- id: identifier",
+        );
+        assert_eq!(view_over_model.len(), 1, "{view_over_model:?}");
+        assert!(view_over_model[0].contains("Duplicate view name \"User\""));
+
+        let two_views = duplicates(
+            "## Recent ::view
+- id: identifier
+
+## Recent ::view
+- id: identifier",
+        );
+        assert_eq!(two_views.len(), 1, "{two_views:?}");
+
+        let flow_over_model = duplicates(
+            "## User
+- id: identifier
+
+## User ::flow
+",
+        );
+        assert_eq!(flow_over_model.len(), 1, "{flow_over_model:?}");
+        assert!(flow_over_model[0].contains("Duplicate flow name \"User\""));
+
+        assert!(duplicates(
+            "## User
+- id: identifier
+
+## Users ::view
+- id: identifier"
+        )
+        .is_empty());
     }
 
     #[test]

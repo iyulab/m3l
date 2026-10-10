@@ -43,6 +43,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   written there was dropped without a diagnostic, so a tool asked to treat an attribute on a view never saw it.
   `@materialized` is still reported as the `materialized` flag and is not repeated among the attributes. The formatter
   writes the attributes back.
+
+### Fixed
+
+- **`M3L-E005` covers views and flows.** A view or a flow declared under a name already taken — a view named like a
+  model, two views of one name, a flow named like either — passed without a diagnostic; only models, enums and
+  interfaces were checked. All five kinds share one namespace of names, and the second declaration is now the error it
+  is for the others. A file that relied on the gap reports `M3L-E005` and needs one of the two renamed.
 - **`M3L-W011`** (warning) — an expression in a portable context (`@computed`, a rollup's `where:`, a view's `where`) uses
   something outside the subset, and the warning names it: a function not in the list, a bracketed or quoted identifier,
   `||`, a `::` cast, a JSON operator, or `+` next to text (a string literal or a text field). A warning, not an error —

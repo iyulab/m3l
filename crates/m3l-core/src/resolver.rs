@@ -436,10 +436,14 @@ fn check_unread_field_text(files: &[ParsedFile], warnings: &mut Vec<Diagnostic>)
                 line: entry.line,
                 col: 1,
                 message: format!(
-                    "Field \"{}\" in {}: \"{}\" is not read. A field line reads \
-                     `name: type = default @attributes \"description\"` in that order — \
-                     move a default next to the type, and put the description last.",
-                    entry.field, entry.element, entry.text
+                    "Field \"{}\" in {}: \"{}\" is not read. {}",
+                    entry.field,
+                    entry.element,
+                    entry.text,
+                    entry.hint.unwrap_or(
+                        "A field line reads `name: type = default @attributes \"description\"` in that \
+                         order — move a default next to the type, and put the description last."
+                    )
                 ),
             });
         }

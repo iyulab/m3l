@@ -501,6 +501,7 @@ fn handle_field(token: &Token, state: &mut ParserState) {
                     &state.current_kind,
                     &mut state.source_directives_done,
                     &mut state.last_field_idx,
+                    &mut state.unread_field_text,
                 );
                 return;
             }
@@ -554,11 +555,25 @@ fn handle_field(token: &Token, state: &mut ParserState) {
                     element: model.name.clone(),
                     field: token.data.name.clone().unwrap_or_default(),
                     text: text.clone(),
+                    hint: None,
                     line: token.line,
                     file: state.file.clone(),
                 });
             }
-            let field = build_field_node(&token.data, token, &state.file, &state.current_kind);
+            let mut unread = Vec::new();
+            let field = build_field_node(
+                &token.data,
+                token,
+                &state.file,
+                &state.current_kind,
+                &mut unread,
+            );
+            state
+                .unread_field_text
+                .extend(unread.into_iter().map(|u| UnreadFieldText {
+                    element: model.name.clone(),
+                    ..u
+                }));
             model.fields.push(field);
             state.last_field_idx = Some(model.fields.len() - 1);
         }
@@ -828,6 +843,7 @@ fn handle_section_item(
     current_kind: &FieldKind,
     source_directives_done: &mut bool,
     last_field_idx: &mut Option<usize>,
+    unread_field_text: &mut Vec<UnreadFieldText>,
 ) {
     let loc = serde_json::json!({
         "file": file,
@@ -855,7 +871,12 @@ fn handle_section_item(
         }
 
         *source_directives_done = true;
-        let field = build_field_node(data, token, file, current_kind);
+        let mut unread = Vec::new();
+        let field = build_field_node(data, token, file, current_kind, &mut unread);
+        unread_field_text.extend(unread.into_iter().map(|u| UnreadFieldText {
+            element: model.name.clone(),
+            ..u
+        }));
         model.fields.push(field);
         *last_field_idx = Some(model.fields.len() - 1);
         return;
@@ -1152,12 +1173,20 @@ fn handle_nested_item(token: &Token, state: &mut ParserState) {
                             sub_data.name = Some(k.to_string());
                             parse_type_and_attrs(v, &mut sub_data);
                             if sub_data.type_name.is_some() {
+                                let mut unread = Vec::new();
                                 let sub_field = build_field_node(
                                     &sub_data,
                                     token,
                                     &state.file,
                                     &state.current_kind,
+                                    &mut unread,
                                 );
+                                state.unread_field_text.extend(unread.into_iter().map(|u| {
+                                    UnreadFieldText {
+                                        element: model.name.clone(),
+                                        ..u
+                                    }
+                                }));
                                 let is_object = sub_field.field_type.as_deref() == Some("object");
                                 if model.fields[field_idx].fields.is_none() {
                                     model.fields[field_idx].fields = Some(Vec::new());
@@ -1384,6 +1413,7 @@ fn build_field_node(
     token: &Token,
     file: &str,
     current_kind: &FieldKind,
+    unread: &mut Vec<UnreadFieldText>,
 ) -> FieldNode {
     let attrs = parse_raw_attributes(&data.attributes);
     let mut kind = current_kind.clone();
@@ -1482,7 +1512,18 @@ fn build_field_node(
                 })
                 .collect::<Vec<_>>()
                 .join(", ");
-            field.rollup = Some(parse_rollup_args(&args_str));
+            let (rollup, unread_platforms) = parse_rollup_args(&args_str);
+            field.rollup = Some(rollup);
+            for text in unread_platforms {
+                unread.push(UnreadFieldText {
+                    element: String::new(),
+                    field: field.name.clone(),
+                    text,
+                    hint: Some(ROLLUP_PLATFORM_HINT),
+                    line: token.line,
+                    file: file.to_string(),
+                });
+            }
         }
     }
 
@@ -1670,7 +1711,11 @@ fn parse_raw_attributes(raw_attrs: &[RawAttribute]) -> Vec<FieldAttribute> {
         .collect()
 }
 
-fn parse_rollup_args(args_str: &str) -> RollupDef {
+/// The hint `M3L-W010` gives for a rollup `platform:` that names no `where_raw:` (§10.7.5).
+const ROLLUP_PLATFORM_HINT: &str =
+    "In a rollup each `platform:` follows the `where_raw:` it names — one per `where_raw:`.";
+
+fn parse_rollup_args(args_str: &str) -> (RollupDef, Vec<String>) {
     let parts = split_rollup_args(args_str);
 
     let target_fk = parts.first().map(|s| s.as_str()).unwrap_or("");
@@ -1697,9 +1742,11 @@ fn parse_rollup_args(args_str: &str) -> RollupDef {
     };
 
     // `where:` is the portable filter; each `where_raw:` is a platform filter, and the `platform:` that
-    // follows it names its platform (§10.7.5) — the pair may repeat, one per platform.
+    // follows it names its platform (§10.7.5) — the pair may repeat, one per platform. A `platform:` with no
+    // `where_raw:` of its own to name — written first, or a second one after a pair — is returned unread.
     let mut where_clause = None;
     let mut where_raw: Vec<PlatformExpression> = Vec::new();
+    let mut unread = Vec::new();
     for p in parts.iter().skip(2) {
         let part = p.trim();
         if let Some(caps) = RE_WHERE.captures(part) {
@@ -1710,22 +1757,24 @@ fn parse_rollup_args(args_str: &str) -> RollupDef {
                 expression: caps[1].to_string(),
             });
         } else if part.starts_with("platform") {
-            if let (Some(caps), Some(last)) = (RE_PLATFORM.captures(part), where_raw.last_mut()) {
-                if last.platform.is_none() {
+            match (RE_PLATFORM.captures(part), where_raw.last_mut()) {
+                (Some(caps), Some(last)) if last.platform.is_none() => {
                     last.platform = Some(caps[1].to_string());
                 }
+                _ => unread.push(part.to_string()),
             }
         }
     }
 
-    RollupDef {
+    let def = RollupDef {
         target,
         fk,
         aggregate,
         field,
         where_clause,
         where_raw,
-    }
+    };
+    (def, unread)
 }
 
 fn split_rollup_args(args_str: &str) -> Vec<String> {

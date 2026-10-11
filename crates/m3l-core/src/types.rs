@@ -563,6 +563,9 @@ pub struct UnreadFieldText {
     pub element: String,
     pub field: String,
     pub text: String,
+    /// What to do about it, when the text was left unread somewhere other than the field line's own order — a
+    /// rollup `platform:` with no `where_raw:` to name. `None` gives the field-line hint.
+    pub hint: Option<&'static str>,
     pub line: usize,
     pub file: String,
 }

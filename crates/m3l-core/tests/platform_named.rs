@@ -91,3 +91,79 @@ fn platform_expressions_that_name_their_platform_are_silent() {
     ));
     assert!(found.is_empty(), "{found:?}");
 }
+
+/// A rollup `platform:` with no `where_raw:` of its own to name is text the rollup does not read — `M3L-W010`, the
+/// same warning a field line's unread text gets, with the rollup's own rule as the hint.
+fn rollup_w010(args: &str) -> Vec<String> {
+    let parsed = parse_string(
+        &format!("{ORDER}## Summary\n- id: identifier @pk\n- n: integer @rollup(Order.customer_id, count, {args})"),
+        "platform_named.m3l.md",
+    );
+    let ast = m3l_core::resolve(&[parsed], None);
+    validate(&ast, &ValidateOptions::default())
+        .warnings
+        .into_iter()
+        .filter(|w| w.code == "M3L-W010")
+        .map(|w| w.message)
+        .collect()
+}
+
+#[test]
+fn a_rollup_platform_before_a_pair_is_not_read_and_is_w010() {
+    let found = rollup_w010(r#"platform: "sqlserver", where_raw: "a = 1", platform: "postgresql""#);
+
+    let message = found.first().expect("W010");
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert!(message.contains(r#"Field "n" in Summary"#), "{message}");
+    assert!(message.contains(r#"platform: "sqlserver""#), "{message}");
+    assert!(
+        message.contains("follows the `where_raw:` it names"),
+        "{message}"
+    );
+}
+
+#[test]
+fn a_second_platform_for_one_where_raw_is_not_read_and_is_w010() {
+    let found = rollup_w010(r#"where_raw: "a = 1", platform: "sqlserver", platform: "postgresql""#);
+
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert!(
+        found[0].contains(r#"platform: "postgresql""#),
+        "{}",
+        found[0]
+    );
+}
+
+#[test]
+fn a_rollup_platform_with_no_where_raw_at_all_is_w010() {
+    let found = rollup_w010(r#"platform: "sqlserver""#);
+
+    assert_eq!(found.len(), 1, "{found:?}");
+}
+
+#[test]
+fn a_platform_before_its_only_where_raw_is_reported_both_ways() {
+    // The where_raw: is left without a platform (W012, which says where the platform: goes), and the platform: itself
+    // is read by nothing (W010). Two warnings, one per thing the author wrote that has no effect.
+    let args = r#"platform: "sqlserver", where_raw: "a = 1""#;
+
+    assert_eq!(rollup_w010(args).len(), 1);
+    assert_eq!(
+        w012(&format!(
+            "{ORDER}## Summary
+- id: identifier @pk
+- n: integer @rollup(Order.customer_id, count, {args})"
+        ))
+        .len(),
+        1
+    );
+}
+
+#[test]
+fn repeated_pairs_leave_nothing_unread() {
+    let found = rollup_w010(
+        r#"where_raw: "a = 1", platform: "sqlserver", where_raw: "a = 2", platform: "postgresql""#,
+    );
+
+    assert!(found.is_empty(), "{found:?}");
+}

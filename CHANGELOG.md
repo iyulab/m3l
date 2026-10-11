@@ -89,6 +89,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   after `::kind`; on `## Product : Base # note` it became the parent's name, and on `## Note # text` the model's.
 - On a `::kind` header, quoted text inside an attribute's arguments (`@table("…")`) is no longer taken for the
   description — and on a view header it is no longer removed from the attribute.
+- **`M3L-W010` reports a header's second description string or a quote that never closes**, as it does on a field
+  line. Both used to stay in the definition and became part of the element's name (`## Product "A" "B"` named the
+  model `Product  "B"`); they are now kept out of it and named instead.
 
 ## [0.19.0] - 2026-10-04
 

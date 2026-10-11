@@ -58,6 +58,7 @@ pub fn resolve_with(
     check_prefix_headers(files, &mut errors);
     check_extend_kind_args(files, &mut errors);
     check_unread_field_text(files, &mut warnings);
+    check_unread_header_text(files, &mut warnings);
 
     for file in files {
         sources.push(file.source.clone());
@@ -444,6 +445,29 @@ fn check_unread_field_text(files: &[ParsedFile], warnings: &mut Vec<Diagnostic>)
                         "A field line reads `name: type = default @attributes \"description\"` in that \
                          order — move a default next to the type, and put the description last."
                     )
+                ),
+            });
+        }
+    }
+}
+
+/// `M3L-W010` for a header: a second description string, or a quote that never closes. Before the
+/// header split took them off the line they became the element's name (or its parent's); now they
+/// are named instead of read.
+fn check_unread_header_text(files: &[ParsedFile], warnings: &mut Vec<Diagnostic>) {
+    for file in files {
+        for entry in &file.unread_header_text {
+            warnings.push(Diagnostic {
+                code: "M3L-W010".to_string(),
+                severity: DiagnosticSeverity::Warning,
+                file: entry.file.clone(),
+                line: entry.line,
+                col: 1,
+                message: format!(
+                    "Header of \"{}\": {} is not read. A header takes one description string \
+                     (`## Name \"description\" @attributes`) — join the text into one, or move the \
+                     rest into a blockquote below the header.",
+                    entry.element, entry.text
                 ),
             });
         }

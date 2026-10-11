@@ -345,18 +345,23 @@ fn header_attributes(text: &str) -> Vec<RawAttribute> {
         .collect()
 }
 
-/// Splits an element header into its definition, its description string (§4.2.1) and its header
-/// comment (§4.2.3): `## Product : Base "A sellable item" @audited # note` →
-/// (`Product : Base  @audited`, `A sellable item`, `note`).
+/// Splits an element header into its definition and its description string (§4.2.1), dropping its
+/// header comment (§4.2.3): `## Product : Base "A sellable item" @audited # note` → definition
+/// `Product : Base  @audited`, description `A sellable item`.
 ///
 /// Only text outside parentheses counts — a quoted argument (`@table("orders")`) or a label is
-/// part of the definition. The first quoted string is the description; a ` # ` outside quotes
-/// starts the comment, which runs to the end of the line. Without this, both leaked into whatever
-/// the definition patterns matched last — a model's name or its parent's.
-fn split_header(content: &str) -> (String, Option<String>, Option<String>) {
+/// part of the definition. The first quoted string is the description; any further one, and a quote
+/// that never closes, is unread text. A ` # ` outside quotes starts the comment, which runs to the
+/// end of the line. Without this, all of them leaked into whatever the definition patterns matched
+/// last — a model's name or its parent's.
+fn split_header(content: &str) -> HeaderParts {
     let chars: Vec<char> = content.chars().collect();
-    let mut head = String::with_capacity(content.len());
-    let mut description: Option<String> = None;
+    let mut parts = HeaderParts {
+        definition: String::with_capacity(content.len()),
+        description: None,
+        unread: None,
+    };
+    let mut unread: Vec<String> = Vec::new();
     let mut depth = 0usize;
     let mut i = 0;
     while i < chars.len() {
@@ -367,11 +372,17 @@ fn split_header(content: &str) -> (String, Option<String>, Option<String>) {
             while j < chars.len() && chars[j] != '"' {
                 j += if chars[j] == '\\' { 2 } else { 1 };
             }
-            let quoted: String = chars[i..j.min(chars.len() - 1) + 1].iter().collect();
-            if depth == 0 && description.is_none() && j < chars.len() {
-                description = Some(chars[i + 1..j].iter().collect());
+            let closed = j < chars.len();
+            let quoted: String = chars[i..j.min(chars.len())].iter().collect::<String>()
+                + if closed { "\"" } else { "" };
+            if depth > 0 {
+                parts.definition.push_str(&quoted);
+            } else if closed && parts.description.is_none() {
+                parts.description = Some(chars[i + 1..j].iter().collect());
             } else {
-                head.push_str(&quoted);
+                // A second description, or a quote that never closes (it runs to the end of the
+                // line). Either way it is not the definition — left there, it became the name.
+                unread.push(quoted.trim_end().to_string());
             }
             i = j + 1;
             continue;
@@ -382,22 +393,28 @@ fn split_header(content: &str) -> (String, Option<String>, Option<String>) {
             && chars[i - 1].is_whitespace()
             && chars.get(i + 1).is_none_or(|n| n.is_whitespace())
         {
-            let comment: String = chars[i + 1..].iter().collect::<String>().trim().to_string();
-            return (
-                head.trim_end().to_string(),
-                description,
-                (!comment.is_empty()).then_some(comment),
-            );
+            // The header comment runs to the end of the line and is not kept (§4.2.3).
+            break;
         }
         match c {
             '(' => depth += 1,
             ')' => depth = depth.saturating_sub(1),
             _ => {}
         }
-        head.push(c);
+        parts.definition.push(c);
         i += 1;
     }
-    (head.trim_end().to_string(), description, None)
+    parts.definition = parts.definition.trim_end().to_string();
+    parts.unread = (!unread.is_empty()).then(|| unread.join(" "));
+    parts
+}
+
+/// What [`split_header`] takes apart.
+struct HeaderParts {
+    definition: String,
+    description: Option<String>,
+    /// Quoted text the header does not read — kept for the resolver to name (`M3L-W010`).
+    unread: Option<String>,
 }
 
 #[allow(clippy::field_reassign_with_default)]
@@ -408,7 +425,11 @@ fn tokenize_h2(content: &str, raw: &str, line: usize) -> Token {
     let normalized = RE_BACKTICK_ATTR.replace_all(content, "$1");
     // The description string and the header comment are not part of the definition; taken off
     // here, they cannot be read as a name, a parent or an attribute by any branch below.
-    let (definition, description, _comment) = split_header(&normalized);
+    let HeaderParts {
+        definition,
+        description,
+        unread,
+    } = split_header(&normalized);
     let content: &str = &definition;
 
     // Check for type indicator: ## Name ::enum, ::interface, ::view, ::attribute
@@ -446,6 +467,7 @@ fn tokenize_h2(content: &str, raw: &str, line: usize) -> Token {
         }
 
         data.description = description;
+        data.unread = unread;
 
         let token_type = match type_indicator {
             "attribute" => TokenType::AttributeDef,
@@ -486,6 +508,7 @@ fn tokenize_h2(content: &str, raw: &str, line: usize) -> Token {
         data.label = label;
         data.inherits = inherits;
         data.description = description;
+        data.unread = unread;
 
         // Parse model-level attributes
         if let Some(attrs_s) = attrs_str {
@@ -505,6 +528,7 @@ fn tokenize_h2(content: &str, raw: &str, line: usize) -> Token {
     let data = TokenData {
         name: Some(content.to_string()),
         description,
+        unread,
         ..Default::default()
     };
     Token {

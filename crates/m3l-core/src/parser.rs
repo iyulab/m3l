@@ -55,6 +55,7 @@ struct ParserState {
     prefix_headers: Vec<PrefixHeader>,
     extend_kind_args: Vec<ExtendKindArg>,
     unread_field_text: Vec<UnreadFieldText>,
+    unread_header_text: Vec<UnreadHeaderText>,
     current_element: CurrentElement,
     current_section: Option<String>,
     current_kind: FieldKind,
@@ -86,6 +87,7 @@ pub fn parse_tokens(tokens: &[Token], file: &str) -> ParsedFile {
         prefix_headers: Vec::new(),
         extend_kind_args: Vec::new(),
         unread_field_text: Vec::new(),
+        unread_header_text: Vec::new(),
         current_element: CurrentElement::None,
         current_section: None,
         current_kind: FieldKind::Stored,
@@ -123,10 +125,21 @@ pub fn parse_tokens(tokens: &[Token], file: &str) -> ParsedFile {
         prefix_headers: state.prefix_headers,
         extend_kind_args: state.extend_kind_args,
         unread_field_text: state.unread_field_text,
+        unread_header_text: state.unread_header_text,
     }
 }
 
 fn process_token(token: &Token, state: &mut ParserState) {
+    // A header's unread text (a second description, an unclosed quote) — every element kind's header
+    // goes through the same split, so it is recorded here once rather than in each handler.
+    if let (Some(text), true) = (&token.data.unread, is_element_header(&token.token_type)) {
+        state.unread_header_text.push(UnreadHeaderText {
+            element: token.data.name.clone().unwrap_or_default(),
+            text: text.clone(),
+            line: token.line,
+            file: state.file.clone(),
+        });
+    }
     match &token.token_type {
         TokenType::Namespace => handle_namespace(token, state),
         TokenType::Prefix => handle_prefix(token, state),
@@ -148,6 +161,20 @@ fn process_token(token: &Token, state: &mut ParserState) {
         TokenType::Text => handle_text(token, state),
         TokenType::HorizontalRule | TokenType::Blank => {}
     }
+}
+
+/// The token kinds an `##` element header produces.
+fn is_element_header(token_type: &TokenType) -> bool {
+    matches!(
+        token_type,
+        TokenType::Model
+            | TokenType::Interface
+            | TokenType::Enum
+            | TokenType::View
+            | TokenType::Flow
+            | TokenType::Extension(_)
+            | TokenType::AttributeDef
+    )
 }
 
 fn handle_namespace(token: &Token, state: &mut ParserState) {

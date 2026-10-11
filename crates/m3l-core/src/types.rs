@@ -555,6 +555,18 @@ pub struct ExtendKindArg {
     pub file: String,
 }
 
+/// Text an element header carried that the header syntax does not read — a second description
+/// string, or a quote that never closes. Recorded by the parser, reported by the resolver as
+/// `M3L-W010`, like [`UnreadFieldText`].
+#[derive(Debug, Clone, PartialEq)]
+pub struct UnreadHeaderText {
+    /// The model, enum, interface, view or flow the header declares.
+    pub element: String,
+    pub text: String,
+    pub line: usize,
+    pub file: String,
+}
+
 /// Text a field line carried that the field syntax does not read — recorded by the parser,
 /// reported by the resolver as `M3L-W010`, the same split [`ExtendKindArg`] uses.
 #[derive(Debug, Clone, PartialEq)]
@@ -594,6 +606,8 @@ pub struct ParsedFile {
     pub extend_kind_args: Vec<ExtendKindArg>,
     /// Every field line with text the field syntax did not read, in source order.
     pub unread_field_text: Vec<UnreadFieldText>,
+    /// Header text no syntax read — see [`UnreadHeaderText`].
+    pub unread_header_text: Vec<UnreadHeaderText>,
 }
 
 /// Final AST — top-level JSON output.

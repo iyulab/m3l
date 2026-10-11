@@ -19,7 +19,7 @@ once.
 - **This repo does not generate code.** It parses `.m3l.md` into an AST and stops there (see the
   design anchor "parser, not producer"). A PR that adds SQL/C#/TypeScript emission, migration
   generation, or any other downstream output is out of scope here — that is a consumer's job
-  (`mdd-booster` and similar tools consume `m3l-core`'s AST for exactly this).
+  (code generators and similar tools consume `m3l-core`'s AST for exactly this).
 
 ## Development
 

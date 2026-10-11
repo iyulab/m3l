@@ -42,7 +42,7 @@ TypeScript, migrations, or any other downstream artifact.
 
 Consequences:
 
-- A consumer (`mdd-booster` and similar tools) owns everything downstream of the AST — what gets
+- A consumer (a code generator or a similar tool) owns everything downstream of the AST — what gets
   generated, in what shape, for which target. M3L never needs to know those consumers exist, and a
   change here is never justified by "because a specific downstream tool wants it" — see the anchor
   below on layering.

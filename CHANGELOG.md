@@ -80,6 +80,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   view whose source is a SQL code block are not checked; a field an interface declares is reported once.
 - The samples and conformance inputs that used `+` between strings or SQL Server's `FORMAT` in a portable context are
   rewritten (`concat(…)`, `@computed_raw`).
+- **A description string on an element header is that element's description, on every kind.** Only an enum header kept
+  it. On a model header it became part of the model's name (`## Product "A sellable item"` named the model
+  `Product "A sellable item"`) or, after a parent, part of the parent's name (`M3L-E007` naming a parent never
+  written); on a view, interface, flow or other `::kind` header it was dropped. A blockquote below the header continues
+  it, as for an enum. Specification §4.2.1 now states the header form.
+- **A header comment (` # …`, §4.2.3) is no longer read as part of a plain model's definition.** It was only stripped
+  after `::kind`; on `## Product : Base # note` it became the parent's name, and on `## Note # text` the model's.
+- On a `::kind` header, quoted text inside an attribute's arguments (`@table("…")`) is no longer taken for the
+  description — and on a view header it is no longer removed from the attribute.
 
 ## [0.19.0] - 2026-10-04
 

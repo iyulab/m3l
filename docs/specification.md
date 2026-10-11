@@ -1395,6 +1395,17 @@ Rendered as part of the field definition. Recommended for all user-facing descri
 - name: string(200) "Product display name, shown in catalog"
 ```
 
+An element header takes one too — a model, interface, enum, view, flow or any other `::kind`. It is that
+element's description, and a blockquote below the header continues it (§4.2.2):
+
+```markdown
+## Product(Product) : BaseModel "A sellable item" @audited
+## OnSale ::view "Products currently on sale" @materialized
+```
+
+Only a quoted string outside parentheses is the description; quoted text inside a label or an attribute's
+arguments (`@table("orders")`) belongs to them.
+
 #### 4.2.2 Blockquotes `>` — Model and Section Documentation
 
 Rendered as styled quote blocks. Use for multi-line descriptions, usage notes, and design rationale:
@@ -1414,7 +1425,11 @@ Brief annotations appended to model headers:
 
 ```markdown
 ## Timestampable ::interface # Common timestamp fields
+## Product : BaseModel # Priced in the store currency
 ```
+
+The comment runs from ` # ` to the end of the line, on any element header. It is not part of the definition —
+not the name, a parent, or an attribute — and not the element's description.
 
 #### 4.2.4 Inline Comments `#` — Developer Notes
 

@@ -57,7 +57,6 @@ static RE_NESTED_KV: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^([\w]+)\s*:\s*(.+)$").unwrap());
 static RE_H2_INHERIT: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r#"^:\s*(.+?)(?:\s+@|\s*"|\s*$)"#).unwrap());
-static RE_H2_DESC: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#""([^"]+)""#).unwrap());
 static RE_MODEL_ATTR: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"@([\w]+)(?:\(([^)]*)\))?").unwrap());
 /// Backticks wrapping an attribute on a heading (e.g. `` `@ledger` ``). Authors
@@ -346,13 +345,71 @@ fn header_attributes(text: &str) -> Vec<RawAttribute> {
         .collect()
 }
 
+/// Splits an element header into its definition, its description string (§4.2.1) and its header
+/// comment (§4.2.3): `## Product : Base "A sellable item" @audited # note` →
+/// (`Product : Base  @audited`, `A sellable item`, `note`).
+///
+/// Only text outside parentheses counts — a quoted argument (`@table("orders")`) or a label is
+/// part of the definition. The first quoted string is the description; a ` # ` outside quotes
+/// starts the comment, which runs to the end of the line. Without this, both leaked into whatever
+/// the definition patterns matched last — a model's name or its parent's.
+fn split_header(content: &str) -> (String, Option<String>, Option<String>) {
+    let chars: Vec<char> = content.chars().collect();
+    let mut head = String::with_capacity(content.len());
+    let mut description: Option<String> = None;
+    let mut depth = 0usize;
+    let mut i = 0;
+    while i < chars.len() {
+        let c = chars[i];
+        if c == '"' {
+            // Find the closing quote, honouring backslash escapes.
+            let mut j = i + 1;
+            while j < chars.len() && chars[j] != '"' {
+                j += if chars[j] == '\\' { 2 } else { 1 };
+            }
+            let quoted: String = chars[i..j.min(chars.len() - 1) + 1].iter().collect();
+            if depth == 0 && description.is_none() && j < chars.len() {
+                description = Some(chars[i + 1..j].iter().collect());
+            } else {
+                head.push_str(&quoted);
+            }
+            i = j + 1;
+            continue;
+        }
+        if depth == 0
+            && c == '#'
+            && i > 0
+            && chars[i - 1].is_whitespace()
+            && chars.get(i + 1).is_none_or(|n| n.is_whitespace())
+        {
+            let comment: String = chars[i + 1..].iter().collect::<String>().trim().to_string();
+            return (
+                head.trim_end().to_string(),
+                description,
+                (!comment.is_empty()).then_some(comment),
+            );
+        }
+        match c {
+            '(' => depth += 1,
+            ')' => depth = depth.saturating_sub(1),
+            _ => {}
+        }
+        head.push(c);
+        i += 1;
+    }
+    (head.trim_end().to_string(), description, None)
+}
+
 #[allow(clippy::field_reassign_with_default)]
 fn tokenize_h2(content: &str, raw: &str, line: usize) -> Token {
     // Normalize backtick-wrapped attributes (`` `@ledger` `` → `@ledger`) so the
     // Markdown-prettified form parses like the bare form instead of being folded
     // into the model name by the fallback branch.
     let normalized = RE_BACKTICK_ATTR.replace_all(content, "$1");
-    let content: &str = &normalized;
+    // The description string and the header comment are not part of the definition; taken off
+    // here, they cannot be read as a name, a parent or an attribute by any branch below.
+    let (definition, description, _comment) = split_header(&normalized);
+    let content: &str = &definition;
 
     // Check for type indicator: ## Name ::enum, ::interface, ::view, ::attribute
     if let Some(caps) = RE_TYPE_INDICATOR.captures(content) {
@@ -379,20 +436,16 @@ fn tokenize_h2(content: &str, raw: &str, line: usize) -> Token {
         if type_indicator == "view" {
             // A view header takes attributes like a model header does (`## V ::view @internal`).
             // `@materialized` is the one the language reads itself and already surfaces as a flag,
-            // so it is not repeated among the attributes. Quoted text on the line is prose, not
-            // attributes — an `@word` inside it names nothing.
-            let unquoted = RE_H2_DESC.replace_all(rest, "");
-            let (flags, attributes): (Vec<_>, Vec<_>) = header_attributes(&unquoted)
+            // so it is not repeated among the attributes. The description is already off the line
+            // (`split_header`), so an `@word` inside it names nothing.
+            let (flags, attributes): (Vec<_>, Vec<_>) = header_attributes(rest)
                 .into_iter()
                 .partition(|a| a.name == "materialized");
             data.materialized = Some(!flags.is_empty());
             data.attributes = attributes;
         }
 
-        // Extract description
-        if let Some(desc_caps) = RE_H2_DESC.captures(rest) {
-            data.description = Some(desc_caps[1].to_string());
-        }
+        data.description = description;
 
         let token_type = match type_indicator {
             "attribute" => TokenType::AttributeDef,
@@ -432,6 +485,7 @@ fn tokenize_h2(content: &str, raw: &str, line: usize) -> Token {
         data.name = Some(name);
         data.label = label;
         data.inherits = inherits;
+        data.description = description;
 
         // Parse model-level attributes
         if let Some(attrs_s) = attrs_str {
@@ -450,6 +504,7 @@ fn tokenize_h2(content: &str, raw: &str, line: usize) -> Token {
     // Fallback
     let data = TokenData {
         name: Some(content.to_string()),
+        description,
         ..Default::default()
     };
     Token {

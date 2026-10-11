@@ -210,7 +210,7 @@ fn handle_model_start(token: &Token, state: &mut ParserState) {
         extended_by: Vec::new(),
         line: token.line,
         inherits: token.data.inherits.clone(),
-        description: None,
+        description: token.data.description.clone(),
         attributes: model_attrs,
         fields: Vec::new(),
         sections: Sections::default(),
@@ -284,7 +284,7 @@ fn handle_view_start(token: &Token, state: &mut ParserState) {
         extended_by: Vec::new(),
         line: token.line,
         inherits: Vec::new(),
-        description: None,
+        description: token.data.description.clone(),
         attributes: parse_raw_attributes(&token.data.attributes),
         materialized: Some(materialized),
         fields: Vec::new(),
@@ -319,7 +319,7 @@ fn handle_flow_start(token: &Token, state: &mut ParserState) {
         extended_by: Vec::new(),
         line: token.line,
         inherits: Vec::new(),
-        description: None,
+        description: token.data.description.clone(),
         attributes: parse_raw_attributes(&token.data.attributes),
         fields: Vec::new(),
         sections: Sections::default(),
@@ -368,7 +368,7 @@ fn handle_extension_start(token: &Token, ext_type: &str, state: &mut ParserState
         extended_by: Vec::new(),
         line: token.line,
         inherits: token.data.inherits.clone(),
-        description: None,
+        description: token.data.description.clone(),
         attributes: parse_raw_attributes(&token.data.attributes),
         fields: Vec::new(),
         sections: Sections::default(),
@@ -2471,6 +2471,116 @@ mod tests {
         assert_eq!(result.views[0].materialized, Some(true));
 
         assert!(result.views[1].attributes.is_empty());
+    }
+
+    /// A description string on an element header (§4.2.1) is that element's description, on
+    /// every kind. Only enums used to keep it: a model's ended up in its name or its parent's
+    /// (`E007` naming a parent the author never wrote), a view's, interface's or flow's vanished.
+    #[test]
+    fn header_description_reaches_every_kind() {
+        let input = "\
+## Base \"Shared columns\"
+- id: identifier @primary
+
+## Product(상품) : Base \"A sellable item\" @audited
+> Priced in the store currency.
+- name: string(200)
+
+## Stamped ::interface \"Timestamps\"
+- created_at: timestamp
+
+## Status ::enum \"Order status\"
+- open \"Open\"
+
+## OnSale ::view \"Products on sale\" @internal
+### Source
+- from: Product
+- name: string(200)
+
+## Checkout ::flow \"Places an order\"
+- step: string
+
+## Archived ::extension(audit) \"Kept for audit\"
+- note: string";
+        let result = parse_string(input, "test.m3l.md");
+
+        let base = &result.models[0];
+        assert_eq!(base.name, "Base");
+        assert_eq!(base.description.as_deref(), Some("Shared columns"));
+
+        let product = &result.models[1];
+        assert_eq!(product.name, "Product");
+        assert_eq!(product.label.as_deref(), Some("상품"));
+        assert_eq!(product.inherits, ["Base"]);
+        assert_eq!(product.attributes[0].name, "audited");
+        // A blockquote continues the header's description, as it does an enum's.
+        assert_eq!(
+            product.description.as_deref(),
+            Some("A sellable item\nPriced in the store currency.")
+        );
+
+        assert_eq!(
+            result.interfaces[0].description.as_deref(),
+            Some("Timestamps")
+        );
+        assert_eq!(result.enums[0].description.as_deref(), Some("Order status"));
+        assert_eq!(
+            result.views[0].description.as_deref(),
+            Some("Products on sale")
+        );
+        assert_eq!(result.views[0].attributes[0].name, "internal");
+        assert_eq!(
+            result.flows[0].description.as_deref(),
+            Some("Places an order")
+        );
+        let archived = result
+            .extensions
+            .values()
+            .flatten()
+            .find(|m| m.name == "Archived")
+            .expect("extension parsed");
+        assert_eq!(archived.description.as_deref(), Some("Kept for audit"));
+    }
+
+    /// A header comment (§4.2.3) is a note on the line, not part of the definition — on a plain
+    /// model it used to become the parent's name, and without a parent the model's.
+    #[test]
+    fn header_comment_is_not_part_of_the_definition() {
+        let input = "\
+## Base
+- id: identifier @primary
+
+## Product : Base # a sellable item
+- name: string(200)
+
+## Note # free-standing
+- body: string
+
+## Stamped ::interface # Common timestamp fields
+- created_at: timestamp";
+        let result = parse_string(input, "test.m3l.md");
+        assert_eq!(result.models[1].name, "Product");
+        assert_eq!(result.models[1].inherits, ["Base"]);
+        assert_eq!(result.models[2].name, "Note");
+        assert!(
+            result.models[1].description.is_none(),
+            "a comment is not a description"
+        );
+        assert_eq!(result.interfaces[0].name, "Stamped");
+    }
+
+    /// Quoted text inside parentheses — a label or an attribute argument — is part of the
+    /// definition, not the description.
+    #[test]
+    fn quoted_text_in_parentheses_is_not_a_header_description() {
+        let input =
+            "## Order @table(\"sales # orders\") \"Customer orders\"\n- id: identifier @primary";
+        let result = parse_string(input, "test.m3l.md");
+        let order = &result.models[0];
+        assert_eq!(order.name, "Order");
+        assert_eq!(order.description.as_deref(), Some("Customer orders"));
+        assert_eq!(order.attributes[0].name, "table");
+        assert_eq!(order.attributes[0].args.as_ref().map(Vec::len), Some(1));
     }
 
     #[test]

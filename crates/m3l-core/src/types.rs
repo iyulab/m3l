@@ -96,6 +96,9 @@ pub struct TokenData {
     /// resolver reports it (`M3L-W010`) so that a default or description written out of order
     /// is not dropped without a word.
     pub unread: Option<String>,
+    /// Attributes on a `::kind` header whose syntax takes none (`## Status ::enum @deprecated`) —
+    /// only a model and a `::view` header read attributes. Reported (`M3L-W010`), not read.
+    pub unread_attributes: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -556,15 +559,26 @@ pub struct ExtendKindArg {
 }
 
 /// Text an element header carried that the header syntax does not read — a second description
-/// string, or a quote that never closes. Recorded by the parser, reported by the resolver as
-/// `M3L-W010`, like [`UnreadFieldText`].
+/// string, a quote that never closes, or attributes on a kind whose header takes none. Recorded by
+/// the parser, reported by the resolver as `M3L-W010`, like [`UnreadFieldText`].
 #[derive(Debug, Clone, PartialEq)]
 pub struct UnreadHeaderText {
     /// The model, enum, interface, view or flow the header declares.
     pub element: String,
     pub text: String,
+    /// What the text is — the resolver words the warning by it.
+    pub part: UnreadHeaderPart,
     pub line: usize,
     pub file: String,
+}
+
+/// Which part of a header went unread.
+#[derive(Debug, Clone, PartialEq)]
+pub enum UnreadHeaderPart {
+    /// A second description string, or a quote that never closes.
+    Quoted,
+    /// Attributes on a `::kind` header — the kind is named — whose syntax takes none.
+    Attributes { kind: String },
 }
 
 /// Text a field line carried that the field syntax does not read — recorded by the parser,

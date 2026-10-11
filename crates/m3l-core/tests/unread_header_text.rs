@@ -72,3 +72,51 @@ fn the_forms_a_header_reads_are_not_reported() {
         assert!(run(header).1.is_empty(), "{header}: {:?}", run(header).1);
     }
 }
+
+/// Specification 10.3.2: only a model and a `::view` header take attributes. On any other kind's
+/// header they were dropped with no warning — `## Status ::enum @deprecated` parsed as if the
+/// attribute had never been written.
+#[test]
+fn attributes_on_a_kind_whose_header_takes_none_are_reported() {
+    for (header, kind) in [
+        ("## Status ::enum @deprecated", "enum"),
+        ("## Named ::interface @abstract", "interface"),
+        ("## Settle ::flow @async", "flow"),
+        ("## Profile ::aspect(Asset) @audited", "aspect"),
+    ] {
+        let (_, found) = run(header);
+        assert_eq!(found.len(), 1, "{header}: {found:?}");
+        let message = &found[0].1;
+        assert!(
+            message.contains(&format!("A `::{kind}` header takes no attributes")),
+            "{message}"
+        );
+        assert!(message.contains('@'), "{message}");
+    }
+}
+
+/// The attribute text is named as written, arguments included, and an inheritance list before it
+/// is still read.
+#[test]
+fn unread_header_attributes_are_named_as_written() {
+    let (parsed, found) = run(r#"## Status ::enum : Base @deprecated("use Phase") @internal"#);
+
+    assert_eq!(parsed.enums[0].inherits, ["Base"]);
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert!(
+        found[0].1.contains(r#"@deprecated("use Phase") @internal"#),
+        "{}",
+        found[0].1
+    );
+}
+
+/// The kinds that do take header attributes stay silent.
+#[test]
+fn model_and_view_header_attributes_are_not_reported() {
+    for header in [
+        "## Product @audited",
+        "## OnSale ::view @materialized @internal",
+    ] {
+        assert!(run(header).1.is_empty(), "{header}: {:?}", run(header).1);
+    }
+}

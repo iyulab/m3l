@@ -130,15 +130,30 @@ pub fn parse_tokens(tokens: &[Token], file: &str) -> ParsedFile {
 }
 
 fn process_token(token: &Token, state: &mut ParserState) {
-    // A header's unread text (a second description, an unclosed quote) — every element kind's header
-    // goes through the same split, so it is recorded here once rather than in each handler.
-    if let (Some(text), true) = (&token.data.unread, is_element_header(&token.token_type)) {
-        state.unread_header_text.push(UnreadHeaderText {
-            element: token.data.name.clone().unwrap_or_default(),
-            text: text.clone(),
-            line: token.line,
-            file: state.file.clone(),
-        });
+    // A header's unread text (a second description, an unclosed quote, attributes its kind does not
+    // take) — every element kind's header goes through the same split, so it is recorded here once
+    // rather than in each handler.
+    if is_element_header(&token.token_type) {
+        let unread = [
+            (token.data.unread.as_ref(), UnreadHeaderPart::Quoted),
+            (
+                token.data.unread_attributes.as_ref(),
+                UnreadHeaderPart::Attributes {
+                    kind: header_kind(&token.token_type),
+                },
+            ),
+        ];
+        for (text, part) in unread {
+            if let Some(text) = text {
+                state.unread_header_text.push(UnreadHeaderText {
+                    element: token.data.name.clone().unwrap_or_default(),
+                    text: text.clone(),
+                    part,
+                    line: token.line,
+                    file: state.file.clone(),
+                });
+            }
+        }
     }
     match &token.token_type {
         TokenType::Namespace => handle_namespace(token, state),
@@ -160,6 +175,19 @@ fn process_token(token: &Token, state: &mut ParserState) {
         TokenType::Blockquote => handle_blockquote(token, state),
         TokenType::Text => handle_text(token, state),
         TokenType::HorizontalRule | TokenType::Blank => {}
+    }
+}
+
+/// The `::kind` a header token was written with, as the author wrote it.
+fn header_kind(token_type: &TokenType) -> String {
+    match token_type {
+        TokenType::Interface => "interface".to_string(),
+        TokenType::Enum => "enum".to_string(),
+        TokenType::View => "view".to_string(),
+        TokenType::Flow => "flow".to_string(),
+        TokenType::AttributeDef => "attribute".to_string(),
+        TokenType::Extension(kind) => kind.clone(),
+        _ => "model".to_string(),
     }
 }
 

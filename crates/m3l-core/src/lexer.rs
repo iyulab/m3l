@@ -464,6 +464,11 @@ fn tokenize_h2(content: &str, raw: &str, line: usize) -> Token {
                 .partition(|a| a.name == "materialized");
             data.materialized = Some(!flags.is_empty());
             data.attributes = attributes;
+        } else {
+            // Only a model and a view header take attributes (§10.3.2). Elsewhere they were dropped
+            // without a word; they are kept as written for the resolver to name.
+            let written: Vec<&str> = RE_MODEL_ATTR.find_iter(rest).map(|m| m.as_str()).collect();
+            data.unread_attributes = (!written.is_empty()).then(|| written.join(" "));
         }
 
         data.description = description;

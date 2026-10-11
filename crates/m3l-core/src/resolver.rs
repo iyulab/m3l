@@ -453,22 +453,31 @@ fn check_unread_field_text(files: &[ParsedFile], warnings: &mut Vec<Diagnostic>)
 
 /// `M3L-W010` for a header: a second description string, or a quote that never closes. Before the
 /// header split took them off the line they became the element's name (or its parent's); now they
-/// are named instead of read.
+/// are named instead of read. Also attributes on a header whose kind takes none, which were dropped.
 fn check_unread_header_text(files: &[ParsedFile], warnings: &mut Vec<Diagnostic>) {
     for file in files {
         for entry in &file.unread_header_text {
+            // Quoted text and attributes go unread for different reasons; the warning says which.
+            let message = match &entry.part {
+                UnreadHeaderPart::Quoted => format!(
+                    "Header of \"{}\": {} is not read. A header takes one description string \
+                     (`## Name \"description\" @attributes`) — join the text into one, or move the \
+                     rest into a blockquote below the header.",
+                    entry.element, entry.text
+                ),
+                UnreadHeaderPart::Attributes { kind } => format!(
+                    "Header of \"{}\": {} is not read. A `::{kind}` header takes no attributes — \
+                     only a model and a `::view` header do — so nothing applies it to \"{}\".",
+                    entry.element, entry.text, entry.element
+                ),
+            };
             warnings.push(Diagnostic {
                 code: "M3L-W010".to_string(),
                 severity: DiagnosticSeverity::Warning,
                 file: entry.file.clone(),
                 line: entry.line,
                 col: 1,
-                message: format!(
-                    "Header of \"{}\": {} is not read. A header takes one description string \
-                     (`## Name \"description\" @attributes`) — join the text into one, or move the \
-                     rest into a blockquote below the header.",
-                    entry.element, entry.text
-                ),
+                message,
             });
         }
     }

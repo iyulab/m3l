@@ -92,6 +92,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`M3L-W010` reports a header's second description string or a quote that never closes**, as it does on a field
   line. Both used to stay in the definition and became part of the element's name (`## Product "A" "B"` named the
   model `Product  "B"`); they are now kept out of it and named instead.
+- **`M3L-W010` reports attributes on a header whose kind takes none.** Only a model and a `::view` header read
+  attributes; on an enum, interface, flow, `::attribute`, `::aspect` or `::subtype` header they were dropped without a
+  word (`## Status ::enum @deprecated` parsed as if the attribute had not been written). They are now named, as
+  written, and still not read.
 
 ## [0.19.0] - 2026-10-04
 

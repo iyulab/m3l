@@ -167,3 +167,78 @@ fn repeated_pairs_leave_nothing_unread() {
 
     assert!(found.is_empty(), "{found:?}");
 }
+
+fn field_w010(field: &str) -> Vec<String> {
+    let parsed = parse_string(
+        &format!("{ORDER}## T\n- id: identifier @pk\n- created_at: timestamp\n{field}"),
+        "platform_named.m3l.md",
+    );
+    let ast = m3l_core::resolve(&[parsed], None);
+    validate(&ast, &ValidateOptions::default())
+        .warnings
+        .into_iter()
+        .filter(|w| w.code == "M3L-W010")
+        .map(|w| w.message)
+        .collect()
+}
+
+#[test]
+fn a_second_platform_on_one_computed_raw_is_w010_and_the_first_stands() {
+    let input = r#"- y: integer @computed_raw("YEAR(created_at)", platform: "sqlserver", platform: "postgresql")"#;
+
+    let found = field_w010(input);
+
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert!(
+        found[0].contains(r#"platform: "postgresql""#),
+        "{}",
+        found[0]
+    );
+    assert!(
+        found[0].contains("one attribute per platform"),
+        "{}",
+        found[0]
+    );
+    let parsed = parse_string(
+        &format!("{ORDER}## T\n- id: identifier @pk\n- created_at: timestamp\n{input}"),
+        "p.m3l.md",
+    );
+    let raw = &parsed.models[2].fields[2]
+        .computed
+        .as_ref()
+        .expect("computed")
+        .raw;
+    assert_eq!(raw[0].platform.as_deref(), Some("sqlserver"));
+}
+
+#[test]
+fn an_argument_computed_raw_has_no_place_for_is_w010() {
+    let found = field_w010(
+        r#"- y: integer @computed_raw("YEAR(created_at)", platform: "sqlserver", note: "x")"#,
+    );
+
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert!(found[0].contains(r#"note: "x""#), "{}", found[0]);
+}
+
+#[test]
+fn a_misspelt_rollup_filter_is_w010_not_an_unfiltered_rollup_in_silence() {
+    let found = rollup_w010(r#"wher: "a = 1""#);
+
+    let message = found.first().expect("W010");
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert!(message.contains(r#"wher: "a = 1""#), "{message}");
+    assert!(
+        message.contains("a rollup reads `where:`, `where_raw:`"),
+        "{message}"
+    );
+}
+
+#[test]
+fn the_arguments_each_attribute_reads_are_not_reported() {
+    assert!(
+        field_w010(r#"- y: integer @computed_raw("YEAR(created_at)", platform: "sqlserver")"#)
+            .is_empty()
+    );
+    assert!(rollup_w010(r#"where: "a = 1", where_raw: "a = 1", platform: "sqlserver""#).is_empty());
+}

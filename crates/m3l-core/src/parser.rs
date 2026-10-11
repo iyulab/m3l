@@ -1512,14 +1512,14 @@ fn build_field_node(
                 })
                 .collect::<Vec<_>>()
                 .join(", ");
-            let (rollup, unread_platforms) = parse_rollup_args(&args_str);
+            let (rollup, unread_args) = parse_rollup_args(&args_str);
             field.rollup = Some(rollup);
-            for text in unread_platforms {
+            for (text, hint) in unread_args {
                 unread.push(UnreadFieldText {
                     element: String::new(),
                     field: field.name.clone(),
                     text,
-                    hint: Some(ROLLUP_PLATFORM_HINT),
+                    hint: Some(hint),
                     line: token.line,
                     file: file.to_string(),
                 });
@@ -1565,11 +1565,30 @@ fn build_field_node(
                     platform = inline_platform;
                 }
             }
-            if platform.is_none() {
-                platform = args.iter().skip(1).find_map(|arg| match arg {
-                    AttrArgValue::String(s) => RE_PLATFORM.captures(s).map(|c| c[1].to_string()),
-                    _ => None,
-                });
+            // After the first argument: one `platform:`, if the first did not name it. Anything else — a second
+            // platform, an argument the attribute has no place for — is not read, and is reported rather than dropped.
+            for arg in args.iter().skip(1) {
+                let text = match arg {
+                    AttrArgValue::String(s) => s.clone(),
+                    AttrArgValue::Number(n) => n.to_string(),
+                    AttrArgValue::Bool(b) => b.to_string(),
+                };
+                let named = if text.trim_start().starts_with("platform") {
+                    RE_PLATFORM.captures(&text).map(|c| c[1].to_string())
+                } else {
+                    None
+                };
+                match named {
+                    Some(name) if platform.is_none() => platform = Some(name),
+                    _ => unread.push(UnreadFieldText {
+                        element: String::new(),
+                        field: field.name.clone(),
+                        text,
+                        hint: Some(COMPUTED_RAW_ARGUMENT_HINT),
+                        line: token.line,
+                        file: file.to_string(),
+                    }),
+                }
             }
             if expression.is_none() && !block_used {
                 expression = block.clone();
@@ -1715,7 +1734,16 @@ fn parse_raw_attributes(raw_attrs: &[RawAttribute]) -> Vec<FieldAttribute> {
 const ROLLUP_PLATFORM_HINT: &str =
     "In a rollup each `platform:` follows the `where_raw:` it names — one per `where_raw:`.";
 
-fn parse_rollup_args(args_str: &str) -> (RollupDef, Vec<String>) {
+/// The hint `M3L-W010` gives for a rollup argument that is none of the ones a rollup reads.
+const ROLLUP_ARGUMENT_HINT: &str =
+    "After its target and aggregate a rollup reads `where:`, `where_raw:` and the `platform:` that follows a `where_raw:`.";
+
+/// The hint `M3L-W010` gives for an `@computed_raw` argument beyond its expression and one `platform:` (§10.7.5).
+const COMPUTED_RAW_ARGUMENT_HINT: &str =
+    "`@computed_raw` reads one expression and one `platform:` — one attribute per platform.";
+
+/// Returns the rollup and the arguments it did not read, each with the hint `M3L-W010` gives for it.
+fn parse_rollup_args(args_str: &str) -> (RollupDef, Vec<(String, &'static str)>) {
     let parts = split_rollup_args(args_str);
 
     let target_fk = parts.first().map(|s| s.as_str()).unwrap_or("");
@@ -1761,8 +1789,11 @@ fn parse_rollup_args(args_str: &str) -> (RollupDef, Vec<String>) {
                 (Some(caps), Some(last)) if last.platform.is_none() => {
                     last.platform = Some(caps[1].to_string());
                 }
-                _ => unread.push(part.to_string()),
+                _ => unread.push((part.to_string(), ROLLUP_PLATFORM_HINT)),
             }
+        } else if !part.is_empty() {
+            // A misspelt `where:` lands here — and a rollup that drops its filter aggregates every row.
+            unread.push((part.to_string(), ROLLUP_ARGUMENT_HINT));
         }
     }
 

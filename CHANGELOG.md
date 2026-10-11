@@ -42,11 +42,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   view `- where_raw:` without `platform:`. An implementation picks a platform expression by its platform, so one with
   none is never chosen; before, it was kept without a word. In a rollup the `platform:` follows the `where_raw:` it is
   for — one written before it leaves that `where_raw:` unnamed, and the warning says where it goes.
-- **`M3L-W010` reaches a rollup's unread `platform:`.** A `platform:` that names no `where_raw:` — written before every
-  `where_raw:`, or a second one after a `where_raw:` that already named its platform — was dropped without a word,
-  including where the `where_raw:` it was meant for took a later `platform:` instead
-  (`platform: a, where_raw: x, platform: b`). It is now reported as text the field does not read, with the rollup's
-  own rule as the hint: each `platform:` follows the `where_raw:` it names.
+- **`M3L-W010` reaches the arguments of `@rollup` and `@computed_raw` that nothing reads.** Each was dropped without a
+  word; each is now reported as text the field does not read, with the attribute's own rule as the hint:
+  - a rollup argument other than `where:`, `where_raw:` and `platform:` — a misspelt `where:` (`wher: "…"`) left the
+    rollup aggregating every row;
+  - a rollup `platform:` that names no `where_raw:` — written before every `where_raw:`, or a second one after a
+    `where_raw:` that already named its platform, including where the `where_raw:` it was meant for took a later
+    `platform:` instead (`platform: a, where_raw: x, platform: b`);
+  - an `@computed_raw` argument beyond its expression and one `platform:` — a second `platform:` (the first still
+    stands; a second platform is a second attribute), or an argument the attribute has no place for.
 - **Attributes on a view header** — `## ViewName ::view @internal` (§4.7.1; grammar `ViewAttrs`). They reach the AST as
   the view's `attributes`, like a model header's. Before, the header accepted `@materialized` only and anything else
   written there was dropped without a diagnostic, so a tool asked to treat an attribute on a view never saw it.

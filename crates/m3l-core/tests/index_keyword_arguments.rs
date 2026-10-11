@@ -74,9 +74,19 @@ fn a_labelled_index_is_named_by_its_label_and_a_second_name_is_unread() {
 
     let found = indexes(lines);
 
+    let warned = w010(lines);
+
     assert_eq!(found[0]["name"], json!("by_sku"));
     assert_eq!(found[0]["args"], json!(["sku"]));
-    assert_eq!(w010(lines).len(), 1);
+    assert_eq!(warned.len(), 1);
+    // The directive's own hint would say `@index` reads `name:` — true of a bare directive, and the opposite of what
+    // happened here. The writer is told where the name came from instead.
+    assert!(
+        warned[0].contains("named by its item name"),
+        "{}",
+        warned[0]
+    );
+    assert!(!warned[0].contains("reads `name:`"), "{}", warned[0]);
 }
 
 #[test]

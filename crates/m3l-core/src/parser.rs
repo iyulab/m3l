@@ -757,20 +757,25 @@ struct IndexArgs {
 const INDEX_ARGUMENT_HINT: &str =
     "After its columns `@index` reads `name:` and `fulltext:`, and `@unique` reads `name:` and `nulls:` — each once.";
 
+/// The hint for a `name:` on the directive of an `### Indexes` item (§3.3.3). The directive hint would tell the writer
+/// that `name:` is read — true of a bare directive, the opposite of what happened here.
+const LABELLED_INDEX_NAME_HINT: &str =
+    "An `### Indexes` item is named by its item name — drop `name:`, or rename the item.";
+
 fn report_unread_index_args(
     sink: &mut Vec<UnreadFieldText>,
     model: &ModelNode,
     directive: &str,
-    unread: Vec<String>,
+    unread: Vec<(String, &'static str)>,
     token: &Token,
     file: &str,
 ) {
-    for text in unread {
+    for (text, hint) in unread {
         sink.push(UnreadFieldText {
             element: model.name.clone(),
             field: format!("@{directive}"),
             text,
-            hint: Some(INDEX_ARGUMENT_HINT),
+            hint: Some(hint),
             line: token.line,
             file: file.to_string(),
         });
@@ -809,19 +814,24 @@ fn split_index_args(args: &[AttrArgValue], unique: bool) -> IndexArgs {
     split
 }
 
-/// Writes what [`split_index_args`] read onto an index entry. `name` is left alone when the entry already has one —
-/// the label of an `### Indexes` item names it, and a second name is unread.
+/// Writes what [`split_index_args`] read onto an index entry, and returns what it did not read with the hint each
+/// gets. `name` is left alone when the entry already has one — the item name of an `### Indexes` item names it
+/// (§3.3.3), and a second name is unread.
 fn insert_index_args(
     entry: &mut serde_json::Map<String, serde_json::Value>,
     split: IndexArgs,
-) -> Vec<String> {
-    let mut unread = split.unread;
+) -> Vec<(String, &'static str)> {
+    let mut unread: Vec<(String, &'static str)> = split
+        .unread
+        .into_iter()
+        .map(|text| (text, INDEX_ARGUMENT_HINT))
+        .collect();
     if !split.columns.is_empty() {
         entry.insert("args".into(), attr_args_to_json(&split.columns));
     }
     if let Some(name) = split.name {
         if entry.contains_key("name") {
-            unread.push(format!("name: \"{name}\""));
+            unread.push((format!("name: \"{name}\""), LABELLED_INDEX_NAME_HINT));
         } else {
             entry.insert("name".into(), serde_json::json!(name));
         }

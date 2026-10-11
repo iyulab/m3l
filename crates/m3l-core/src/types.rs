@@ -99,6 +99,9 @@ pub struct TokenData {
     /// Attributes on a `::kind` header whose syntax takes none (`## Status ::enum @deprecated`) —
     /// only a model and a `::view` header read attributes. Reported (`M3L-W010`), not read.
     pub unread_attributes: Option<String>,
+    /// Words on a header the header syntax has no place for — `oops` in `## Status ::enum oops` or
+    /// `## Product oops`. Reported (`M3L-W010`); before, they were dropped or became the name.
+    pub unread_words: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -579,6 +582,8 @@ pub enum UnreadHeaderPart {
     Quoted,
     /// Attributes on a `::kind` header — the kind is named — whose syntax takes none.
     Attributes { kind: String },
+    /// Words that are none of the header's parts — name, label, parents, attributes, description.
+    Words,
 }
 
 /// Text a field line carried that the field syntax does not read — recorded by the parser,

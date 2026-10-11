@@ -96,6 +96,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   attributes; on an enum, interface, flow, `::attribute`, `::aspect` or `::subtype` header they were dropped without a
   word (`## Status ::enum @deprecated` parsed as if the attribute had not been written). They are now named, as
   written, and still not read.
+- **`M3L-W010` reports words a header has no place for, and they no longer become a model's name.** On a `::kind`
+  header, a word that is neither a parent nor an attribute (`## Status ::enum oops`) was dropped silently. On a model
+  header, a word after the name made the whole line the name, attributes included: `## Product oops @audited` declared
+  a model named `Product oops @audited` with no attributes. The name is now the leading identifier (and label), the
+  attributes are read, and the words are named. A model whose header carried such words is renamed by this change.
 
 ## [0.19.0] - 2026-10-04
 

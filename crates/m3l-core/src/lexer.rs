@@ -38,6 +38,10 @@ static RE_BINDING: LazyLock<Regex> = LazyLock::new(|| {
 });
 static RE_INLINE_COMMENT: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\s+#\s+(.+)$").unwrap());
 
+/// A header that opens with a name (and label) followed by text the model pattern does not take —
+/// `## Product oops`. The name is that leading identifier; the rest is read for attributes and named.
+static RE_LEADING_NAME: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^([\w][\w.]*(?:\([^)]*\))?)\s+(\S.*)$").unwrap());
 static RE_NAME_LABEL: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^([\w][\w.]*)\(([^)]*)\)$").unwrap());
 static RE_NAMESPACE: LazyLock<Regex> =
@@ -470,6 +474,12 @@ fn tokenize_h2(content: &str, raw: &str, line: usize) -> Token {
             let written: Vec<&str> = RE_MODEL_ATTR.find_iter(rest).map(|m| m.as_str()).collect();
             data.unread_attributes = (!written.is_empty()).then(|| written.join(" "));
         }
+        // Whatever is left once the parents and the attributes are taken has no place in the header.
+        let after_parents = RE_H2_INHERIT
+            .captures(rest)
+            .and_then(|c| c.get(1))
+            .map_or(rest, |m| &rest[m.end()..]);
+        data.unread_words = unread_words(after_parents);
 
         data.description = description;
         data.unread = unread;
@@ -518,8 +528,31 @@ fn tokenize_h2(content: &str, raw: &str, line: usize) -> Token {
         // Parse model-level attributes
         if let Some(attrs_s) = attrs_str {
             data.attributes = header_attributes(attrs_s);
+            data.unread_words = unread_words(attrs_s);
         }
 
+        return Token {
+            token_type: TokenType::Model,
+            raw: raw.to_string(),
+            line,
+            indent: 0,
+            data,
+        };
+    }
+
+    // A name followed by words the model pattern does not take (`## Product oops @audited`): the name
+    // is the leading identifier, attributes among the rest are read, and the other words are named.
+    // Before, the whole line became the name, attributes included.
+    if let Some(caps) = RE_LEADING_NAME.captures(content) {
+        let (name, label) = parse_name_label(&caps[1]);
+        let tail = &caps[2];
+        let mut data = TokenData::default();
+        data.name = Some(name);
+        data.label = label;
+        data.attributes = header_attributes(tail);
+        data.unread_words = unread_words(tail);
+        data.description = description;
+        data.unread = unread;
         return Token {
             token_type: TokenType::Model,
             raw: raw.to_string(),
@@ -543,6 +576,15 @@ fn tokenize_h2(content: &str, raw: &str, line: usize) -> Token {
         indent: 0,
         data,
     }
+}
+
+/// The words of `text` that are not attributes, or `None` when there are none.
+fn unread_words(text: &str) -> Option<String> {
+    let words: Vec<&str> = RE_MODEL_ATTR
+        .split(text)
+        .flat_map(str::split_whitespace)
+        .collect();
+    (!words.is_empty()).then(|| words.join(" "))
 }
 
 fn parse_name_label(s: &str) -> (String, Option<String>) {

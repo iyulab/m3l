@@ -470,6 +470,12 @@ fn check_unread_header_text(files: &[ParsedFile], warnings: &mut Vec<Diagnostic>
                      only a model and a `::view` header do — so nothing applies it to \"{}\".",
                     entry.element, entry.text, entry.element
                 ),
+                UnreadHeaderPart::Words => format!(
+                    "Header of \"{}\": `{}` is not read. A header is `## Name(Label) : Parents \
+                     @attributes \"description\"` (or `## Name ::kind …`), and these words are none \
+                     of its parts.",
+                    entry.element, entry.text
+                ),
             };
             warnings.push(Diagnostic {
                 code: "M3L-W010".to_string(),

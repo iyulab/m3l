@@ -142,6 +142,7 @@ fn process_token(token: &Token, state: &mut ParserState) {
                     kind: header_kind(&token.token_type),
                 },
             ),
+            (token.data.unread_words.as_ref(), UnreadHeaderPart::Words),
         ];
         for (text, part) in unread {
             if let Some(text) = text {

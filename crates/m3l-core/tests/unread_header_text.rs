@@ -120,3 +120,82 @@ fn model_and_view_header_attributes_are_not_reported() {
         assert!(run(header).1.is_empty(), "{header}: {:?}", run(header).1);
     }
 }
+
+fn words_warning(found: &[(usize, String)]) -> Option<&String> {
+    found
+        .iter()
+        .map(|(_, m)| m)
+        .find(|m| m.contains("these words are none of its parts"))
+}
+
+/// Words after `::kind` that are neither parents nor attributes were dropped without a warning.
+#[test]
+fn words_a_kind_header_has_no_place_for_are_reported() {
+    for (header, words) in [
+        ("## Status ::enum oops", "`oops`"),
+        ("## Named ::interface extra words", "`extra words`"),
+        ("## Settle ::flow later", "`later`"),
+    ] {
+        let (_, found) = run(header);
+        let message = words_warning(&found).unwrap_or_else(|| panic!("{header}: {found:?}"));
+        assert!(message.contains(words), "{message}");
+    }
+}
+
+/// A view still reads its attributes around the stray word.
+#[test]
+fn a_view_header_reads_its_attributes_and_names_the_stray_word() {
+    let (parsed, found) = run("## Shown ::view stray @materialized");
+
+    assert_eq!(parsed.views[0].materialized, Some(true));
+    assert!(
+        words_warning(&found).is_some_and(|m| m.contains("`stray`")),
+        "{found:?}"
+    );
+}
+
+/// A model header with words after its name took the whole line as the name — attributes
+/// included — and said nothing. The name is the leading identifier now.
+#[test]
+fn words_after_a_model_name_are_reported_and_kept_out_of_the_name() {
+    let (parsed, found) = run("## Product oops @audited");
+
+    assert_eq!(parsed.models[0].name, "Product");
+    assert_eq!(parsed.models[0].attributes[0].name, "audited");
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert!(words_warning(&found).is_some_and(|m| m.contains("`oops`")));
+
+    let (parsed, found) = run("## Item(품목) trailing");
+    assert_eq!(parsed.models[0].name, "Item");
+    assert_eq!(parsed.models[0].label.as_deref(), Some("품목"));
+    assert!(words_warning(&found).is_some_and(|m| m.contains("`trailing`")));
+}
+
+/// Words after a model's attributes were dropped while the attributes were read.
+#[test]
+fn words_after_model_attributes_are_reported() {
+    let (parsed, found) = run("## Product @audited oops");
+
+    assert_eq!(parsed.models[0].attributes[0].name, "audited");
+    assert!(
+        words_warning(&found).is_some_and(|m| m.contains("`oops`")),
+        "{found:?}"
+    );
+}
+
+/// Parents and attributes are parts of a header, not stray words.
+#[test]
+fn parents_and_attributes_are_not_stray_words() {
+    for header in [
+        "## Status ::enum : Base",
+        "## OnSale ::view @materialized @internal",
+        "## Profile ::aspect(Asset) : Base",
+        "## Product : Base @audited @table(\"products\")",
+    ] {
+        assert!(
+            words_warning(&run(header).1).is_none(),
+            "{header}: {:?}",
+            run(header).1
+        );
+    }
+}

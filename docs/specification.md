@@ -1145,6 +1145,11 @@ Indexes are used to optimize query performance.
 - @unique(order_id, product_id) "Ensures uniqueness of products per order"
 ```
 
+After its columns, `@index` takes the keyword arguments `name:` (the index's name) and `fulltext:` (`true` or
+`false`); `@unique` takes `name:` and `nulls:` (§3.3.4.2). Each is given once. A keyword argument is never a column:
+an implementation reads the columns and the keywords apart, and a keyword the directive does not take is reported
+(`M3L-W010`).
+
 #### 3.3.3 Index Section (Recommended for Multiple Indexes)
 
 ```markdown
@@ -2990,7 +2995,7 @@ Conforming parsers should use these error codes for consistent diagnostics.
 | `M3L-W007` | Attribute `@{attr}` is declared for target `[{target}]` but used on `{subject}` | Custom registry attribute used on a field, model, or enum value that its declared `target` does not list |
 | `M3L-W008` | Attribute `@{attr}` is required but used without an explicit argument on `{subject}` | Custom registry attribute declared `required: true` was used bare (no argument) |
 | `M3L-W009` | Relationship notation `{notation}` in model `{model}` is written among the fields — it is read as a relationship, not a field, but `### Relations` is where it belongs | `>name`/`<name`/`<>name` (or an arrow spelling) written in the field list (§3.2.4) instead of `### Relations` (§3.2.3) — parsed either way, but flagged since the section is the documented home |
-| `M3L-W010` | Field `{field}` in `{model}`: `{text}` is not read | Text left on a field line after the field syntax (§2.5.7) has read everything it reads — most often a default written after an attribute (§2.5.8). Also an attribute argument nothing reads: a rollup argument other than `where:`, `where_raw:` and the `platform:` that follows a `where_raw:` — a misspelt `where:` would otherwise leave the rollup unfiltered — a rollup `platform:` with no `where_raw:` to name, and an `@computed_raw` argument beyond its expression and one `platform:` (§10.7.5) |
+| `M3L-W010` | Field `{field}` in `{model}`: `{text}` is not read | Text left on a field line after the field syntax (§2.5.7) has read everything it reads — most often a default written after an attribute (§2.5.8). Also an attribute argument nothing reads: a rollup argument other than `where:`, `where_raw:` and the `platform:` that follows a `where_raw:` — a misspelt `where:` would otherwise leave the rollup unfiltered — a rollup `platform:` with no `where_raw:` to name, an `@computed_raw` argument beyond its expression and one `platform:` (§10.7.5), and an `@index`/`@unique` keyword argument the directive does not take (§3.3.2) |
 | `M3L-W011` | `{context}` `"{expression}"` is not a portable expression (§10.7): {constructs} | An expression in a portable context — `@computed`, a rollup's `where:`, a view's `where` — uses something outside the subset: a function not in §10.7.4, a bracketed or quoted identifier, `\|\|`, a `::` cast, a JSON operator, or `+` next to text. Each construct is named once. `@computed_raw` and a view whose source is a SQL code block (§4.7.8) are not checked |
 | `M3L-W012` | `{what}` with no platform — an implementation picks a platform expression by its platform, so this one is never chosen | A platform expression — `@computed_raw`, a rollup's `where_raw:`, a view's `- where_raw:` — written without `platform:` (§10.7.5). In a rollup the `platform:` follows the `where_raw:` it is for; one written before it names nothing |
 

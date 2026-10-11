@@ -21,6 +21,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed — AST
 
+- 🔴 **An `@index`/`@unique` directive's keyword arguments leave `args`.** `args` is the column list, and
+  `name: "…"` and `fulltext: …` stayed in it — so the specification's own `@index(customer_id, order_date,
+  name: "customer_orders")` reached a consumer reading `args` as columns with a third column named
+  `name: "customer_orders"`. Each keyword now has its own field on the index entry — `name`, `fulltext` (boolean),
+  `nulls` (as before) — and a keyword the directive does not take is reported (`M3L-W010`) rather than kept as a
+  column. A labelled `### Indexes` item keeps its label as `name`; a `name:` argument there is reported. A consumer
+  that read a keyword out of `args` reads the field instead.
+
 - 🔴 **`computed` holds the portable expression and the platform expressions apart.** `computed.expression` is the
   `@computed` expression, now optional; `computed.platform` is gone, and each `@computed_raw` becomes an entry of
   `computed.raw` (`[{ "platform", "expression" }]`). A field may carry one `@computed_raw` per platform beside a portable

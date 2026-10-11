@@ -29,7 +29,10 @@ static RE_PLATFORM: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r#"platform\s*:\s*["']?([^"'\s]+)["']?"#).unwrap());
 // Same optional-quote shape as `RE_WHERE`, same reason: by the time this sees the
 // arg, the generic tokenizer has already stripped one enclosing quote pair.
-static RE_NULLS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"^nulls:\s*"?(.*?)"?$"#).unwrap());
+// A keyword argument in an `@index`/`@unique` list — `name: "…"`, `fulltext: true`, `nulls: "…"`. The same
+// optional-quote shape as `RE_WHERE`; a column name never carries a colon.
+static RE_INDEX_KEYWORD: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*"?(.*?)"?$"#).unwrap());
 
 // --- Parser state ---
 
@@ -485,7 +488,13 @@ fn handle_field(token: &Token, state: &mut ParserState) {
         CurrentElement::Model(ref mut model) => {
             // Directive-only lines
             if token.data.is_directive {
-                handle_directive(&token.data, model, token, &state.file);
+                handle_directive(
+                    &token.data,
+                    model,
+                    token,
+                    &state.file,
+                    &mut state.unread_field_text,
+                );
                 return;
             }
 
@@ -730,29 +739,109 @@ fn apply_relation_notation(entry: &mut serde_json::Map<String, serde_json::Value
     }
 }
 
-/// Splits a `@unique(...)` arg list into its column names and an optional trailing
-/// `nulls: "not_distinct"` policy kwarg — same trailing-`key: value` shape `where:`
-/// already uses on `@rollup` (`RE_WHERE`). The policy arg is not a column name, so
-/// leaving it in `args` would make a consumer that reads `args` as a column list
-/// (e.g. mdd-booster's `SectionIndexParser`) treat it as one.
-fn split_unique_nulls_policy(args: &[AttrArgValue]) -> (Vec<AttrArgValue>, Option<String>) {
-    let mut nulls_policy = None;
-    let mut columns = Vec::with_capacity(args.len());
-    for a in args {
-        if nulls_policy.is_none() {
-            if let AttrArgValue::String(s) = a {
-                if let Some(caps) = RE_NULLS.captures(s.trim()) {
-                    nulls_policy = Some(caps[1].to_string());
-                    continue;
-                }
-            }
-        }
-        columns.push(a.clone());
-    }
-    (columns, nulls_policy)
+/// An `@index`/`@unique` argument list taken apart: the columns, and the keyword arguments that are not columns.
+///
+/// A keyword argument left among the columns becomes a column to every consumer that reads `args` as the column
+/// list — `name: "customer_orders"`, the specification's own example, was emitted as a column named that. So each
+/// keyword is taken out: the ones the directive reads into their own fields, any other into `unread`
+/// (`M3L-W010`).
+struct IndexArgs {
+    columns: Vec<AttrArgValue>,
+    name: Option<String>,
+    fulltext: Option<bool>,
+    nulls: Option<String>,
+    unread: Vec<String>,
 }
 
-fn handle_directive(data: &TokenData, model: &mut ModelNode, token: &Token, file: &str) {
+/// The hint `M3L-W010` gives for a keyword argument an `@index`/`@unique` does not read (§3.3).
+const INDEX_ARGUMENT_HINT: &str =
+    "After its columns `@index` reads `name:` and `fulltext:`, and `@unique` reads `name:` and `nulls:` — each once.";
+
+fn report_unread_index_args(
+    sink: &mut Vec<UnreadFieldText>,
+    model: &ModelNode,
+    directive: &str,
+    unread: Vec<String>,
+    token: &Token,
+    file: &str,
+) {
+    for text in unread {
+        sink.push(UnreadFieldText {
+            element: model.name.clone(),
+            field: format!("@{directive}"),
+            text,
+            hint: Some(INDEX_ARGUMENT_HINT),
+            line: token.line,
+            file: file.to_string(),
+        });
+    }
+}
+
+fn split_index_args(args: &[AttrArgValue], unique: bool) -> IndexArgs {
+    let mut split = IndexArgs {
+        columns: Vec::with_capacity(args.len()),
+        name: None,
+        fulltext: None,
+        nulls: None,
+        unread: Vec::new(),
+    };
+    for a in args {
+        let AttrArgValue::String(s) = a else {
+            split.columns.push(a.clone());
+            continue;
+        };
+        let Some(caps) = RE_INDEX_KEYWORD.captures(s.trim()) else {
+            split.columns.push(a.clone());
+            continue;
+        };
+        let value = caps[2].to_string();
+        match &caps[1] {
+            "name" if split.name.is_none() => split.name = Some(value),
+            "fulltext"
+                if !unique && split.fulltext.is_none() && (value == "true" || value == "false") =>
+            {
+                split.fulltext = Some(value == "true")
+            }
+            "nulls" if unique && split.nulls.is_none() => split.nulls = Some(value),
+            _ => split.unread.push(s.trim().to_string()),
+        }
+    }
+    split
+}
+
+/// Writes what [`split_index_args`] read onto an index entry. `name` is left alone when the entry already has one —
+/// the label of an `### Indexes` item names it, and a second name is unread.
+fn insert_index_args(
+    entry: &mut serde_json::Map<String, serde_json::Value>,
+    split: IndexArgs,
+) -> Vec<String> {
+    let mut unread = split.unread;
+    if !split.columns.is_empty() {
+        entry.insert("args".into(), attr_args_to_json(&split.columns));
+    }
+    if let Some(name) = split.name {
+        if entry.contains_key("name") {
+            unread.push(format!("name: \"{name}\""));
+        } else {
+            entry.insert("name".into(), serde_json::json!(name));
+        }
+    }
+    if let Some(fulltext) = split.fulltext {
+        entry.insert("fulltext".into(), serde_json::json!(fulltext));
+    }
+    if let Some(nulls) = split.nulls {
+        entry.insert("nulls".into(), serde_json::json!(nulls));
+    }
+    unread
+}
+
+fn handle_directive(
+    data: &TokenData,
+    model: &mut ModelNode,
+    token: &Token,
+    file: &str,
+    unread_field_text: &mut Vec<UnreadFieldText>,
+) {
     if data.attributes.is_empty() {
         return;
     }
@@ -775,17 +864,11 @@ fn handle_directive(data: &TokenData, model: &mut ModelNode, token: &Token, file
         let mut entry = serde_json::Map::new();
         entry.insert("type".into(), serde_json::json!("directive"));
         entry.insert("raw".into(), serde_json::json!(raw_content));
-        if attr.name == "unique" {
-            let (columns, nulls) = split_unique_nulls_policy(&attr.args);
-            if !columns.is_empty() {
-                entry.insert("args".into(), attr_args_to_json(&columns));
-            }
-            if let Some(n) = nulls {
-                entry.insert("nulls".into(), serde_json::json!(n));
-            }
-        } else if let Some(ref a) = args_val {
-            entry.insert("args".into(), a.clone());
-        }
+        let unread = insert_index_args(
+            &mut entry,
+            split_index_args(&attr.args, attr.name == "unique"),
+        );
+        report_unread_index_args(unread_field_text, model, &attr.name, unread, token, file);
         entry.insert("unique".into(), serde_json::json!(attr.name == "unique"));
         entry.insert("loc".into(), loc);
         model
@@ -924,17 +1007,11 @@ fn handle_section_item(
             entry.insert("type".into(), serde_json::json!("indexed"));
             entry.insert("attr".into(), serde_json::json!(attr.name.clone()));
             entry.insert("unique".into(), serde_json::json!(attr.name == "unique"));
-            if attr.name == "unique" {
-                let (columns, nulls) = split_unique_nulls_policy(&attr.args);
-                if !columns.is_empty() {
-                    entry.insert("args".into(), attr_args_to_json(&columns));
-                }
-                if let Some(n) = nulls {
-                    entry.insert("nulls".into(), serde_json::json!(n));
-                }
-            } else if !attr.args.is_empty() {
-                entry.insert("args".into(), attr_args_to_json(&attr.args));
-            }
+            let unread = insert_index_args(
+                &mut entry,
+                split_index_args(&attr.args, attr.name == "unique"),
+            );
+            report_unread_index_args(unread_field_text, model, &attr.name, unread, token, file);
         }
 
         entry.insert("loc".into(), loc);

@@ -1211,8 +1211,10 @@ For example:
 
 By default, a `NULL` in any column of a multi-column `@unique` constraint excludes that row from
 uniqueness enforcement — two rows that agree on every other column may both carry `NULL` in the
-same nullable column. This matches SQL Server's native `UNIQUE` semantics for nullable columns
-and is the correct model for "a value here is unique, `NULL` means not set."
+same nullable column. This is the SQL standard's default (`NULLS DISTINCT`) and what PostgreSQL
+does natively; SQL Server's own `UNIQUE` counts a `NULL` as a value, so an implementation there
+has to leave the `NULL` rows out of the constraint to get it. It is the correct model for
+"a value here is unique, `NULL` means not set."
 
 Some multi-column constraints mean the opposite: a fallback/override table (organization → channel
 → part, with a `NULL` column standing for "applies to the whole range") needs `NULL` to be **a

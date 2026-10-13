@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Specification
+
+- §3.3.4.3 said the default `NULL` handling of a multi-column `@unique` — a `NULL` in any column takes the row out
+  of the constraint — "matches SQL Server's native `UNIQUE` semantics". It is the other way round: that default is
+  the SQL standard's `NULLS DISTINCT` and PostgreSQL's native behaviour, while SQL Server's `UNIQUE` counts a `NULL`
+  as a value and refuses a second such row. The sentence now says so. The same section's closing paragraph already
+  mapped `nulls: "not_distinct"` to a plain `UNIQUE` on SQL Server, which the old sentence contradicted. No change
+  to the language or the parser.
+
 ## [0.20.0] - 2026-10-11
 
 ### Specification — portable expressions (RFC-0005, text)

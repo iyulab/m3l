@@ -23,6 +23,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **An `::aspect` or `::subtype` header takes a model's attributes** (`## Profile ::aspect(Asset) @table("…")`) — each
   declares an ordinary model that also names a base. They were reported as unread (`M3L-W010`) and dropped.
 
+### Conformance
+
+- **Validation diagnostics are part of the conformance suite.** `spec/conformance/validate.json` lists inputs with the
+  diagnostics `m3l validate` must report for each — code, line and severity — beside the parse fixtures, which carry
+  only what resolution reports. A validator diagnostic was pinned by the core's own tests alone, which a binding or
+  another implementation cannot run. Starts with `M3L-E001`, `M3L-E002`, `M3L-E022`, `M3L-E027` and strict
+  `M3L-W004`.
+
 ### Specification
 
 - §3.1.6 and §3.1.8 called an enum value's quoted text its "label"; with labels in the language they say

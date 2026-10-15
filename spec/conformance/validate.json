@@ -1,0 +1,23 @@
+{
+  "description": "Validate diagnostics: each input, run through `m3l validate --format json`, reports exactly the listed diagnostics (code, line, severity). Messages are not part of the contract.",
+  "tests": [
+    {
+      "name": "lookup-paths",
+      "input": "validate/inputs/lookup-paths.m3l.md",
+      "expected": "validate/expected/lookup-paths.json",
+      "strict": false
+    },
+    {
+      "name": "rollup-reference",
+      "input": "validate/inputs/rollup-reference.m3l.md",
+      "expected": "validate/expected/rollup-reference.json",
+      "strict": false
+    },
+    {
+      "name": "lookup-depth-strict",
+      "input": "validate/inputs/lookup-depth-strict.m3l.md",
+      "expected": "validate/expected/lookup-depth-strict.json",
+      "strict": true
+    }
+  ]
+}

@@ -68,7 +68,8 @@ Consequences:
 ## 4. The spec is pinned by fixtures, not by prose alone
 
 `docs/specification.md` states what M3L means. `spec/conformance/` (paired `inputs/`/`expected/`
-fixtures) states what M3L *actually does*, checked on every CI run. A spec clause with no
+fixtures — the AST each input parses to, and under `validate/` the diagnostics validation reports)
+states what M3L *actually does*, checked on every CI run. A spec clause with no
 corresponding fixture is a claim nobody is currently verifying.
 
 Consequences:

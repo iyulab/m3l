@@ -55,6 +55,16 @@ before committing:
 M3L_BLESS=1 cargo test -p m3l-cli --test conformance_expected
 ```
 
+The AST carries only what resolution reports. A diagnostic the validator raises (`M3L-E002`,
+`M3L-E022`, `M3L-E027`, the strict-mode warnings, …) is pinned by the second half of the suite:
+`spec/conformance/validate.json` lists inputs under `validate/inputs/` with the diagnostics
+`m3l validate --format json` must report for each — code, line and severity, not the message —
+and `crates/m3l-cli/tests/conformance_validate.rs` checks them the same way:
+
+```sh
+M3L_BLESS=1 cargo test -p m3l-cli --test conformance_validate
+```
+
 ### Layout
 
 ```

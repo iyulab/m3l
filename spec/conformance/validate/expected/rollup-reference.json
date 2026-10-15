@@ -1,0 +1,9 @@
+{
+  "diagnostics": [
+    {
+      "code": "M3L-E001",
+      "line": 5,
+      "severity": "error"
+    }
+  ]
+}

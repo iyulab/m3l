@@ -1,0 +1,9 @@
+{
+  "diagnostics": [
+    {
+      "code": "M3L-W004",
+      "line": 22,
+      "severity": "warning"
+    }
+  ]
+}

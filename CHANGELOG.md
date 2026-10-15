@@ -38,6 +38,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   the attribute by name read it as present; `m3l format` wrote it back that way. For an attribute that is written bare
   (§10.8) `true` is now the bare attribute (`@unique`, no arguments) and `false` is no attribute. Other attributes keep
   the boolean as their argument (`- default: false`).
+- **An extended-format derived field is a derived field** (§2.3.2, §4.4.2, §4.5.3). `- computed: "…"`, `- lookup: …`
+  and `- rollup: …` items added the attribute but left the field `kind: "stored"` with no `computed`/`lookup`/`rollup`
+  definition — and `m3l format`, which writes the line form, turned it into a derived field on the next parse. The item
+  now makes the field what the attribute makes it on a field line. `- formula: "…"` (§4.4.2, beside `- computed: true`)
+  is read as the `@computed` expression; it no longer arrives as an attribute of its own.
 
 ## [0.22.0] - 2026-10-15
 

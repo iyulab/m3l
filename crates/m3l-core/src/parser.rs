@@ -1362,11 +1362,21 @@ fn handle_nested_item(token: &Token, state: &mut ParserState) {
 
                     // Extended format field attributes
                     if let Some(k) = key {
+                        let mut unread = Vec::new();
                         apply_extended_attribute(
                             &mut model.fields[field_idx],
                             k,
                             value.unwrap_or(""),
+                            token.line,
+                            &state.file,
+                            &mut unread,
                         );
+                        state.unread_field_text.extend(unread.into_iter().map(|u| {
+                            UnreadFieldText {
+                                element: model.name.clone(),
+                                ..u
+                            }
+                        }));
                     }
                     return;
                 }
@@ -1636,22 +1646,6 @@ fn build_field_node(
     unread: &mut Vec<UnreadFieldText>,
 ) -> FieldNode {
     let attrs = parse_raw_attributes(&data.attributes);
-    let mut kind = current_kind.clone();
-
-    // Detect kind from attributes
-    let lookup_attr = attrs.iter().find(|a| a.name == "lookup");
-    let rollup_attr = attrs.iter().find(|a| a.name == "rollup");
-    let computed_attr = attrs.iter().find(|a| a.name == "computed");
-    let computed_raw_attrs: Vec<_> = attrs.iter().filter(|a| a.name == "computed_raw").collect();
-    let computed_raw_attr = computed_raw_attrs.first().copied();
-
-    if lookup_attr.is_some() {
-        kind = FieldKind::Lookup;
-    } else if rollup_attr.is_some() {
-        kind = FieldKind::Rollup;
-    } else if computed_attr.is_some() || computed_raw_attr.is_some() {
-        kind = FieldKind::Computed;
-    }
 
     // Process default_value
     let (default_value, default_value_type, default_value_quoted, default_value_backtick) =
@@ -1681,7 +1675,7 @@ fn build_field_node(
         nullable: data.nullable,
         array: data.array,
         array_item_nullable: data.array_item_nullable,
-        kind,
+        kind: current_kind.clone(),
         default_value,
         default_value_type,
         default_value_quoted,
@@ -1710,6 +1704,57 @@ fn build_field_node(
             col: 1,
         },
     };
+
+    apply_derived_attributes(
+        &mut field,
+        &attrs,
+        data.code_block.as_ref().map(|cb| cb.content.as_str()),
+        token.line,
+        file,
+        unread,
+    );
+
+    // Inline comment as field description
+    if field.description.is_none() {
+        if let Some(ref comment) = data.comment {
+            field.description = Some(comment.clone());
+        }
+    }
+
+    // Blockquote description overrides
+    if let Some(ref bq) = data.blockquote_desc {
+        field.description = Some(bq.clone());
+    }
+
+    field
+}
+
+/// What the derived-field attributes among `attrs` make of a field (§4.4–§4.6): its kind, and its lookup, rollup or
+/// computed definition. A field line runs it on its attributes; an extended-format item (§2.3.2) runs it on the
+/// attribute it adds, so both spellings arrive as the same derived field. Without such an attribute the field keeps
+/// the kind it has (a `### Lookup`-style section's, or stored). An argument-less `@computed` takes its expression from
+/// `block`, the fenced block under the field.
+fn apply_derived_attributes(
+    field: &mut FieldNode,
+    attrs: &[FieldAttribute],
+    block: Option<&str>,
+    line: usize,
+    file: &str,
+    unread: &mut Vec<UnreadFieldText>,
+) {
+    let lookup_attr = attrs.iter().find(|a| a.name == "lookup");
+    let rollup_attr = attrs.iter().find(|a| a.name == "rollup");
+    let computed_attr = attrs.iter().find(|a| a.name == "computed");
+    let computed_raw_attrs: Vec<_> = attrs.iter().filter(|a| a.name == "computed_raw").collect();
+    let computed_raw_attr = computed_raw_attrs.first().copied();
+
+    if lookup_attr.is_some() {
+        field.kind = FieldKind::Lookup;
+    } else if rollup_attr.is_some() {
+        field.kind = FieldKind::Rollup;
+    } else if computed_attr.is_some() || computed_raw_attr.is_some() {
+        field.kind = FieldKind::Computed;
+    }
 
     // Parse lookup
     if let Some(la) = lookup_attr {
@@ -1741,7 +1786,7 @@ fn build_field_node(
                     field: field.name.clone(),
                     text,
                     hint: Some(hint),
-                    line: token.line,
+                    line,
                     file: file.to_string(),
                 });
             }
@@ -1756,7 +1801,7 @@ fn build_field_node(
             expression: None,
             raw: Vec::new(),
         };
-        let block = data.code_block.as_ref().map(|cb| cb.content.clone());
+        let block = block.map(str::to_string);
         let mut block_used = false;
 
         if let Some(ca) = computed_attr {
@@ -1806,7 +1851,7 @@ fn build_field_node(
                         field: field.name.clone(),
                         text,
                         hint: Some(COMPUTED_RAW_ARGUMENT_HINT),
-                        line: token.line,
+                        line,
                         file: file.to_string(),
                     }),
                 }
@@ -1827,20 +1872,6 @@ fn build_field_node(
             field.computed = Some(computed);
         }
     }
-
-    // Inline comment as field description
-    if field.description.is_none() {
-        if let Some(ref comment) = data.comment {
-            field.description = Some(comment.clone());
-        }
-    }
-
-    // Blockquote description overrides
-    if let Some(ref bq) = data.blockquote_desc {
-        field.description = Some(bq.clone());
-    }
-
-    field
 }
 
 /// Returns `(value, type, quoted, backtick)`. `quoted` is `Some(true)` only
@@ -2276,8 +2307,16 @@ fn parse_nested_value(value: &str) -> serde_json::Value {
 
 /// One `- key: value` item of the extended field format (§2.3.2) — another spelling of what the basic format
 /// writes on the field's line, so it is read by the same readers: the type by the type reader, the value by
-/// the attribute-argument reader, and the result lands where the inline attribute's would.
-fn apply_extended_attribute(field: &mut FieldNode, key: &str, value: &str) {
+/// the attribute-argument reader, and the result lands where the inline attribute's would — a derived-field
+/// attribute included, which makes the field the derived field the line form makes it.
+fn apply_extended_attribute(
+    field: &mut FieldNode,
+    key: &str,
+    value: &str,
+    line: usize,
+    file: &str,
+    unread: &mut Vec<UnreadFieldText>,
+) {
     match key {
         "type" => {
             let mut data = TokenData::default();
@@ -2295,17 +2334,19 @@ fn apply_extended_attribute(field: &mut FieldNode, key: &str, value: &str) {
             field.description = Some(parsed.to_string());
         }
         _ => {
+            // `- formula: expr` is the expression of `@computed`, written beside `- computed: true` (§4.4.2).
+            let name = if key == "formula" { "computed" } else { key };
             let (mut args, mut args_quoted): (Vec<_>, Vec<_>) =
                 parse_attr_args_string_with_origin(value)
                     .into_iter()
                     .unzip();
             // `- unique: true` is `@unique`, `- unique: false` is no `@unique` — only for an attribute that is
             // written bare (§10.8); a quoted "false" is a string argument, not the flag's truth value.
-            if BARE_ATTRIBUTES.contains(key) {
+            if BARE_ATTRIBUTES.contains(name) {
                 if let ([AttrArgValue::Bool(set)], [false]) =
                     (args.as_slice(), args_quoted.as_slice())
                 {
-                    if !set {
+                    if !set || field.attributes.iter().any(|a| a.name == name) {
                         return;
                     }
                     args.clear();
@@ -2313,7 +2354,7 @@ fn apply_extended_attribute(field: &mut FieldNode, key: &str, value: &str) {
                 }
             }
             let attrs = parse_raw_attributes(&[RawAttribute {
-                name: key.to_string(),
+                name: name.to_string(),
                 args,
                 args_quoted,
                 cascade: None,
@@ -2324,7 +2365,15 @@ fn apply_extended_attribute(field: &mut FieldNode, key: &str, value: &str) {
                     .get_or_insert_with(Vec::new)
                     .extend(names);
             }
-            field.attributes.extend(without_renamed_from(attrs));
+            let attrs = without_renamed_from(attrs);
+            // An attribute with arguments replaces the bare one already there (`computed: true`, then `formula:`).
+            for attr in attrs.iter().filter(|a| a.args.is_some()) {
+                field
+                    .attributes
+                    .retain(|a| a.name != attr.name || a.args.is_some());
+            }
+            apply_derived_attributes(field, &attrs, None, line, file, unread);
+            field.attributes.extend(attrs);
         }
     }
 }

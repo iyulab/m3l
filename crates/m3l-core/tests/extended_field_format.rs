@@ -160,3 +160,86 @@ fn a_custom_attribute_keeps_a_boolean_as_its_argument() {
         Some(vec![m3l_core::AttrArgValue::Bool(false)])
     );
 }
+
+/// The derived part of a field — its kind and definition — as JSON, so two spellings compare whole.
+fn derived(f: &FieldNode) -> serde_json::Value {
+    serde_json::json!({
+        "kind": f.kind,
+        "lookup": f.lookup,
+        "rollup": f.rollup,
+        "computed": f.computed,
+        "persisted": f.attributes.iter().any(|a| a.name == "persisted"),
+    })
+}
+
+#[test]
+fn an_extended_computed_item_makes_a_computed_field() {
+    let (inline, extended) = pair(
+        "decimal(10,2) @computed(\"price * qty\")",
+        "  - type: decimal(10,2)\n  - computed: \"price * qty\"\n",
+    );
+    assert_eq!(derived(&inline), derived(&extended));
+    assert_eq!(extended.kind, m3l_core::FieldKind::Computed);
+}
+
+/// The specification's own extended computed field (§4.4.2): `computed: true` with the expression as `formula:`.
+#[test]
+fn a_formula_item_is_the_computed_expression() {
+    let (inline, extended) = pair(
+        "decimal(12,2) @computed(\"quantity * unit_price\") @persisted",
+        "  - computed: true\n  - formula: \"quantity * unit_price\"\n  - persisted: true\n  - type: decimal(12,2)\n",
+    );
+    assert_eq!(derived(&inline), derived(&extended));
+    assert!(extended.attributes.iter().all(|a| a.name != "formula"));
+    assert_eq!(
+        extended
+            .attributes
+            .iter()
+            .filter(|a| a.name == "computed")
+            .count(),
+        1
+    );
+}
+
+#[test]
+fn a_formula_before_computed_true_reads_the_same() {
+    let (inline, extended) = pair(
+        "integer @computed(\"a + b\")",
+        "  - type: integer\n  - formula: \"a + b\"\n  - computed: true\n",
+    );
+    assert_eq!(derived(&inline), derived(&extended));
+}
+
+#[test]
+fn an_extended_lookup_item_makes_a_lookup_field() {
+    let (inline, extended) = pair(
+        "string @lookup(order_id.customer_id.name)",
+        "  - type: string\n  - lookup: order_id.customer_id.name\n",
+    );
+    assert_eq!(derived(&inline), derived(&extended));
+    assert_eq!(extended.kind, m3l_core::FieldKind::Lookup);
+}
+
+#[test]
+fn an_extended_rollup_item_makes_a_rollup_field() {
+    let (inline, extended) = pair(
+        "integer @rollup(Order.customer_id, count, where: \"status = 'paid'\")",
+        "  - type: integer\n  - rollup: Order.customer_id, count, where: \"status = 'paid'\"\n",
+    );
+    assert_eq!(derived(&inline), derived(&extended));
+    assert_eq!(extended.kind, m3l_core::FieldKind::Rollup);
+}
+
+/// A former name on a derived field without storage is the error it is inline (§2.2.6) — the kind the check reads
+/// is the extended field's own.
+#[test]
+fn a_rename_on_an_extended_computed_field_is_misplaced() {
+    let src = "## M\n- id: identifier @pk\n- price: decimal\n- t\n  - type: decimal\n  - computed: \"price * 2\"\n  - renamed_from: old_t\n";
+    let ast = resolve(&[parse_string(src, "extended.m3l.md")], None);
+    let result = validate(&ast, &ValidateOptions::default());
+    assert!(
+        result.errors.iter().any(|e| e.code == "M3L-E031"),
+        "{:#?}",
+        result.errors
+    );
+}

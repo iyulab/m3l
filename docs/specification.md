@@ -1654,6 +1654,10 @@ Computed fields derive their values from expressions and other fields **within t
   - description: "Final price after quantity and discount"
 ```
 
+`formula:` is the expression `@computed` takes, so this field is
+`- total_price: decimal(12,2) @computed("quantity * unit_price * (1 - discount_rate)") @persisted "Final price after quantity and discount"`
+— a computed field, whichever spelling it is written in (§2.3.2). `- computed: "expression"` is the same field again.
+
 #### 4.4.3 Computed Field Types
 
 **String Operations:**

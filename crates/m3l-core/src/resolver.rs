@@ -467,7 +467,8 @@ fn check_unread_header_text(files: &[ParsedFile], warnings: &mut Vec<Diagnostic>
                 ),
                 UnreadHeaderPart::Attributes { kind } => format!(
                     "Header of \"{}\": {} is not read. A `::{kind}` header takes no attributes — \
-                     only a model and a `::view` header do — so nothing applies it to \"{}\".",
+                     only a model header (an `::aspect` or `::subtype` one too) and a `::view` header \
+                     do — so nothing applies it to \"{}\".",
                     entry.element, entry.text, entry.element
                 ),
                 UnreadHeaderPart::Words => format!(

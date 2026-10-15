@@ -210,6 +210,7 @@ fn enum_node_json() {
         description: None,
         values: vec![EnumValue {
             name: "Active".into(),
+            label: None,
             description: Some("Active status".into()),
             value_type: None,
             value: None,

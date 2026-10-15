@@ -1856,3 +1856,33 @@ fn conformance_enum_value_attributes_json_surface() {
     );
     assert_eq!(values[2]["attributes"][0]["name"], "system");
 }
+
+/// An enum value's display label (`- open(Opened): "…"`) reaches the AST, standalone and inline,
+/// beside its description and attributes; a value without one serializes as before.
+#[test]
+fn conformance_enum_value_display_label() {
+    let input = include_str!("../../../spec/conformance/inputs/enum-value-display-label.m3l.md");
+    let ast = full_pipeline(input, "enum-value-display-label.m3l.md");
+
+    assert!(ast.errors.is_empty(), "unexpected errors: {:?}", ast.errors);
+    let json = serde_json::to_value(&ast).unwrap();
+
+    let values = json["enums"][0]["values"].as_array().unwrap();
+    assert_eq!(values[0]["label"], "Opened");
+    assert_eq!(
+        values[0]["description"],
+        "Waiting for someone to pick it up"
+    );
+    assert_eq!(values[1]["label"], "In progress");
+    assert!(!values[2].as_object().unwrap().contains_key("label"));
+    assert_eq!(values[3]["label"], "Legacy");
+    assert_eq!(values[3]["attributes"][0]["name"], "system");
+
+    let priority = json["models"][0]["fields"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|f| f["name"] == "priority")
+        .unwrap();
+    assert_eq!(priority["enum_values"][1]["label"], "Urgent");
+}

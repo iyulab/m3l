@@ -510,6 +510,7 @@ fn handle_field(token: &Token, state: &mut ParserState) {
         CurrentElement::Enum(ref mut enum_node) => {
             let mut enum_val = EnumValue {
                 name: token.data.name.clone().unwrap_or_default(),
+                label: token.data.label.clone(),
                 description: token.data.description.clone(),
                 value_type: None,
                 value: None,
@@ -1172,6 +1173,7 @@ fn handle_nested_item(token: &Token, state: &mut ParserState) {
             if let Some(k) = key {
                 let mut val = EnumValue {
                     name: k.to_string(),
+                    label: data.label.clone(),
                     description: None,
                     value_type: None,
                     value: None,
@@ -1257,6 +1259,7 @@ fn handle_nested_item(token: &Token, state: &mut ParserState) {
                         if let Some(k) = key {
                             let mut ev = EnumValue {
                                 name: k.to_string(),
+                                label: data.label.clone(),
                                 description: None,
                                 value_type: None,
                                 value: None,
@@ -1288,6 +1291,7 @@ fn handle_nested_item(token: &Token, state: &mut ParserState) {
                                 }
                                 let mut ev = EnumValue {
                                     name: k.to_string(),
+                                    label: data.label.clone(),
                                     description: None,
                                     value_type: None,
                                     value: None,

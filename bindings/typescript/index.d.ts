@@ -89,9 +89,13 @@ export interface ExtendedBy {
 
 export interface EnumValue {
   name: string;
+  /** Display label written in parentheses after the name (`- open(Opened): "…"`). */
+  label?: string;
   description?: string;
   type?: string;
   value?: unknown;
+  /** Attributes declared on the value itself (`- legacy: "…" @system`). Omitted when there are none. */
+  attributes?: FieldAttribute[];
 }
 
 // --- Field definition types ---

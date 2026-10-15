@@ -58,7 +58,7 @@ static RE_IMPORT: LazyLock<Regex> =
 static RE_ENUM_VALUE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r#"^([\w]+)(?:\(([^)]*)\))?\s+"((?:[^"\\]|\\.)*)"$"#).unwrap());
 static RE_NESTED_KV: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^([\w]+)\s*:\s*(.+)$").unwrap());
+    LazyLock::new(|| Regex::new(r"^([\w]+)(?:\(([^)]*)\))?\s*:\s*(.+)$").unwrap());
 static RE_H2_INHERIT: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r#"^:\s*(.+?)(?:\s+@|\s*"|\s*$)"#).unwrap());
 static RE_MODEL_ATTR: LazyLock<Regex> =
@@ -468,9 +468,14 @@ fn tokenize_h2(content: &str, raw: &str, line: usize) -> Token {
                 .partition(|a| a.name == "materialized");
             data.materialized = Some(!flags.is_empty());
             data.attributes = attributes;
+        } else if matches!(type_indicator, "aspect" | "subtype") {
+            // An aspect or a subtype is an ordinary model that also names a base (RFC-0004 §3.3), so
+            // its header takes a model's attributes (`## Profile ::aspect(Asset) @table("…")`).
+            data.attributes = header_attributes(rest);
         } else {
-            // Only a model and a view header take attributes (§10.3.2). Elsewhere they were dropped
-            // without a word; they are kept as written for the resolver to name.
+            // Only a model (an aspect and a subtype included) and a view header take attributes
+            // (§10.3.2). Elsewhere they were dropped without a word; they are kept as written for
+            // the resolver to name.
             let written: Vec<&str> = RE_MODEL_ATTR.find_iter(rest).map(|m| m.as_str()).collect();
             data.unread_attributes = (!written.is_empty()).then(|| written.join(" "));
         }
@@ -1005,9 +1010,13 @@ fn parse_attributes_balanced(content: &str) -> Vec<RawAttribute> {
 fn parse_nested_item(content: &str) -> TokenData {
     let mut data = TokenData::default();
 
+    // `- key: value`, or `- key(Label): value` — an inline enum value may carry a display
+    // label, as a standalone one does. Without the optional label the labelled form fell
+    // through to the field-line reading and the value was lost from the enum entirely.
     if let Some(caps) = RE_NESTED_KV.captures(content) {
         data.key = Some(caps[1].to_string());
-        data.value = Some(caps[2].trim().to_string());
+        data.label = caps.get(2).map(|m| m.as_str().to_string());
+        data.value = Some(caps[3].trim().to_string());
     }
 
     // Also try to parse as field line for sub-fields

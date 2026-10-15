@@ -728,6 +728,22 @@ Example:
 - banned: "Permanently banned account"
 ```
 
+A value may also carry a **display label**, in parentheses after its name — the `name(Label)` form
+fields and models use (§2.5.7):
+
+```markdown
+## TicketState ::enum
+- open(Opened): "Waiting for someone to pick it up"
+- in_progress(In progress): "Someone is working on it"
+- closed: "Done"
+```
+
+The label is the short name a person is shown; the quoted text is the value's description. Both are
+optional and independent: a value without a label has none (a consumer that needs one may fall back
+to the description), and a value may have a label and no description. Labels are written the same way
+on inline values (§3.1.7). They appear in the AST as `EnumValue.label`, omitted entirely when a value
+has none.
+
 #### 3.1.2 Enum Definition with Namespace
 
 ```markdown
@@ -843,9 +859,9 @@ agree:
 
 | Situation | Outcome |
 |---|---|
-| Two parents declare the same name **with the same label** | Kept once, in the position of the first. This is the diamond case — the same value reached by two paths is one value |
-| Two parents declare the same name **with different labels** | `M3L-E020`. Nothing in the source says which label wins, and picking one silently would make the enum's meaning depend on the order its parents happen to be listed in |
-| A parent and the enum's own block declare the same name | `M3L-E020`, whether or not the labels agree. Model inheritance lets a child replace an inherited field with `@override` (§3.4.5); enum values have no such marker, so there is no way to write the intent down and the collision is refused instead of guessed |
+| Two parents declare the same name **identically** — the same label, description, type, stored value and attributes | Kept once, in the position of the first. This is the diamond case — the same value reached by two paths is one value |
+| Two parents declare the same name **differently** | `M3L-E020`. Nothing in the source says which declaration wins, and picking one silently would make the enum's meaning depend on the order its parents happen to be listed in |
+| A parent and the enum's own block declare the same name | `M3L-E020`, whether or not the declarations agree. Model inheritance lets a child replace an inherited field with `@override` (§3.4.5); enum values have no such marker, so there is no way to write the intent down and the collision is refused instead of guessed |
 | The enum's own block declares a name twice | `M3L-E020`. Previously unreported |
 
 An unresolved parent is `M3L-E007`, the same diagnostic a model gets for an unresolved base.
@@ -889,7 +905,7 @@ For enums used only within a single field, define values inline. The `values:` k
 #### 3.1.8 Enum Value Attributes
 
 Individual enum values may carry attributes, using the same `@name` / `@name(args)`
-syntax as fields. They are written after the label:
+syntax as fields. They are written after the description:
 
 ```markdown
 ## PaymentMethod ::enum
@@ -1333,10 +1349,11 @@ Ordinary models that additionally name one base model: `base { kind, model }`. `
 "an optional companion of one Base row, existing or not as a unit"; `subtype` says "a kind of
 Base". M3L records the declaration and checks that the base model exists and is not itself
 an aspect. How a generator stores either is not part of the language. A parent list may
-follow the base argument.
+follow the base argument, and the header takes a model's attributes:
 
 ```markdown
 ## AssetMaintenanceProfile ::aspect(Asset) : Timestampable
+## TruckDetail ::subtype(Vehicle) @table("truck_details")
 ```
 
 ### 3.5 Metadata Definition
@@ -2781,9 +2798,10 @@ ModelAttrs     ← (_ '@' Identifier ('(' AttrParams ')')?)+
 ViewAttrs      ← (_ '@' Identifier ('(' AttrParams ')')?)*
 ```
 
-Only a model header and a `::view` header take attributes. Attributes written on any other kind's header — an
-enum, an interface, a flow, an `::attribute` definition, an `::aspect` or `::subtype` model — are not read and are
-reported (`M3L-W010`). So are words a header has no place for — text that is none of the name, label, parents,
+Only a model header and a `::view` header take attributes — an `::aspect` or `::subtype` header among the model
+headers, since each declares an ordinary model that also names a base (§3.4.8): `## Profile ::aspect(Asset)
+@table("asset_profiles")`. Attributes written on any other kind's header — an enum, an interface, a flow, an
+`::attribute` definition — are not read and are reported (`M3L-W010`). So are words a header has no place for — text that is none of the name, label, parents,
 attributes and description (`## Status ::enum oops`, `## Product oops`); on a model header the name is the leading
 identifier, not the line.
 

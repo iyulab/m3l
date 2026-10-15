@@ -97,7 +97,8 @@ pub struct TokenData {
     /// is not dropped without a word.
     pub unread: Option<String>,
     /// Attributes on a `::kind` header whose syntax takes none (`## Status ::enum @deprecated`) —
-    /// only a model and a `::view` header read attributes. Reported (`M3L-W010`), not read.
+    /// only a model (an `::aspect` and a `::subtype` included) and a `::view` header read
+    /// attributes. Reported (`M3L-W010`), not read.
     pub unread_attributes: Option<String>,
     /// Words on a header the header syntax has no place for — `oops` in `## Status ::enum oops` or
     /// `## Product oops`. Reported (`M3L-W010`); before, they were dropped or became the name.
@@ -193,6 +194,11 @@ pub struct CustomAttribute {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct EnumValue {
     pub name: String,
+    /// The display label written in parentheses after the name (`- open(Opened): "…"`) —
+    /// the same `name(Label)` form fields and models use. Omitted when absent, so values
+    /// without one serialize exactly as before this field existed.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]

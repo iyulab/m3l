@@ -82,7 +82,6 @@ fn attributes_on_a_kind_whose_header_takes_none_are_reported() {
         ("## Status ::enum @deprecated", "enum"),
         ("## Named ::interface @abstract", "interface"),
         ("## Settle ::flow @async", "flow"),
-        ("## Profile ::aspect(Asset) @audited", "aspect"),
     ] {
         let (_, found) = run(header);
         assert_eq!(found.len(), 1, "{header}: {found:?}");
@@ -181,6 +180,30 @@ fn words_after_model_attributes_are_reported() {
         words_warning(&found).is_some_and(|m| m.contains("`oops`")),
         "{found:?}"
     );
+}
+
+/// `::aspect` and `::subtype` declare ordinary models that also name a base (RFC-0004 §3.3), so their
+/// headers take a model's attributes. They were reported as unread and dropped.
+#[test]
+fn a_model_with_a_base_reads_its_header_attributes_as_a_model_does() {
+    for (header, kind) in [
+        (
+            "## Profile ::aspect(Asset) @audited @table(\"asset_profiles\")",
+            "aspect",
+        ),
+        (
+            "## Truck ::subtype(Vehicle) : Base @audited @table(\"trucks\")",
+            "subtype",
+        ),
+    ] {
+        let (parsed, found) = run(header);
+
+        assert!(found.is_empty(), "{header}: {found:?}");
+        let model = &parsed.models[0];
+        assert_eq!(model.base.as_ref().map(|b| b.kind.as_str()), Some(kind));
+        let names: Vec<_> = model.attributes.iter().map(|a| a.name.as_str()).collect();
+        assert_eq!(names, ["audited", "table"], "{header}");
+    }
 }
 
 /// Parents and attributes are parts of a header, not stray words.

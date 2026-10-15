@@ -243,6 +243,13 @@ public class EnumValue
     [JsonPropertyName("name")]
     public string Name { get; set; } = "";
 
+    /// <summary>
+    /// The display label written in parentheses after the name (<c>- open(Opened): "…"</c>) —
+    /// the same <c>name(Label)</c> form fields and models use. <c>null</c> when the value has none.
+    /// </summary>
+    [JsonPropertyName("label")]
+    public string? Label { get; set; }
+
     [JsonPropertyName("description")]
     public string? Description { get; set; }
 

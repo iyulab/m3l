@@ -644,10 +644,14 @@ fn format_enum_value(val: &m3l_core::EnumValue, indent: usize) -> String {
     // colon-less `- name "label"` shape only parses when the label is the
     // *entire* remainder, so `- name "label" @attr` would be swallowed into
     // the name.
+    let name = match val.label {
+        Some(ref label) => format!("{}({label})", val.name),
+        None => val.name.clone(),
+    };
     if rhs.is_empty() {
-        format!("{prefix}- {}", val.name)
+        format!("{prefix}- {name}")
     } else {
-        format!("{prefix}- {}: {rhs}", val.name)
+        format!("{prefix}- {name}: {rhs}")
     }
 }
 
@@ -862,6 +866,15 @@ mod tests {
             "formatted output was:
 {formatted}"
         );
+    }
+
+    #[test]
+    fn format_preserves_enum_value_labels() {
+        let (before, after) = roundtrip_enum_values(
+            "## Status ::enum\n- open(Opened): \"대기 중\" @system\n- closed(Closed): \"완료\"\n- draft: \"초안\"",
+        );
+        assert!(before.iter().any(|v| v.label.as_deref() == Some("Opened")));
+        assert_eq!(before, after, "enum value labels must survive format");
     }
 
     #[test]

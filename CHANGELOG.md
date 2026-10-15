@@ -6,7 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **An enum value may carry a display label** — `- open(Opened): "Waiting for someone to pick it up"`, the `name(Label)`
+  form fields and models use (§3.1.1). It reaches the AST as `EnumValue.label`, omitted when a value has none, so a
+  value without one serializes exactly as before. The label was already read on a standalone value and then dropped;
+  on an inline value (`- values:` and without it) the labelled form was not recognized at all and **the value was lost
+  from the enum**. The formatter writes it back, and two parents that give one value different labels collide
+  (`M3L-E020`), as any other difference does. The C# and TypeScript bindings gain `Label`/`label` (TypeScript also
+  gains the `attributes` the AST already carried).
+- **An `::aspect` or `::subtype` header takes a model's attributes** (`## Profile ::aspect(Asset) @table("…")`) — each
+  declares an ordinary model that also names a base. They were reported as unread (`M3L-W010`) and dropped.
+
 ### Specification
+
+- §3.1.6 and §3.1.8 called an enum value's quoted text its "label"; with labels in the language they say
+  "description", and the inheritance table says a value collides when two declarations differ in any part.
 
 - §3.3.4.3 said the default `NULL` handling of a multi-column `@unique` — a `NULL` in any column takes the row out
   of the constraint — "matches SQL Server's native `UNIQUE` semantics". It is the other way round: that default is

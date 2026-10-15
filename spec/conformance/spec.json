@@ -123,6 +123,12 @@
       "category": "unit"
     },
     {
+      "name": "enum-value-display-label",
+      "input": "inputs/enum-value-display-label.m3l.md",
+      "expected": "expected/enum-value-display-label.json",
+      "category": "unit"
+    },
+    {
       "name": "enum-with-labels",
       "input": "inputs/enum-with-labels.m3l.md",
       "expected": "expected/enum-with-labels.json",

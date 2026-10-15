@@ -13,7 +13,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   identity, so an implementation that changes storage can rename instead of dropping and re-creating. Several names are
   a history, oldest first. The parser lifts the names into their own key — `renamed_from` on model and field nodes,
   absent when not declared — and does not repeat the attribute in `attributes`. `m3l format` writes it back from that
-  key. The C# and TypeScript AST types carry `RenamedFrom` / `renamed_from`.
+  key. The C# and TypeScript AST types carry `RenamedFrom` / `renamed_from`. A field in the extended format declares it
+  as an item (`- renamed_from: level, tier`) and it arrives in the same key.
 - **The declaration is checked — five new errors** (§10.5.1): `M3L-E028` a former name that is a current name (a
   model's against the models, views and interfaces of its namespace; a field's against the model's fields, inherited
   and `::extend`-added ones included) · `M3L-E029` two models of a namespace, or two fields of a model, claiming the
@@ -22,6 +23,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `M3L-E032` an argument that is empty, qualified or not an identifier, or a declaration naming none. A declaration on an
   inherited field is reported once, where it is written. On an `::extend` header it stays `M3L-W010` (the header takes
   no attributes).
+
+### Fixed
+
+- **An extended-format `type:` with parameters or generics is read like the same type on a field line** (§2.3.2).
+  `- type: string(100)` arrived as the type name `string(100)` with no parameters — `M3L-E009` «Undefined type» — and
+  `map<string,integer>` kept its generics inside the name. The item is now read by the field line's type reader:
+  `type: "string"`, `params: [100]`, `genericParams`, and `?`/`[]` as there.
+- **An extended-format item's value arrives as the attribute's arguments** (§2.3.2). A value was kept whole as one
+  argument, so `- check: "len > 0", name: "nonempty"` carried a single string where `@check("len > 0", name:
+  "nonempty")` carries two arguments; it is now read by the inline argument reader, quoting recorded as there.
 
 ## [0.22.0] - 2026-10-15
 

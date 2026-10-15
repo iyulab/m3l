@@ -1065,7 +1065,7 @@ pub fn parse_attr_args_string(s: &str) -> Vec<AttrArgValue> {
 /// backtick-delimited value is never marked quoted here: its backticks are kept
 /// as part of the stored string (see the `` ` `` branch below), so it already
 /// round-trips without help from this flag.
-fn parse_attr_args_string_with_origin(s: &str) -> Vec<(AttrArgValue, bool)> {
+pub(crate) fn parse_attr_args_string_with_origin(s: &str) -> Vec<(AttrArgValue, bool)> {
     let mut args = Vec::new();
     let bytes = s.as_bytes();
     let len = bytes.len();

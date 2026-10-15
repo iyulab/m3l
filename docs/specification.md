@@ -441,7 +441,9 @@ remove it in a change of its own.**
 **Parsed form.** The names arrive as their own key — `renamed_from: ["Client"]` on the model node,
 `renamed_from: ["level", "tier"]` on the field node, absent when not declared — and the attribute is
 not repeated in the node's `attributes` (one fact, one place; the same rule as §3.2.4's «One parsed
-form for every spelling»).
+form for every spelling»). A field in the extended format (§2.3.2) writes the same declaration as an
+item — `- renamed_from: level, tier` — and it arrives in the same key, after any names its line
+declares.
 
 **What implementations do.** An implementation that produces or changes storage may use the
 declaration to emit a rename instead of a removal plus an addition, in the order the history gives and
@@ -516,6 +518,11 @@ Example:
 ```
 
 **Prefer Basic Format:** `- email: email @unique @index "Primary contact email"`
+
+The extended format is another spelling of the basic one, not a second dialect: `type:` takes a type exactly as a
+field line writes it — parameters, generics, `?` and `[]` included (`- type: decimal(10,2)?`) — and an item's value is
+read as the arguments of the attribute it names, so `- check: "len > 0", name: "nonempty"` is
+`@check("len > 0", name: "nonempty")`.
 
 #### 2.3.3 Field Metadata
 

@@ -7,7 +7,7 @@ use std::collections::{BTreeMap, HashMap};
 use std::sync::LazyLock;
 
 use crate::catalogs::STANDARD_ATTRIBUTES;
-use crate::lexer::{lex, parse_type_and_attrs};
+use crate::lexer::{lex, parse_attr_args_string_with_origin, parse_type_and_attrs};
 use crate::types::*;
 
 static RE_QUOTE_STR: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"^"(.*)"$"#).unwrap());
@@ -2274,58 +2274,43 @@ fn parse_nested_value(value: &str) -> serde_json::Value {
     serde_json::Value::String(unquoted.to_string())
 }
 
+/// One `- key: value` item of the extended field format (§2.3.2) — another spelling of what the basic format
+/// writes on the field's line, so it is read by the same readers: the type by the type reader, the value by
+/// the attribute-argument reader, and the result lands where the inline attribute's would.
 fn apply_extended_attribute(field: &mut FieldNode, key: &str, value: &str) {
     match key {
         "type" => {
-            let mut t = value.to_string();
-            if t.ends_with('?') {
-                field.nullable = true;
-                t = t[..t.len() - 1].to_string();
-            }
-            if t.ends_with("[]") {
-                field.array = true;
-                t = t[..t.len() - 2].to_string();
-            }
-            field.field_type = Some(t);
+            let mut data = TokenData::default();
+            parse_type_and_attrs(value, &mut data);
+            field.field_type = data.type_name;
+            field.params = (!data.type_params.is_empty()).then_some(data.type_params);
+            field.generic_params =
+                (!data.type_generic_params.is_empty()).then_some(data.type_generic_params);
+            field.nullable = data.nullable;
+            field.array = data.array;
+            field.array_item_nullable = data.array_item_nullable;
         }
         "description" => {
             let parsed = unwrap_delimiters(value, &['"', '\'']);
             field.description = Some(parsed.to_string());
         }
-        "reference" => {
-            field.attributes.push(FieldAttribute {
-                name: "reference".to_string(),
-                args: Some(vec![AttrArgValue::String(value.to_string())]),
-                args_quoted: None,
-                cascade: None,
-                is_standard: Some(true),
-                is_registered: None,
-            });
-        }
-        "on_delete" => {
-            field.attributes.push(FieldAttribute {
-                name: "on_delete".to_string(),
-                args: Some(vec![AttrArgValue::String(value.to_string())]),
-                args_quoted: None,
-                cascade: None,
-                is_standard: Some(true),
-                is_registered: None,
-            });
-        }
         _ => {
-            let parsed_val = parse_arg_value(value);
-            field.attributes.push(FieldAttribute {
+            let (args, args_quoted) = parse_attr_args_string_with_origin(value)
+                .into_iter()
+                .unzip();
+            let attrs = parse_raw_attributes(&[RawAttribute {
                 name: key.to_string(),
-                args: Some(vec![parsed_val]),
-                args_quoted: None,
+                args,
+                args_quoted,
                 cascade: None,
-                is_standard: if STANDARD_ATTRIBUTES.contains(key) {
-                    Some(true)
-                } else {
-                    None
-                },
-                is_registered: None,
-            });
+            }]);
+            if let Some(names) = renamed_from_of(&attrs) {
+                field
+                    .renamed_from
+                    .get_or_insert_with(Vec::new)
+                    .extend(names);
+            }
+            field.attributes.extend(without_renamed_from(attrs));
         }
     }
 }

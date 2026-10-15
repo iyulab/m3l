@@ -267,7 +267,8 @@ fn handle_model_start(token: &Token, state: &mut ParserState) {
         line: token.line,
         inherits: token.data.inherits.clone(),
         description: token.data.description.clone(),
-        attributes: model_attrs,
+        renamed_from: renamed_from_of(&model_attrs),
+        attributes: without_renamed_from(model_attrs),
         fields: Vec::new(),
         sections: Sections::default(),
         materialized: None,
@@ -341,7 +342,8 @@ fn handle_view_start(token: &Token, state: &mut ParserState) {
         line: token.line,
         inherits: Vec::new(),
         description: token.data.description.clone(),
-        attributes: parse_raw_attributes(&token.data.attributes),
+        attributes: without_renamed_from(parse_raw_attributes(&token.data.attributes)),
+        renamed_from: renamed_from_of(&parse_raw_attributes(&token.data.attributes)),
         materialized: Some(materialized),
         fields: Vec::new(),
         sections: Sections::default(),
@@ -376,7 +378,8 @@ fn handle_flow_start(token: &Token, state: &mut ParserState) {
         line: token.line,
         inherits: Vec::new(),
         description: token.data.description.clone(),
-        attributes: parse_raw_attributes(&token.data.attributes),
+        attributes: without_renamed_from(parse_raw_attributes(&token.data.attributes)),
+        renamed_from: renamed_from_of(&parse_raw_attributes(&token.data.attributes)),
         fields: Vec::new(),
         sections: Sections::default(),
         materialized: None,
@@ -425,7 +428,8 @@ fn handle_extension_start(token: &Token, ext_type: &str, state: &mut ParserState
         line: token.line,
         inherits: token.data.inherits.clone(),
         description: token.data.description.clone(),
-        attributes: parse_raw_attributes(&token.data.attributes),
+        attributes: without_renamed_from(parse_raw_attributes(&token.data.attributes)),
+        renamed_from: renamed_from_of(&parse_raw_attributes(&token.data.attributes)),
         fields: Vec::new(),
         sections: Sections::default(),
         materialized: None,
@@ -1683,7 +1687,8 @@ fn build_field_node(
         default_value_quoted,
         default_value_backtick,
         description: data.description.clone(),
-        attributes: attrs.clone(),
+        attributes: without_renamed_from(attrs.clone()),
+        renamed_from: renamed_from_of(&attrs),
         framework_attrs,
         lookup: None,
         rollup: None,
@@ -1913,6 +1918,30 @@ fn parse_raw_attributes_opt(raw_attrs: &[RawAttribute]) -> Option<Vec<FieldAttri
     } else {
         Some(parse_raw_attributes(raw_attrs))
     }
+}
+
+/// The former names `@renamed_from(...)` declares, oldest first (§2.2.6, §2.3.5) — every argument, as written, across
+/// every occurrence. `None` when the element declares none; an empty list when it is written without a name.
+fn renamed_from_of(attrs: &[FieldAttribute]) -> Option<Vec<String>> {
+    let mut found: Option<Vec<String>> = None;
+    for attr in attrs.iter().filter(|a| a.name == "renamed_from") {
+        let names = found.get_or_insert_with(Vec::new);
+        for arg in attr.args.iter().flatten() {
+            names.push(match arg {
+                AttrArgValue::String(s) => s.trim().to_string(),
+                AttrArgValue::Number(n) => n.to_string(),
+                AttrArgValue::Bool(b) => b.to_string(),
+            });
+        }
+    }
+    found
+}
+
+/// The attribute list without `@renamed_from` — its names have their own key, so the fact is in one place
+/// (§2.2.6 — the same rule as the relationship entries' one parsed form, §3.2.4).
+fn without_renamed_from(mut attrs: Vec<FieldAttribute>) -> Vec<FieldAttribute> {
+    attrs.retain(|a| a.name != "renamed_from");
+    attrs
 }
 
 fn parse_raw_attributes(raw_attrs: &[RawAttribute]) -> Vec<FieldAttribute> {

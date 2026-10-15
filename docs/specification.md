@@ -391,6 +391,63 @@ Models are primarily separated by `##` headers. For documents with complex or le
 - Do NOT use horizontal rules within a model (between fields and sections)
 - The M3L parser treats horizontal rules as whitespace (ignored)
 
+#### 2.2.6 Former Names (`@renamed_from`)
+
+A model describes the present. When a model or a stored field is renamed, two versions of the model
+differ by one name — and that difference reads exactly like a removal plus an unrelated addition.
+Nothing in either version separates the two, yet they have opposite consequences for data: a rename
+keeps the stored data under the new name, a removal plus an addition starts the new name empty.
+`@renamed_from` writes the identity down where the rename happened:
+
+```markdown
+## Customer @renamed_from(Client)
+- id: identifier @pk
+- display_name: string(200) @renamed_from(name)
+- tier_code: string(20) @renamed_from(level, tier)
+```
+
+- On a **model header** it names the model's former names; on a **field** (§2.3.5) the field's former
+  names within the same model.
+- **Several names are a history, oldest first**: `@renamed_from(level, tier)` reads «`level` became
+  `tier`, and `tier` became `tier_code`». That is the order the renames happened and the order an
+  implementation replays them in for storage still at the oldest name; the next rename is appended.
+- **A former name is a name, never a reference.** `@reference(Client)` does not resolve to `Customer`;
+  every reference is updated in the same change, as without this declaration. It adds history, not an
+  alias. A former name is unqualified — a rename stays within its namespace (§2.1).
+
+**Where it applies.** Only where something is stored under a name:
+
+| Element | Applies | Why |
+|---|---|---|
+| Model (`##`, including `::aspect` and `::subtype`) | ✅ | A model is stored under its name |
+| Stored field, including one an `::extend` block adds | ✅ | A field is stored under its name |
+| Inherited field | on the parent | It is declared once; its rename holds for every model that inherits it |
+| `@computed(…) @persisted` | ✅ | It has storage (optional — it is recomputable) |
+| `::view` (also `@materialized`), `::extend` header | ❌ | A view's rows are derived; an extend block names its target, whose own header carries the rename |
+| Derived field without storage (`@computed`, `@lookup`, `@rollup`, view fields) | ❌ | No stored value carries over |
+| Enum value | ❌ | Renaming a value rewrites stored *data* — a data migration, not a rename |
+| Relationship name (`### Relations`, `@relation`) | ❌ | A navigation name is not stored |
+
+A declaration where it does not apply is an error, not ignored (§10.5): an author who writes it
+expects it to act.
+
+**Lifetime.** The language does not require a declaration to be removed and defines no point after
+which it is stale: a model cannot know which of its databases are already past a rename. Keeping one
+is harmless to an implementation that records what it applied; removing it too early is the failure it
+prevents. **Keep a declaration until every storage built from the model is known to be past it, then
+remove it in a change of its own.**
+
+**Parsed form.** The names arrive as their own key — `renamed_from: ["Client"]` on the model node,
+`renamed_from: ["level", "tier"]` on the field node, absent when not declared — and the attribute is
+not repeated in the node's `attributes` (one fact, one place; the same rule as §3.2.4's «One parsed
+form for every spelling»).
+
+**What implementations do.** An implementation that produces or changes storage may use the
+declaration to emit a rename instead of a removal plus an addition, in the order the history gives and
+only for a former name whose storage still exists. One that does not act on it says so; it does not
+treat the declaration as an ordinary attribute and drop it. Moving a model between namespaces and
+changing a file's `# Prefix:` are not renames in this sense.
+
 ### 2.3 Field Definition
 > **Status: Implemented** — Fully supported in `m3l-core` parser.
 
@@ -499,6 +556,16 @@ Switch to extended format when any of these apply:
   - searchable: true
   - description: "The user who has been blocked from this account"
 ```
+
+#### 2.3.5 Former Field Names
+
+A stored field states its former names with `@renamed_from` on its line, oldest first:
+
+```markdown
+- display_name: string(200) @renamed_from(name)
+```
+
+The rules — where it applies, history order, lifetime, parsed form — are §2.2.6's.
 
 ### 2.4 Data Type Notation
 > **Status: Implemented** — Fully supported in `m3l-core` parser.
@@ -3323,6 +3390,7 @@ The following catalog lists all standard `@` attributes defined by M3L. Parsers 
 | `@materialized` | — | view | Physically materialized view |
 | `@meta` | `(key, value)` | model | Arbitrary metadata key-value |
 | `@override` | — | field | Override inherited field definition |
+| `@renamed_from` | `(Name, …)` | model, stored field | Former names, oldest first (§2.2.6) — parsed into `renamed_from`, not kept in `attributes` |
 
 > Attributes not listed here are treated as extension attributes. Parsers may choose to pass them through to the AST or emit a warning, depending on configuration.
 

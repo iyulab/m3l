@@ -28,6 +28,7 @@ fn field_node_json_keys() {
         fields: None,
         binding: None,
         origin: None,
+        renamed_from: None,
         loc: SourceLocation {
             file: "test.m3l.md".into(),
             line: 1,
@@ -50,6 +51,7 @@ fn field_node_json_keys() {
 
     // Optional fields should be absent when None
     assert!(!obj.contains_key("label"));
+    assert!(!obj.contains_key("renamed_from"));
     assert!(!obj.contains_key("params"));
     assert!(!obj.contains_key("generic_params"));
     assert!(!obj.contains_key("default_value"));
@@ -117,6 +119,7 @@ fn model_node_json_keys() {
         prefix: None,
         base: None,
         extended_by: vec![],
+        renamed_from: None,
         line: 1,
         inherits: vec![],
         description: None,
@@ -144,6 +147,7 @@ fn model_node_json_keys() {
     assert!(!obj.contains_key("materialized"));
     assert!(!obj.contains_key("source_def"));
     assert!(!obj.contains_key("refresh"));
+    assert!(!obj.contains_key("renamed_from"));
     // namespace omitted when None
     assert!(!obj.contains_key("namespace"));
 }
@@ -312,7 +316,8 @@ fn catalogs_content() {
     assert!(STANDARD_ATTRIBUTES.contains("check")); // CHECK constraint
     assert!(!STANDARD_ATTRIBUTES.contains("custom_attr"));
     assert!(!STANDARD_ATTRIBUTES.contains("visibility")); // removed, spec §10.8.3 — superseded by @public/@private
-    assert_eq!(STANDARD_ATTRIBUTES.len(), 35);
+    assert!(STANDARD_ATTRIBUTES.contains("renamed_from")); // spec §2.2.6 · §2.3.5 (RFC-0006)
+    assert_eq!(STANDARD_ATTRIBUTES.len(), 36);
 
     // Kind sections
     assert!(KIND_SECTIONS.contains("Lookup"));

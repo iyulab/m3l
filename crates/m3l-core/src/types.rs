@@ -323,6 +323,10 @@ pub struct FieldNode {
     /// Set on a field that an `::extend` block added to this model.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<FieldOrigin>,
+    /// The field's former names, oldest first, from `@renamed_from(...)` (§2.3.5). The attribute is not repeated in
+    /// `attributes`. Absent when not declared; empty when declared without a name (an error, §10.5).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub renamed_from: Option<Vec<String>>,
     pub loc: SourceLocation,
 }
 
@@ -458,6 +462,10 @@ pub struct ModelNode {
     /// One entry per `::extend` block merged into this model, in merge order.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub extended_by: Vec<ExtendedBy>,
+    /// The model's former names, oldest first, from `@renamed_from(...)` on its header (§2.2.6). The attribute is
+    /// not repeated in `attributes`. Absent when not declared; empty when declared without a name (an error, §10.5).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub renamed_from: Option<Vec<String>>,
     pub line: usize,
     pub inherits: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]

@@ -42,6 +42,9 @@ pub static TYPE_CATALOG: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
 /// These are the officially defined attributes in the M3L specification.
 pub static STANDARD_ATTRIBUTES: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
     let mut s = HashSet::new();
+    // Rename declarations (§2.2.6, §2.3.5) — lifted into `renamed_from` on models and fields; listed so
+    // that one written where it is not lifted (an enum value) is reported as misplaced, not as unknown.
+    s.insert("renamed_from");
     // Field constraints
     s.insert("primary");
     s.insert("unique");

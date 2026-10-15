@@ -336,6 +336,10 @@ public class FieldNode
     [JsonPropertyName("origin")]
     public FieldOrigin? Origin { get; set; }
 
+    /// <summary>The field's former names, oldest first, from <c>@renamed_from(...)</c> (specification §2.3.5). Null when not declared.</summary>
+    [JsonPropertyName("renamed_from")]
+    public List<string>? RenamedFrom { get; set; }
+
     [JsonPropertyName("loc")]
     public SourceLocation Loc { get; set; } = new();
 }
@@ -498,6 +502,10 @@ public class ModelNode
 
     [JsonPropertyName("extended_by")]
     public List<ExtendedBy> ExtendedBy { get; set; } = [];
+
+    /// <summary>The model's former names, oldest first, from <c>@renamed_from(...)</c> on its header (specification §2.2.6). Null when not declared.</summary>
+    [JsonPropertyName("renamed_from")]
+    public List<string>? RenamedFrom { get; set; }
 
     [JsonPropertyName("line")]
     public int Line { get; set; }

@@ -1,6 +1,6 @@
 # M3L RFC-0006: Rename Declarations
 
-> **RFC Status**: Proposed
+> **RFC Status**: Accepted (2026-10-15)
 > **Author**: UJ (iyulab)
 > **Date**: 2026-10-15
 > **M3L Version Target**: assigned on acceptance (a minor release)
@@ -131,19 +131,20 @@ form gains an optional key on model and field nodes; consumers that ignore unkno
    inheritance and `::extend` cases.
 3. Consumers: acting on the declaration (out of this repository).
 
-## 7. Open questions
-- **History order.** Oldest first reads as a timeline and matches replay order; newest first puts the
-  name an author most recently saw next to the current one. This draft takes oldest first.
-- **Moving between namespaces.** `domain.sales.Client` → `domain.crm.Customer` is a rename for storage
-  that is keyed by namespace and a no-op for storage that is not. This draft leaves it out (former names
-  are unqualified); a later revision could allow a qualified former name for exactly this case.
-- **Prefix changes.** A changed `# Prefix:` renames every model's storage at once. A file-level
-  declaration (`# Prefix: crm @renamed_from(sales)`) is the natural shape; left out until there is a
-  case for it.
-- **Enum values.** A value rename (`Pending` → `Waiting`) is a data change on every row holding the
-  value. If it is wanted, it is a separate declaration with data semantics — not this one.
-- **Spelling.** `@renamed_from` against shorter `@was` / `@formerly`. This draft prefers the name that
-  says what happened and from which direction.
+## 7. Decisions on the open questions
+Settled at acceptance; each was open in the draft.
+
+- **History order — oldest first.** It reads as a timeline and is the order an implementation replays
+  the renames in; the next rename is appended at the end.
+- **Moving between namespaces — not covered.** A former name is unqualified and a qualified one is an
+  error. Allowing a qualified former name later relaxes an error, so it adds to the language without
+  breaking a model; allowing it now and withdrawing it later would break one.
+- **Prefix changes — not covered**, for the same reason. A file-level declaration
+  (`# Prefix: crm @renamed_from(sales)`) remains the natural shape if a case appears.
+- **Enum values — not covered.** A value rename changes every row holding the value — a data change, not
+  a storage name — and would be a separate declaration with data semantics.
+- **Spelling — `@renamed_from`.** It says what happened and from which direction; `@was` and `@formerly`
+  leave the reader to infer the direction.
 
 ## 8. Alternatives considered
 - **Leave renames out of the model (status quo).** Every rename is restated by hand outside the model,

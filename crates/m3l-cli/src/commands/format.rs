@@ -90,8 +90,9 @@ fn format_ast(ast: &m3l_core::M3lAst) -> String {
     if let Some(blocks) = ast.extensions.get("extend") {
         for block in blocks {
             lines.push(format!(
-                "## {} ::extend",
-                labelled(&block.name, &block.label)
+                "## {} ::extend{}",
+                labelled(&block.name, &block.label),
+                renamed_from(&block.renamed_from)
             ));
             format_model_body(&mut lines, block);
             lines.push(String::new());
@@ -122,8 +123,20 @@ fn format_model(lines: &mut Vec<String>, model: &m3l_core::ModelNode) {
             }
         }
     }
+    header.push_str(&renamed_from(&model.renamed_from));
     lines.push(header);
     format_model_body(lines, model);
+}
+
+/// ` @renamed_from(a, b)` when the declaration names former names, nothing otherwise.
+///
+/// The parser lifts the attribute out of the attribute list into its own key, so the
+/// attribute loops above never see it — without this, formatting would delete it.
+fn renamed_from(names: &Option<Vec<String>>) -> String {
+    match names {
+        Some(names) => format!(" @renamed_from({})", names.join(", ")),
+        None => String::new(),
+    }
 }
 
 /// `Name(Label)` when the declaration carries a label, `Name` otherwise.
@@ -199,6 +212,7 @@ fn format_view(lines: &mut Vec<String>, view: &m3l_core::ModelNode) {
             header.push_str(&args_str);
         }
     }
+    header.push_str(&renamed_from(&view.renamed_from));
     lines.push(header);
     if let Some(ref desc) = view.description {
         push_description(lines, desc, "");
@@ -524,6 +538,7 @@ fn format_field(lines: &mut Vec<String>, field: &m3l_core::FieldNode, indent: us
             line.push_str(symbol);
         }
     }
+    line.push_str(&renamed_from(&field.renamed_from));
 
     // Framework attributes (`` `[MaxLength(70)]` ``) pass through untouched.
     for fa in field.framework_attrs.iter().flatten() {
@@ -1269,6 +1284,41 @@ mod lossless {
         .join("\n");
         let losses = round_trip_losses(&src);
         assert!(losses.is_empty(), "{losses:#?}");
+    }
+
+    /// `@renamed_from` is lifted out of the attribute list into its own key, so the attribute loops never
+    /// see it — the formatter writes it back from the key, on model and view headers and on fields
+    /// (an `::extend` block's included), or a format would delete a rename declaration and the next
+    /// storage change would read the rename as a removal plus an addition.
+    #[test]
+    fn rename_declarations_round_trip_without_loss() {
+        let src = "# Namespace: shop\n\n## Customer @renamed_from(Client)\n- id: identifier @pk\n\
+                   - tier_code: string(20) @renamed_from(level, tier) @unique\n\n\
+                   ## Archive ::view @renamed_from(Old)\n- id: identifier\n\n\
+                   ## Customer ::extend\n- note: string(10) @renamed_from(memo)\n";
+        let losses = round_trip_losses(src);
+        assert!(losses.is_empty(), "{losses:#?}");
+        let opts = m3l_core::ResolveOptions {
+            inline_inherited: false,
+            merge_extends: false,
+        };
+        let formatted = format_ast(&m3l_core::resolve_with(
+            &[m3l_core::parse_string(src, "t.m3l.md")],
+            None,
+            opts,
+        ));
+        assert!(
+            formatted.contains("## Customer @renamed_from(Client)"),
+            "{formatted}"
+        );
+        assert!(
+            formatted.contains("- tier_code: string(20) @unique @renamed_from(level, tier)"),
+            "{formatted}"
+        );
+        assert!(
+            formatted.contains("- note: string(10) @renamed_from(memo)"),
+            "{formatted}"
+        );
     }
 
     #[test]

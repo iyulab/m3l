@@ -149,6 +149,8 @@ export interface FieldNode {
   fields?: FieldNode[];
   /** Set on a field that an `::extend` block added to this model. */
   origin?: FieldOrigin;
+  /** The field's former names, oldest first, from `@renamed_from(...)` (specification §2.3.5). */
+  renamed_from?: string[];
   loc: SourceLocation;
 }
 
@@ -201,6 +203,8 @@ export interface ModelNode {
   base?: ModelBase;
   /** One entry per `::extend` block merged into this model, in merge order. */
   extended_by?: ExtendedBy[];
+  /** The model's former names, oldest first, from `@renamed_from(...)` on its header (specification §2.2.6). */
+  renamed_from?: string[];
   line: number;
   inherits: string[];
   description?: string;

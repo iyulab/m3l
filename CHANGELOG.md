@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- **`@renamed_from(Name, …)` — a model's or a stored field's former names** (§2.2.6, §2.3.5; RFC-0006). Two versions
+  of a model that differ by one name read the same as a removal plus an unrelated addition; the declaration states the
+  identity, so an implementation that changes storage can rename instead of dropping and re-creating. Several names are
+  a history, oldest first. The parser lifts the names into their own key — `renamed_from` on model and field nodes,
+  absent when not declared — and does not repeat the attribute in `attributes`. `m3l format` writes it back from that
+  key. The C# and TypeScript AST types carry `RenamedFrom` / `renamed_from`.
+
 ## [0.22.0] - 2026-10-15
 
 ### Changed

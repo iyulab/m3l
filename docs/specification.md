@@ -1641,7 +1641,7 @@ Complex computed expressions can use fenced code blocks for readability:
 When `@computed` has no inline arguments and a fenced code block follows (indented under the field), the code block content becomes the computed expression. Both inline (`@computed("expr")` or `` @computed(`expr`) ``) and code block forms are valid.
 
 ### 4.5 Lookup Fields
-> **Status: Implemented** — Fully supported in `m3l-core` parser and validator (E002, W004).
+> **Status: Implemented** — Fully supported in `m3l-core` parser and validator (E002, E022, E027, W004).
 
 Lookup fields reference a value from a related model by following a foreign key relationship. They are **read-only** and computed at runtime unless `@persisted` is specified.
 
@@ -1717,7 +1717,12 @@ Simple Format and Extended Format correspondence:
 #### 4.5.4 Lookup Constraints
 
 - **Maximum chain depth**: Up to 3-hop recommended. Beyond that, use Derived Views (4.7).
-- **No circular references**: The parser must raise an error if a Lookup chain loops back to itself.
+- **Lookups may chain; they may not loop.** A path may end on another Lookup field — `@lookup(customer_id.region_name)`
+  where `region_name` is itself a lookup — and that field's own path is followed in turn. A Lookup field whose
+  dependencies lead back to itself is defined in terms of itself and cannot be computed: `M3L-E027`, naming the loop
+  (`Category.root_name -> Category.root_name` for `- root_name: string? @lookup(parent_id.root_name)`;
+  `Order.customer_label -> Customer.last_order_label -> Order.customer_label` across models). Visiting a model twice
+  is not a loop — `@lookup(parent_id.parent_id.name)` ends on a stored field of a different row.
 - **Nullable propagation**: If any reference in the chain is nullable, the result is also nullable.
 - **Reference validation**: Each FK field in the Lookup path must have a `@reference` attribute declared. `@lookup(product_id.name)` requires `product_id` to have `@reference(Product)`, otherwise the parser raises an error.
 - **Path resolution**: Each segment of the Lookup path must name a field of the model reached at that point — the first on the declaring model, each later one on the model the previous key references (declared, inherited, or itself derived). `@lookup(order_id.nothing_id.name)` raises `M3L-E022`. A path that passes through a model the document does not define is not checked beyond that point.
@@ -3035,6 +3040,7 @@ Conforming parsers should use these error codes for consistent diagnostics.
 | `M3L-E024` | rowversion field `{field}` in `{model}` cannot {contradiction} | A `rowversion` field (§10.4.1) is nullable, an array, or given a default, or carries `@pk`, `@primary`, `@unique`, `@reference` or `@fk` — each gives someone other than the engine a say in a value the engine sets on every write |
 | `M3L-E025` | View `{view}` field `{field}`: `@from({target})` — {problem} | An `@from(Relation.field)` in a view names a relation that is not the view's `from` or a `join`, or a field that relation does not have (§4.7.1). A relation that is itself undefined is reported once, as `M3L-E004`; a view whose source is a SQL code block (§4.7.8) is not checked |
 | `M3L-E026` | `{what}` twice for platform `{platform}` — one expression per platform | A platform declared twice for one expression — two `@computed_raw` on a field, two `where_raw:` in a rollup, or two `- where_raw:` lines in a view's Source (§10.7.5). One expression per platform is what lets an implementation pick its own without guessing |
+| `M3L-E027` | `@lookup` chain loops back to itself: `{loop}` | A Lookup field's path ends on a Lookup field whose dependencies lead back to the first (§4.5.4). Reported once per loop, at the loop's first field in declaration order |
 
 #### 10.5.2 Warnings
 

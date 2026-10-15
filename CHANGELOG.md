@@ -15,6 +15,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   from the enum**. The formatter writes it back, and two parents that give one value different labels collide
   (`M3L-E020`), as any other difference does. The C# and TypeScript bindings gain `Label`/`label` (TypeScript also
   gains the `attributes` the AST already carried).
+- **`M3L-E027` — a lookup chain that loops back to itself** (§4.5.4). A lookup may end on another lookup field and the
+  chain is followed; when following it arrives back at the field it started from, that field is defined in terms of
+  itself and no view can compute it. The specification required an error and nothing reported one. Each loop is
+  reported once, naming it; a path that only revisits a model (`parent_id.parent_id.name`) is not a loop. The
+  specification now says outright that lookups may chain.
 - **An `::aspect` or `::subtype` header takes a model's attributes** (`## Profile ::aspect(Asset) @table("…")`) — each
   declares an ordinary model that also names a base. They were reported as unread (`M3L-W010`) and dropped.
 

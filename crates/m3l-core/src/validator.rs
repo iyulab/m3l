@@ -31,16 +31,27 @@ pub fn validate(ast: &M3lAst, options: &ValidateOptions) -> ValidateResult {
         }
     }
 
-    // M3L-E002: @lookup path FK missing @reference
+    // M3L-E002: @lookup path FK missing @reference — and, for M3L-E027, which lookup ends on which.
+    let mut lookup_order: Vec<(String, String)> = Vec::new();
+    let mut lookup_ends_on: HashMap<(String, String), (String, String)> = HashMap::new();
+    let mut lookup_lines: HashMap<(String, String), (String, usize)> = HashMap::new();
     for model in &all_models {
         for field in &model.fields {
             if field.kind == FieldKind::Lookup {
                 if let Some(ref lookup) = field.lookup {
-                    validate_lookup_reference(field, model, lookup, &model_map, &mut errors);
+                    let end =
+                        validate_lookup_reference(field, model, lookup, &model_map, &mut errors);
+                    let key = (model.name.clone(), field.name.clone());
+                    lookup_order.push(key.clone());
+                    lookup_lines.insert(key.clone(), (field.loc.file.clone(), field.loc.line));
+                    if let Some((on, end)) = end.filter(|(_, end)| end.kind == FieldKind::Lookup) {
+                        lookup_ends_on.insert(key, (on.name.clone(), end.name.clone()));
+                    }
                 }
             }
         }
     }
+    validate_lookup_cycles(&lookup_order, &lookup_ends_on, &lookup_lines, &mut errors);
 
     // M3L-E004: a view's `from` or `join` names an undefined model (or view).
     // M3L-E025: an `@from(Relation.field)` names a relation the view does not read, or a field that
@@ -591,16 +602,18 @@ fn validate_rollup_reference(
     }
 }
 
-fn validate_lookup_reference(
+/// Walks a lookup path, reporting what breaks it (`M3L-E002`, `M3L-E022`), and returns the model and
+/// field it ends on — `None` when the walk stopped (a broken path, or a model outside this AST).
+fn validate_lookup_reference<'a>(
     field: &FieldNode,
-    model: &ModelNode,
+    model: &'a ModelNode,
     lookup: &LookupDef,
-    model_map: &HashMap<&str, &ModelNode>,
+    model_map: &HashMap<&str, &'a ModelNode>,
     errors: &mut Vec<Diagnostic>,
-) {
+) -> Option<(&'a ModelNode, &'a FieldNode)> {
     let segments: Vec<&str> = lookup.path.split('.').collect();
     if segments.len() < 2 {
-        return;
+        return None;
     }
 
     // Every segment but the last is an FK hop (spec 4.5.4: "Each FK field in the Lookup path
@@ -625,7 +638,7 @@ fn validate_lookup_reference(
             Some(f) => f,
             None => {
                 errors.push(unknown(fk_field_name, current));
-                return;
+                return None;
             }
         };
 
@@ -652,24 +665,75 @@ fn validate_lookup_reference(
                         field.name, fk_field_name, location
                     ),
                 });
-                return;
+                return None;
             }
         };
 
         // `@reference(Model)` names the model; `@fk(Model.field)` names it before the dot.
         let target = match reference.args.as_deref() {
             Some([AttrArgValue::String(arg), ..]) => arg.split('.').next().unwrap_or(arg),
-            _ => return,
+            _ => return None,
         };
-        current = match model_map.get(target) {
-            Some(m) => m,
-            None => return,
-        };
+        current = model_map.get(target)?;
     }
 
     let last = segments[segments.len() - 1];
-    if !current.fields.iter().any(|f| f.name == last) {
-        errors.push(unknown(last, current));
+    match current.fields.iter().find(|f| f.name == last) {
+        Some(end) => Some((current, end)),
+        None => {
+            errors.push(unknown(last, current));
+            None
+        }
+    }
+}
+
+/// `M3L-E027`: lookups whose definitions depend on each other in a loop (§4.5.4). A lookup that ends on
+/// another lookup field depends on that field; following those dependencies back to the field it
+/// started from means the field is defined in terms of itself. Visiting a model twice is not a loop —
+/// `parent_id.parent_id.name` ends on a stored field. Each loop is reported once, at the first of its
+/// fields in declaration order, naming the whole loop.
+fn validate_lookup_cycles(
+    order: &[(String, String)],
+    ends_on: &HashMap<(String, String), (String, String)>,
+    lines: &HashMap<(String, String), (String, usize)>,
+    errors: &mut Vec<Diagnostic>,
+) {
+    let mut reported: HashSet<Vec<(String, String)>> = HashSet::new();
+    for start in order {
+        let mut path = vec![start.clone()];
+        let mut current = start;
+        while let Some(next) = ends_on.get(current) {
+            if let Some(at) = path.iter().position(|n| n == next) {
+                let mut cycle = path[at..].to_vec();
+                if cycle.first() != Some(start) {
+                    break;
+                }
+                let mut key = cycle.clone();
+                key.sort();
+                if reported.insert(key) {
+                    cycle.push(start.clone());
+                    let chain = cycle
+                        .iter()
+                        .map(|(m, f)| format!("{m}.{f}"))
+                        .collect::<Vec<_>>()
+                        .join(" -> ");
+                    let (file, line) = lines[start].clone();
+                    errors.push(Diagnostic {
+                        code: "M3L-E027".into(),
+                        severity: DiagnosticSeverity::Error,
+                        file,
+                        line,
+                        col: 1,
+                        message: format!(
+                            "@lookup chain loops back to itself: {chain} — each field is defined by the next, so none can be computed"
+                        ),
+                    });
+                }
+                break;
+            }
+            path.push(next.clone());
+            current = next;
+        }
     }
 }
 

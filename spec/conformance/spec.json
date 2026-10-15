@@ -147,6 +147,12 @@
       "category": "unit"
     },
     {
+      "name": "extended-field-format",
+      "input": "inputs/extended-field-format.m3l.md",
+      "expected": "expected/extended-field-format.json",
+      "category": "unit"
+    },
+    {
       "name": "multi-file",
       "input_dir": "inputs/multi",
       "expected": "expected/multi-file.json",

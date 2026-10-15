@@ -1886,3 +1886,29 @@ fn conformance_enum_value_display_label() {
         .unwrap();
     assert_eq!(priority["enum_values"][1]["label"], "Urgent");
 }
+
+/// The extended field format is another spelling of the line form (§2.3.2): the fixture writes the same fields both
+/// ways, and every field but its source location arrives identical.
+#[test]
+fn conformance_extended_field_format() {
+    let input = include_str!("../../../spec/conformance/inputs/extended-field-format.m3l.md");
+    let ast = full_pipeline(input, "extended-field-format.m3l.md");
+    assert!(ast.errors.is_empty(), "{:?}", ast.errors);
+
+    let fields = |model: &str| -> Vec<serde_json::Value> {
+        let m = ast.models.iter().find(|m| m.name == model).unwrap();
+        m.fields
+            .iter()
+            .map(|f| {
+                let mut v = serde_json::to_value(f).unwrap();
+                v.as_object_mut().unwrap().remove("loc");
+                v
+            })
+            .collect()
+    };
+    let (line, extended) = (fields("Line"), fields("Extended"));
+    assert_eq!(line.len(), 10);
+    for (a, b) in line.iter().zip(&extended) {
+        assert_eq!(a, b, "field {}", a["name"]);
+    }
+}

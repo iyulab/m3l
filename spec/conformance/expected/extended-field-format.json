@@ -1,0 +1,527 @@
+{
+  "parserVersion": "0.22.0",
+  "astVersion": "1.0",
+  "project": {
+    "name": "sample.extended"
+  },
+  "sources": [
+    "spec/conformance/inputs/extended-field-format.m3l.md"
+  ],
+  "models": [
+    {
+      "name": "Line",
+      "type": "model",
+      "source": "spec/conformance/inputs/extended-field-format.m3l.md",
+      "namespace": "sample.extended",
+      "line": 3,
+      "inherits": [],
+      "description": "Every field on one line (§2.3.1).",
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/extended-field-format.m3l.md",
+            "line": 6,
+            "col": 1
+          }
+        },
+        {
+          "name": "price",
+          "type": "decimal",
+          "params": [
+            10.0,
+            2.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/extended-field-format.m3l.md",
+            "line": 7,
+            "col": 1
+          }
+        },
+        {
+          "name": "qty",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/extended-field-format.m3l.md",
+            "line": 8,
+            "col": 1
+          }
+        },
+        {
+          "name": "code",
+          "type": "string",
+          "params": [
+            20.0
+          ],
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "unique",
+              "isStandard": true
+            }
+          ],
+          "renamed_from": [
+            "legacy_code",
+            "old_code"
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/extended-field-format.m3l.md",
+            "line": 9,
+            "col": 1
+          }
+        },
+        {
+          "name": "tags",
+          "type": "map",
+          "generic_params": [
+            "string",
+            "integer"
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/extended-field-format.m3l.md",
+            "line": 10,
+            "col": 1
+          }
+        },
+        {
+          "name": "label",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "check",
+              "args": [
+                "len(label) > 0",
+                "name: \"nonempty\""
+              ],
+              "argsQuoted": [
+                true,
+                false
+              ],
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/extended-field-format.m3l.md",
+            "line": 11,
+            "col": 1
+          }
+        },
+        {
+          "name": "active",
+          "type": "boolean",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "default",
+              "args": [
+                false
+              ]
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/extended-field-format.m3l.md",
+            "line": 12,
+            "col": 1
+          }
+        },
+        {
+          "name": "total",
+          "type": "decimal",
+          "params": [
+            12.0,
+            2.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "computed",
+          "attributes": [
+            {
+              "name": "computed",
+              "args": [
+                "price * qty"
+              ],
+              "argsQuoted": [
+                true
+              ],
+              "isStandard": true
+            },
+            {
+              "name": "persisted",
+              "isStandard": true
+            }
+          ],
+          "computed": {
+            "expression": "price * qty"
+          },
+          "loc": {
+            "file": "spec/conformance/inputs/extended-field-format.m3l.md",
+            "line": 13,
+            "col": 1
+          }
+        },
+        {
+          "name": "doubled",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "computed",
+          "attributes": [
+            {
+              "name": "computed",
+              "args": [
+                "qty * 2"
+              ],
+              "argsQuoted": [
+                true
+              ],
+              "isStandard": true
+            }
+          ],
+          "computed": {
+            "expression": "qty * 2"
+          },
+          "loc": {
+            "file": "spec/conformance/inputs/extended-field-format.m3l.md",
+            "line": 14,
+            "col": 1
+          }
+        },
+        {
+          "name": "line_name",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "lookup",
+          "attributes": [
+            {
+              "name": "lookup",
+              "args": [
+                "id.name"
+              ],
+              "isStandard": true
+            }
+          ],
+          "lookup": {
+            "path": "id.name"
+          },
+          "loc": {
+            "file": "spec/conformance/inputs/extended-field-format.m3l.md",
+            "line": 15,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/extended-field-format.m3l.md",
+        "line": 3,
+        "col": 1
+      }
+    },
+    {
+      "name": "Extended",
+      "type": "model",
+      "source": "spec/conformance/inputs/extended-field-format.m3l.md",
+      "namespace": "sample.extended",
+      "line": 17,
+      "inherits": [],
+      "description": "The same fields in the extended format (§2.3.2) — the same AST, apart from the model's name.",
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk"
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/extended-field-format.m3l.md",
+            "line": 20,
+            "col": 1
+          }
+        },
+        {
+          "name": "price",
+          "type": "decimal",
+          "params": [
+            10.0,
+            2.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/extended-field-format.m3l.md",
+            "line": 23,
+            "col": 1
+          }
+        },
+        {
+          "name": "qty",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/extended-field-format.m3l.md",
+            "line": 25,
+            "col": 1
+          }
+        },
+        {
+          "name": "code",
+          "type": "string",
+          "params": [
+            20.0
+          ],
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "unique",
+              "isStandard": true
+            }
+          ],
+          "renamed_from": [
+            "legacy_code",
+            "old_code"
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/extended-field-format.m3l.md",
+            "line": 27,
+            "col": 1
+          }
+        },
+        {
+          "name": "tags",
+          "type": "map",
+          "generic_params": [
+            "string",
+            "integer"
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/extended-field-format.m3l.md",
+            "line": 32,
+            "col": 1
+          }
+        },
+        {
+          "name": "label",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "check",
+              "args": [
+                "len(label) > 0",
+                "name: \"nonempty\""
+              ],
+              "argsQuoted": [
+                true,
+                false
+              ],
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/extended-field-format.m3l.md",
+            "line": 34,
+            "col": 1
+          }
+        },
+        {
+          "name": "active",
+          "type": "boolean",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "default",
+              "args": [
+                false
+              ]
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/extended-field-format.m3l.md",
+            "line": 37,
+            "col": 1
+          }
+        },
+        {
+          "name": "total",
+          "type": "decimal",
+          "params": [
+            12.0,
+            2.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "computed",
+          "attributes": [
+            {
+              "name": "computed",
+              "args": [
+                "price * qty"
+              ],
+              "argsQuoted": [
+                true
+              ],
+              "isStandard": true
+            },
+            {
+              "name": "persisted",
+              "isStandard": true
+            }
+          ],
+          "computed": {
+            "expression": "price * qty"
+          },
+          "loc": {
+            "file": "spec/conformance/inputs/extended-field-format.m3l.md",
+            "line": 40,
+            "col": 1
+          }
+        },
+        {
+          "name": "doubled",
+          "type": "integer",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "computed",
+          "attributes": [
+            {
+              "name": "computed",
+              "args": [
+                "qty * 2"
+              ],
+              "argsQuoted": [
+                true
+              ],
+              "isStandard": true
+            }
+          ],
+          "computed": {
+            "expression": "qty * 2"
+          },
+          "loc": {
+            "file": "spec/conformance/inputs/extended-field-format.m3l.md",
+            "line": 45,
+            "col": 1
+          }
+        },
+        {
+          "name": "line_name",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "lookup",
+          "attributes": [
+            {
+              "name": "lookup",
+              "args": [
+                "id.name"
+              ],
+              "isStandard": true
+            }
+          ],
+          "lookup": {
+            "path": "id.name"
+          },
+          "loc": {
+            "file": "spec/conformance/inputs/extended-field-format.m3l.md",
+            "line": 48,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/extended-field-format.m3l.md",
+        "line": 17,
+        "col": 1
+      }
+    }
+  ],
+  "enums": [],
+  "interfaces": [],
+  "views": [],
+  "flows": [],
+  "attributeRegistry": [],
+  "errors": [],
+  "warnings": []
+}

@@ -42,7 +42,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   and `- rollup: …` items added the attribute but left the field `kind: "stored"` with no `computed`/`lookup`/`rollup`
   definition — and `m3l format`, which writes the line form, turned it into a derived field on the next parse. The item
   now makes the field what the attribute makes it on a field line. `- formula: "…"` (§4.4.2, beside `- computed: true`)
-  is read as the `@computed` expression; it no longer arrives as an attribute of its own.
+  is read as the `@computed` expression; it no longer arrives as an attribute of its own. A new conformance test,
+  `extended-field-format`, writes ten fields both ways and expects the same AST for each.
 
 ## [0.22.0] - 2026-10-15
 

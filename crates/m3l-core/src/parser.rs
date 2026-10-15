@@ -1438,25 +1438,94 @@ fn handle_text(token: &Token, state: &mut ParserState) {
     }
 }
 
+/// Gives every relationship entry one parsed form (§3.2.4 "Parsed form"), whichever spelling wrote it.
+///
+/// Two spellings arrived in other shapes. A `- @relation(name, <- Model.key)` / `@relation(name, -> Target, from: key)`
+/// directive kept its arguments as written (`type: "directive"`, `args`) — the same facts a `- <name` entry carries in
+/// `direction`/`name`/`target`/`from`, left for each consumer to read out of the text again. And a reverse entry whose
+/// nested `- target: Model.key` names the key inside the target kept `Model.key` as its target, where the one-line
+/// `<- Model via key` gives `target: Model` and `from: key`. Both are the same fact in a second shape; this reads them
+/// into the first, once, after the nested items have been applied (a nested key still wins over the notation).
+fn normalize_relations(relations: &mut [serde_json::Value]) {
+    for entry in relations.iter_mut() {
+        let serde_json::Value::Object(obj) = entry else {
+            continue;
+        };
+        if obj.get("type").and_then(|t| t.as_str()) == Some("directive") {
+            let args: Vec<String> = obj
+                .get("args")
+                .and_then(|a| a.as_array())
+                .map(|a| {
+                    a.iter()
+                        .map(|v| {
+                            v.as_str()
+                                .map(str::to_string)
+                                .unwrap_or_else(|| v.to_string())
+                        })
+                        .collect()
+                })
+                .unwrap_or_default();
+            if args.len() >= 2 {
+                let arrow = args[1].trim();
+                let from = args[2..]
+                    .iter()
+                    .find_map(|a| a.trim().strip_prefix("from:").map(|f| f.trim().to_string()));
+                let (direction, target) = if let Some(t) = arrow.strip_prefix("<-") {
+                    ("from", t.trim())
+                } else if let Some(t) = arrow.strip_prefix("->") {
+                    ("to", t.trim())
+                } else {
+                    continue;
+                };
+                obj.insert("direction".into(), serde_json::json!(direction));
+                obj.insert("name".into(), serde_json::json!(args[0].trim()));
+                obj.insert("target".into(), serde_json::json!(target));
+                if let Some(from) = from {
+                    obj.insert("from".into(), serde_json::json!(from));
+                }
+                obj.remove("type");
+                obj.remove("args");
+            }
+        }
+        // `- target: Comment.post_id` under a reverse entry names the key inside the target.
+        if obj.get("direction").and_then(|d| d.as_str()) == Some("from")
+            && !obj.contains_key("from")
+        {
+            if let Some((model, key)) = obj
+                .get("target")
+                .and_then(|t| t.as_str())
+                .and_then(|t| t.split_once('.'))
+                .map(|(m, k)| (m.to_string(), k.to_string()))
+            {
+                obj.insert("target".into(), serde_json::json!(model));
+                obj.insert("from".into(), serde_json::json!(key));
+            }
+        }
+    }
+}
+
 fn finalize_element(state: &mut ParserState) {
     finalize_attr_def(state);
 
     let element = std::mem::replace(&mut state.current_element, CurrentElement::None);
     match element {
         CurrentElement::Enum(en) => state.enums.push(*en),
-        CurrentElement::Model(model) => match &model.model_type {
-            ModelType::Interface => state.interfaces.push(*model),
-            ModelType::View => state.views.push(*model),
-            ModelType::Flow => state.flows.push(*model),
-            ModelType::Extension(ext_type) => {
-                state
-                    .extensions
-                    .entry(ext_type.clone())
-                    .or_default()
-                    .push(*model);
+        CurrentElement::Model(mut model) => {
+            normalize_relations(&mut model.sections.relations);
+            match &model.model_type {
+                ModelType::Interface => state.interfaces.push(*model),
+                ModelType::View => state.views.push(*model),
+                ModelType::Flow => state.flows.push(*model),
+                ModelType::Extension(ext_type) => {
+                    state
+                        .extensions
+                        .entry(ext_type.clone())
+                        .or_default()
+                        .push(*model);
+                }
+                _ => state.models.push(*model),
             }
-            _ => state.models.push(*model),
-        },
+        }
         CurrentElement::None => {}
     }
 

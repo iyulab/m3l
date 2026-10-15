@@ -18,6 +18,12 @@
       "input": "validate/inputs/lookup-depth-strict.m3l.md",
       "expected": "validate/expected/lookup-depth-strict.json",
       "strict": true
+    },
+    {
+      "name": "relation-entries",
+      "input": "validate/inputs/relation-entries.m3l.md",
+      "expected": "validate/expected/relation-entries.json",
+      "strict": false
     }
   ]
 }

@@ -92,7 +92,57 @@ fn arrow_spellings_name_a_target_rather_than_a_relationship_name() {
 
     let from = &rels[4];
     assert_eq!(get(from, "direction"), Some("from"));
-    assert_eq!(get(from, "target"), Some("Comment.post_id"));
+    // `<- Comment.post_id` names the key inside the target; the parsed form gives it its own key, the way
+    // `<- Comment via post_id` and a nested `- from:` do.
+    assert_eq!(get(from, "target"), Some("Comment"));
+    assert_eq!(get(from, "from"), Some("post_id"));
+}
+
+const DIRECTIVES: &str = r#"
+# Namespace: probe
+
+## Post
+- id: identifier @primary
+- parent_id: identifier? @reference(Post)
+
+### Relations
+- @relation(comments, <- Comment.post_id) "Comments on the post"
+- @relation(parent, -> Post, from: parent_id)
+- <replies
+  - target: Reply.post_id
+
+## Comment
+- id: identifier @primary
+- post_id: identifier @reference(Post)
+
+## Reply
+- id: identifier @primary
+- post_id: identifier @reference(Post)
+"#;
+
+/// A `@relation(...)` directive and a nested `- target: Model.key` carry the same facts as the notation, so they
+/// arrive in the same parsed form — a consumer reads `direction`/`name`/`target`/`from` and nothing else.
+#[test]
+fn directives_and_qualified_targets_arrive_in_the_parsed_form() {
+    let rels = relations(DIRECTIVES);
+
+    let comments = &rels[0];
+    assert_eq!(get(comments, "direction"), Some("from"));
+    assert_eq!(get(comments, "name"), Some("comments"));
+    assert_eq!(get(comments, "target"), Some("Comment"));
+    assert_eq!(get(comments, "from"), Some("post_id"));
+    assert_eq!(comments.get("type"), None, "no second shape");
+    assert_eq!(comments.get("args"), None, "no second shape");
+
+    let parent = &rels[1];
+    assert_eq!(get(parent, "direction"), Some("to"));
+    assert_eq!(get(parent, "name"), Some("parent"));
+    assert_eq!(get(parent, "target"), Some("Post"));
+    assert_eq!(get(parent, "from"), Some("parent_id"));
+
+    let replies = &rels[2];
+    assert_eq!(get(replies, "target"), Some("Reply"));
+    assert_eq!(get(replies, "from"), Some("post_id"));
 }
 
 /// The raw line is kept as well, so nothing that read it before has to change

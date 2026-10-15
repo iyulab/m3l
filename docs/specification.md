@@ -993,22 +993,22 @@ Relationships define connections between models.
 
 #### 3.2.1.1 CASCADE Behavior
 
-M3L uses a 2-tier system for specifying cascade behavior:
+M3L uses a 2-tier system for specifying what happens to a referencing row when the row it refers to is deleted:
 
 **Tier 1 — Symbol Syntax (Simple Cases, Recommended):**
 
 | Syntax | Behavior | Description |
 |---|---|---|
-| `@reference(Model)` | Automatic | Nullable → SET NULL, Non-nullable → CASCADE |
-| `@reference(Model)!` | NO ACTION | Prevent deletion of referenced record |
+| `@reference(Model)` | Default — no action | No delete action is declared: deleting a referenced record is refused while it is referenced |
+| `@reference(Model)!` | NO ACTION | Prevent deletion of referenced record (the default, written out) |
 | `@reference(Model)?` | SET NULL | Set to null on deletion (requires nullable field) |
 | `@reference(Model)!!` | RESTRICT | Strict prevention of deletion |
 
 ```markdown
-- author_id: identifier @reference(User)      # Automatic → CASCADE (non-nullable)
-- reviewer_id?: identifier @reference(User)    # Automatic → SET NULL (nullable)
-- blocker_id: identifier @reference(User)!     # Explicit: NO ACTION
-- admin_id: identifier @reference(User)!!      # Explicit: RESTRICT
+- author_id: identifier @reference(User)       # Default: deleting the user is refused while posts refer to it
+- reviewer_id: identifier? @reference(User)?    # Explicit: SET NULL
+- blocker_id: identifier @reference(User)!      # Explicit: NO ACTION
+- admin_id: identifier @reference(User)!!       # Explicit: RESTRICT
 ```
 
 **Tier 2 — Extended Format (Complex Cases):**
@@ -1022,10 +1022,25 @@ For cases requiring `on_update` or fine-grained control, use the extended field 
   - on_update: cascade
 ```
 
-**Automatic Decision Logic:**
-When no explicit symbol is provided, CASCADE behavior is determined by field nullability:
-- **Nullable FK** → SET NULL (safe cleanup)
-- **Non-nullable FK** → CASCADE (strong relationship)
+**Default — no action.** A reference that declares no delete action — no symbol, no `on_delete` — removes
+nothing: deleting the referenced record is refused while any record refers to it, whether the key is nullable or
+not. This is the SQL default (`NO ACTION`), so an implementation that writes no `ON DELETE` clause means exactly
+this. Deleting rows along with their parent (`cascade`) and clearing their references (`set_null`) change other
+rows' data, so they are declared, never inferred:
+
+```markdown
+- order_id: identifier
+  - reference: Order
+  - on_delete: cascade        # order lines go with their order
+- assignee_id: identifier? @reference(User)?   # an assignment is cleared when the user goes
+```
+
+The default does not depend on nullability on purpose. A nullable key says the value may be absent, not that the
+referenced row may vanish under it; and a required key says the row needs its parent, not that the row should be
+deleted with it — history, audit and legal records are typically required references to master data that must
+outlive any one delete. A default that deleted or cleared rows would do so silently for every model that never
+thought about it, and on some databases (SQL Server) cascading or nulling paths that meet on one table are refused
+outright, so such a default would also make common models undeployable.
 
 > **Deprecated syntax**: The standalone attribute forms (`@cascade`, `@no_action`, `@set_null`, `@restrict`) and the parameter form (`@cascade(CASCADE)`, `@cascade(NO-ACTION)`) are deprecated. Use the symbol suffix or extended format instead. Parsers should emit a warning for deprecated forms.
 
@@ -1092,12 +1107,19 @@ abbreviation a person chose.
 | `direction` | the leading characters | `to` (`>`, `->`) · `from` (`<`, `<-`) · `many-to-many` (`<>`) |
 | `name` | the short spellings (`>author`), or a key in front of any spelling | the entry's own name |
 | `target` | the arrow spellings (`-> Person`), or the token after a short spelling with a key in front | the model named by the arrow |
-| `from` | a trailing `via <field>` | the FK field, the same fact `- from:` gives on its own line |
+| `from` | a trailing `via <field>` | the FK field, the same fact `- from:` gives on its own line — on this model for `to`, on `target` for `from` |
 | `cardinality` | after the colon | carried through as written; this section does not close the set |
 | `raw` | the whole line | kept, so the source spelling stays available |
 
 A nested item names its key explicitly (`- target: Person`) and wins over anything the notation
 supplied for that key — `via` included: a nested `- from:` overrides it the same way.
+
+**One parsed form for every spelling.** A reverse entry may name the key inside its target —
+`- <comments` with `- target: Comment.post_id`, or `<- Comment.post_id` — and the parsed form gives that key its
+own entry key: `target: Comment`, `from: post_id`, exactly as `<- Comment via post_id` does. A `@relation(...)`
+directive (§3.2.2) is the same entry written as arguments, and arrives the same way:
+`@relation(comments, <- Comment.post_id)` is `{direction: from, name: comments, target: Comment, from: post_id}`,
+`@relation(parent, -> Category, from: parent_id)` is `{direction: to, name: parent, target: Category, from: parent_id}`.
 
 **Placement.** `### Relations` is where this notation belongs (§3.2.3). Written among a model's
 fields it is still read as a relationship — never as a field — but a parser reports it
@@ -2587,7 +2609,8 @@ Support for modern data types:
 
 ### 8.4 Cascade Behavior for Foreign Keys
 
-M3L provides comprehensive syntax for controlling foreign key cascade behavior with automatic decision logic:
+M3L provides syntax for controlling what a foreign key does when its referenced row is deleted. A reference that
+declares nothing refuses the delete (§3.2.1.1); every action that changes other rows is declared.
 
 #### 8.4.1 Symbol-Based Cascade Notation
 
@@ -2609,48 +2632,50 @@ M3L provides comprehensive syntax for controlling foreign key cascade behavior w
 - TargetType: ReportTargetType
 - TargetId: identifier
 - Status: ReportStatus = "Pending"
-- ReviewedBy?: identifier @reference(User)     # Automatic → SET NULL (nullable)
+- ReviewedBy: identifier? @reference(User)?   # SET NULL - clear the reviewer when the user goes
 - SystemAdmin: identifier @reference(User)!!   # RESTRICT - critical system constraint
 
 ## Post
-> Blog post with automatic cascade decisions
+> Blog post with default and declared delete actions
 
 - Id: identifier @primary
-- AuthorId: identifier @reference(User)        # Automatic → CASCADE (non-nullable)
-- CategoryId?: identifier @reference(Category) # Automatic → SET NULL (nullable)
-- ModeratedBy?: identifier @reference(User)    # Automatic → SET NULL (nullable)
+- AuthorId: identifier @reference(User)        # Default - deleting the author is refused while posts refer to it
+- CategoryId: identifier? @reference(Category)? # SET NULL - a post survives its category
+- ModeratedBy: identifier? @reference(User)    # Default - deleting the moderator is refused while referenced
 ```
 
 #### 8.4.2 Cascade Behavior Guidelines
 
-**Automatic Decision (recommended)**: Let M3L decide based on field nullability
+**Default (no symbol)**: deleting the referenced row is refused while it is referenced — nothing is removed or cleared
+that the model did not ask for
 ```markdown
-- AuthorId: identifier @reference(User)        # Non-nullable → CASCADE
-- CategoryId?: identifier @reference(Category) # Nullable → SET NULL
+- AuthorId: identifier @reference(User)        # Deleting the user is refused while posts refer to it
+- CategoryId: identifier? @reference(Category) # Nullable, and still refused — nullability is not a delete action
 ```
 
-**CASCADE**: Use for parent-child relationships where child data becomes meaningless without parent
+**CASCADE (`on_delete: cascade`)**: Use for parent-child relationships where child data becomes meaningless without parent
 ```markdown
-- AuthorId: identifier @reference(User) @cascade        # Delete posts when author deleted
-- CategoryId: identifier @reference(Category) @cascade  # Delete products when category deleted
+- OrderId: identifier
+  - reference: Order
+  - on_delete: cascade                         # Delete order lines with their order
 ```
 
-**NO ACTION (!)**: Use for important reference data that should be preserved
+**NO ACTION (!)**: Use for important reference data that should be preserved — the default, written out
 ```markdown
-- CreatedBy: identifier @reference(User)! @no_action      # Preserve audit trail
-- ModeratorId: identifier @reference(User)! @no_action    # Prevent moderator deletion
+- CreatedBy: identifier @reference(User)!      # Preserve audit trail
+- ModeratorId: identifier @reference(User)!    # Prevent moderator deletion
 ```
 
 **SET NULL (?)**: Use for optional relationships where record should survive parent deletion
 ```markdown
-- ReviewedBy?: identifier @reference(User)? @set_null    # Clear reviewer on deletion
-- AssignedTo?: identifier @reference(User)? @set_null    # Clear assignment on deletion
+- ReviewedBy: identifier? @reference(User)?    # Clear reviewer on deletion
+- AssignedTo: identifier? @reference(User)?    # Clear assignment on deletion
 ```
 
 **RESTRICT (!!)**: Use for critical system constraints that must never be deleted
 ```markdown
-- SystemAdminId: identifier @reference(User)!! @restrict  # Critical system constraint
-- RootCategory: identifier @reference(Category)!! @restrict # Foundation data
+- SystemAdminId: identifier @reference(User)!!  # Critical system constraint
+- RootCategory: identifier @reference(Category)!! # Foundation data
 ```
 
 ## 9. Best Practices and Anti-patterns
@@ -2686,7 +2711,7 @@ M3L provides comprehensive syntax for controlling foreign key cascade behavior w
 
 #### 9.1.5 Cascade Behavior Best Practices
 
-- **Leverage automatic decisions** for simple relationships - nullable fields automatically get SET NULL, non-nullable get CASCADE
+- **Declare every delete action that changes other rows** - `on_delete: cascade` and `?` (SET NULL) are never implied; a reference without them refuses the delete
 - **Use NO ACTION (!)** for audit trail preservation, user blocking systems, and critical reference data
 - **Use SET NULL (?)** for optional assignments where the record should survive reference deletion
 - **Use RESTRICT (!!)** for critical system constraints that should never be deleted
@@ -2694,20 +2719,20 @@ M3L provides comprehensive syntax for controlling foreign key cascade behavior w
 - **Test cascade scenarios** thoroughly, especially for complex multi-table relationships
 - **Avoid cascade conflicts** by using NO ACTION for circular or complex reference patterns
 
-**Automatic Decision Examples:**
+**Default Examples:**
 ```markdown
-# Automatic behavior based on nullability
-- AuthorId: identifier @reference(User)      # Non-nullable → CASCADE
-- ReviewedBy?: identifier @reference(User)   # Nullable → SET NULL
+# No symbol: the delete is refused while referenced, nullable or not
+- AuthorId: identifier @reference(User)
+- ReviewedBy: identifier? @reference(User)
 ```
 
 **Syntax Choice Guidelines:**
 ```markdown
 # Simple cases: Use symbol syntax (Tier 1)
-- CreatedBy: identifier @reference(User)     # Automatic (CASCADE for non-nullable)
-- ReviewedBy: identifier @reference(User)!   # NO ACTION
-- AssignedTo?: identifier @reference(User)   # Automatic (SET NULL for nullable)
-- SystemAdmin: identifier @reference(User)!! # RESTRICT
+- CreatedBy: identifier @reference(User)       # Default (refused while referenced)
+- ReviewedBy: identifier @reference(User)!     # NO ACTION
+- AssignedTo: identifier? @reference(User)?    # SET NULL
+- SystemAdmin: identifier @reference(User)!!   # RESTRICT
 
 # Complex cases: Use extended format (Tier 2)
 - author_id: identifier
@@ -2718,18 +2743,24 @@ M3L provides comprehensive syntax for controlling foreign key cascade behavior w
 
 **Anti-patterns to avoid:**
 ```markdown
-# BAD: Multiple CASCADE paths to same table can cause conflicts
-- BlockerId: identifier @reference(User)     # AUTO → CASCADE
-- BlockedUserId: identifier @reference(User) # AUTO → CASCADE - can cause conflicts!
+# BAD: Multiple CASCADE paths to same table can cause conflicts (SQL Server refuses them)
+- BlockerId: identifier
+  - reference: User
+  - on_delete: cascade
+- BlockedUserId: identifier
+  - reference: User
+  - on_delete: cascade                         # a second cascading path to User
 
-# GOOD: Use NO ACTION for blocking/audit systems
-- BlockerId: identifier @reference(User)! @no_action     # NO ACTION - preserve blocking data
-- BlockedUserId: identifier @reference(User)! @no_action # NO ACTION - preserve blocking data
+# GOOD: Leave blocking/audit references at the default, or say NO ACTION
+- BlockerId: identifier @reference(User)!      # NO ACTION - preserve blocking data
+- BlockedUserId: identifier @reference(User)!  # NO ACTION - preserve blocking data
 
-# MIXED: Different business logic for same reference
-- UserId: identifier @reference(User)! @cascade     # User data can be deleted
-- CreatedBy: identifier @reference(User)! @no_action # Creator audit preserved
-- SystemRole: identifier @reference(User)!! @restrict # Critical system constraint
+# MIXED: Different business logic for references to the same model
+- UserId: identifier
+  - reference: User
+  - on_delete: cascade                         # User data goes with the user
+- CreatedBy: identifier @reference(User)!      # Creator audit preserved
+- SystemRole: identifier @reference(User)!!    # Critical system constraint
 ```
 - Apply security attributes consistently across models
 - Use events sparingly for critical business state changes
@@ -3023,7 +3054,7 @@ Conforming parsers should use these error codes for consistent diagnostics.
 | `M3L-E007` | Unresolved parent `{parent}` in inheritance | `## Child : Parent` where Parent is not defined |
 | `M3L-E008` | Ambiguous model reference `{name}` in namespaces {ns1}, {ns2} | Short name exists in multiple namespaces |
 | `M3L-E009` | Undefined type `{type}` | Type not in catalog and not a known model/enum |
-| `M3L-E010` | Relations entry without matching `@reference` | `### Relations` defines relationship with no FK `@reference` |
+| `M3L-E010` | Relationship entry `{entry}` matches no `@reference` key: {problem} | A `### Relations` entry or `@relation` (§3.2.6) that names a key the model does not have, a key with no `@reference`/`@fk`, or a target other than the one the key references — or, for a reverse entry, a key on the named model that does not reference this one. `@reference` defines the relationship; an entry only supplements one that exists |
 | `M3L-E011` | Extend target `{model}` not found | `## {model} ::extend` references a model that is not defined |
 | `M3L-E012` | Extend field `{field}` collides with an existing field in `{model}` | An extend block adds a field name already present on the target — its own, inherited, or added by another extend block |
 | `M3L-E013` | Attribute `@{attr}` not allowed in an extend block | `@pk`, `@primary`, and `@override` are reserved for the base model and cannot appear in an extend block |

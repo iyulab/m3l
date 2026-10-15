@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Changed
+
+- **A reference without a delete action refuses the delete — the specification no longer infers one** (§3.2.1.1, §8.4,
+  §9.1.5). The «automatic decision» (a required key cascades, a nullable one is set to null) is gone: a reference that
+  declares no symbol and no `on_delete` removes nothing — deleting the referenced record is refused while it is
+  referenced, the SQL default (`NO ACTION`). `cascade` and `set_null` change other rows' data, so they are declared
+  (`on_delete: cascade`, `@reference(X)?`), never inferred. The parser never computed the old default, so its output
+  does not change; an implementation that followed the old text should stop inferring. The examples in those sections
+  no longer use the deprecated attribute forms (`@cascade`, `@no_action`, …) or the `name?:` nullable spelling.
+- **Relationship entries arrive in one parsed form** (§3.2.4). A `@relation(...)` directive used to arrive as
+  `type: "directive"` with its arguments as written, and a reverse entry naming its key inside the target
+  (`- target: Comment.post_id`) kept `Comment.post_id` as its target. Both now carry `direction`/`name`/`target`/`from`
+  like every other entry — `target: Comment`, `from: post_id`. A consumer that read `args` or split the target itself
+  reads the keys instead.
+
+### Fixed
+
+- **`M3L-E010` checks every relationship entry against the keys it supplements** (§3.2.6 «a parser error»). It caught
+  one case — a `from:` key without `@reference` — and passed an entry naming a key the model does not have, a target
+  other than the one the key references, and any reverse entry. All four are now reported; a conformance case
+  (`validate/relation-entries`) pins them.
+
 ## [0.21.0] - 2026-10-15
 
 ### Added

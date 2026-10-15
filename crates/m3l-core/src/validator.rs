@@ -195,9 +195,9 @@ pub fn validate(ast: &M3lAst, options: &ValidateOptions) -> ValidateResult {
         check_deprecated_syntax(&model.fields, &mut warnings);
     }
 
-    // M3L-E010: Relations entry without @reference
+    // M3L-E010: a Relations entry that matches no @reference key (§3.2.6)
     for model in &all_models {
-        validate_relations_references(model, &mut errors);
+        validate_relations_references(model, &model_map, &mut errors);
     }
 
     // M3L-W009: Relationship notation written in the field list
@@ -484,87 +484,6 @@ fn validate_relation_notation_placement(model: &ModelNode, warnings: &mut Vec<Di
     }
 }
 
-fn validate_relations_references(model: &ModelNode, errors: &mut Vec<Diagnostic>) {
-    for rel in &model.sections.relations {
-        // Skip directive-type entries
-        if rel.get("type").and_then(|v| v.as_str()) == Some("directive") {
-            continue;
-        }
-
-        // Only outgoing relations put the foreign key on *this* model, so only
-        // they can be checked against its fields. The direction is a parsed fact
-        // (specification 3.2.4) -- looking for a '>' in the source line mistook
-        // `<>` for `>`, and let a '>' anywhere in a description turn an incoming
-        // relation into an outgoing one. Both were reachable, and both reported
-        // M3L-E010 against a model that never owned the key.
-        //
-        // An entry the notation could not classify carries no `direction` at
-        // all -- a `### Relations` item written without one of the leading
-        // spellings. It is left undiagnosed rather than guessed at: the same
-        // stance the parser takes toward what follows a cardinality colon.
-        if rel.get("direction").and_then(|v| v.as_str()) != Some("to") {
-            continue;
-        }
-
-        // `from` is a parsed fact (specification 3.2.4): a nested `- from:` or a
-        // trailing `via <field>` on the notation itself, whichever the entry
-        // used -- the parser resolves both to this one key.
-        let from_field = match rel.get("from").and_then(|v| v.as_str()) {
-            Some(f) => f.to_string(),
-            None => continue,
-        };
-
-        // Find FK field
-        let fk_field = model.fields.iter().find(|f| f.name == from_field);
-        let fk_field = match fk_field {
-            Some(f) => f,
-            None => continue,
-        };
-
-        let has_reference = fk_field
-            .attributes
-            .iter()
-            .any(|a| a.name == "reference" || a.name == "fk");
-
-        if !has_reference {
-            let loc = rel.get("loc");
-            let (file, line) = match loc {
-                Some(l) => (
-                    l.get("file")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or(&model.source)
-                        .to_string(),
-                    l.get("line")
-                        .and_then(|v| v.as_u64())
-                        .unwrap_or(model.line as u64) as usize,
-                ),
-                None => (model.source.clone(), model.line),
-            };
-
-            let model_type = match &model.model_type {
-                ModelType::Model => "model",
-                ModelType::View => "view",
-                ModelType::Interface => "interface",
-                ModelType::Enum => "enum",
-                ModelType::Flow => "flow",
-                ModelType::Extension(s) => s.as_str(),
-            };
-
-            errors.push(Diagnostic {
-                code: "M3L-E010".into(),
-                severity: DiagnosticSeverity::Error,
-                file,
-                line,
-                col: 1,
-                message: format!(
-                    "Relations entry references FK \"{}\" which has no @reference or @fk attribute in {} \"{}\"",
-                    from_field, model_type, model.name
-                ),
-            });
-        }
-    }
-}
-
 fn validate_rollup_reference(
     field: &FieldNode,
     _model: &ModelNode,
@@ -683,6 +602,91 @@ fn validate_lookup_reference<'a>(
         None => {
             errors.push(unknown(last, current));
             None
+        }
+    }
+}
+
+/// The model a key's `@reference(Model)` / `@fk(Model.field)` points at, if the field is such a key.
+fn referenced_model(field: &FieldNode) -> Option<&str> {
+    let reference = field
+        .attributes
+        .iter()
+        .find(|a| a.name == "reference" || a.name == "fk")?;
+    match reference.args.as_deref() {
+        Some([AttrArgValue::String(arg), ..]) => Some(arg.split('.').next().unwrap_or(arg)),
+        _ => None,
+    }
+}
+
+/// `M3L-E010`: `@reference` defines a relationship; a `### Relations` entry (or `@relation`) only supplements one
+/// (§3.2.6). An entry that names a key the model does not have, a key that is no reference, a target other than the
+/// one the key points at, or — for a reverse entry — a key on another model that does not point here, describes a
+/// relationship that is not there.
+fn validate_relations_references(
+    model: &ModelNode,
+    model_map: &HashMap<&str, &ModelNode>,
+    errors: &mut Vec<Diagnostic>,
+) {
+    for entry in &model.sections.relations {
+        let Some(obj) = entry.as_object() else {
+            continue;
+        };
+        let text = |k: &str| obj.get(k).and_then(|v| v.as_str());
+        let raw = text("raw").unwrap_or("");
+        let loc = obj.get("loc");
+        let line = loc
+            .and_then(|l| l.get("line"))
+            .and_then(|l| l.as_u64())
+            .map(|l| l as usize)
+            .unwrap_or(model.line);
+        let file = loc
+            .and_then(|l| l.get("file"))
+            .and_then(|f| f.as_str())
+            .unwrap_or(&model.source)
+            .to_string();
+        let problem = match (text("direction"), text("from")) {
+            (Some("to"), Some(key)) => match model.fields.iter().find(|f| f.name == key) {
+                None => Some(format!(
+                    "`from: {key}` is not a field of \"{}\"",
+                    model.name
+                )),
+                Some(field) => match referenced_model(field) {
+                    None => Some(format!("\"{key}\" has no @reference or @fk attribute")),
+                    Some(target) => text("target").filter(|t| *t != target).map(|t| {
+                        format!("the target is \"{t}\" but \"{key}\" references \"{target}\"")
+                    }),
+                },
+            },
+            (Some("from"), Some(key)) => match text("target") {
+                None => None,
+                Some(dependent) => match model_map.get(dependent) {
+                    None => None, // an undefined model is reported where models are resolved
+                    Some(dep) => match dep.fields.iter().find(|f| f.name == key) {
+                        None => Some(format!("\"{dependent}\" has no field \"{key}\"")),
+                        Some(field) if referenced_model(field) != Some(model.name.as_str()) => {
+                            Some(format!(
+                                "\"{dependent}.{key}\" does not reference \"{}\"",
+                                model.name
+                            ))
+                        }
+                        Some(_) => None,
+                    },
+                },
+            },
+            _ => None,
+        };
+        if let Some(problem) = problem {
+            errors.push(Diagnostic {
+                code: "M3L-E010".into(),
+                severity: DiagnosticSeverity::Error,
+                file,
+                line,
+                col: 1,
+                message: format!(
+                    "Relationship entry \"{raw}\" on \"{}\" matches no @reference key: {problem}",
+                    model.name
+                ),
+            });
         }
     }
 }

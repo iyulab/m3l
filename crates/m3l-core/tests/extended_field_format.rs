@@ -107,3 +107,56 @@ fn an_extended_value_with_several_arguments_reads_as_the_inline_arguments() {
         check(&extended).map(|a| a.args)
     );
 }
+
+fn names(f: &FieldNode) -> Vec<&str> {
+    f.attributes.iter().map(|a| a.name.as_str()).collect()
+}
+
+#[test]
+fn a_true_flag_item_is_the_bare_attribute() {
+    let (inline, extended) = pair(
+        "string @unique @index @searchable",
+        "  - type: string\n  - unique: true\n  - index: true\n  - searchable: true\n",
+    );
+    assert_eq!(names(&inline), names(&extended));
+    for (a, b) in inline.attributes.iter().zip(&extended.attributes) {
+        assert_eq!(a.args, b.args, "@{}", a.name);
+    }
+}
+
+#[test]
+fn a_false_flag_item_is_no_attribute() {
+    let f = field(
+        "## M\n- id: identifier @pk\n- f\n  - type: string\n  - unique: false\n  - index: false\n",
+        "f",
+    );
+    assert!(f.attributes.is_empty(), "{:?}", f.attributes);
+}
+
+#[test]
+fn an_attribute_that_takes_a_value_keeps_a_boolean_as_its_value() {
+    let f = field(
+        "## M\n- id: identifier @pk\n- f\n  - type: boolean\n  - default: false\n  - unique: \"false\"\n",
+        "f",
+    );
+    let default = f.attributes.iter().find(|a| a.name == "default").unwrap();
+    assert_eq!(
+        default.args,
+        Some(vec![m3l_core::AttrArgValue::Bool(false)])
+    );
+    // Quoted, it is a string argument, not the flag's truth value.
+    assert!(f.attributes.iter().any(|a| a.name == "unique"));
+}
+
+#[test]
+fn a_custom_attribute_keeps_a_boolean_as_its_argument() {
+    let f = field(
+        "## M\n- id: identifier @pk\n- f\n  - type: string\n  - audited: false\n",
+        "f",
+    );
+    let audited = f.attributes.iter().find(|a| a.name == "audited").unwrap();
+    assert_eq!(
+        audited.args,
+        Some(vec![m3l_core::AttrArgValue::Bool(false)])
+    );
+}

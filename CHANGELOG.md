@@ -33,6 +33,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **An extended-format item's value arrives as the attribute's arguments** (§2.3.2). A value was kept whole as one
   argument, so `- check: "len > 0", name: "nonempty"` carried a single string where `@check("len > 0", name:
   "nonempty")` carries two arguments; it is now read by the inline argument reader, quoting recorded as there.
+- **An extended-format `- unique: false` no longer declares a unique constraint** (§2.3.2). A boolean item arrived as
+  the attribute with that boolean as its argument — `@unique(false)`, `@index(false)` — and a consumer that tests for
+  the attribute by name read it as present; `m3l format` wrote it back that way. For an attribute that is written bare
+  (§10.8) `true` is now the bare attribute (`@unique`, no arguments) and `false` is no attribute. Other attributes keep
+  the boolean as their argument (`- default: false`).
 
 ## [0.22.0] - 2026-10-15
 

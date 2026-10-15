@@ -6,7 +6,7 @@ use regex::Regex;
 use std::collections::{BTreeMap, HashMap};
 use std::sync::LazyLock;
 
-use crate::catalogs::STANDARD_ATTRIBUTES;
+use crate::catalogs::{BARE_ATTRIBUTES, STANDARD_ATTRIBUTES};
 use crate::lexer::{lex, parse_attr_args_string_with_origin, parse_type_and_attrs};
 use crate::types::*;
 
@@ -2295,9 +2295,23 @@ fn apply_extended_attribute(field: &mut FieldNode, key: &str, value: &str) {
             field.description = Some(parsed.to_string());
         }
         _ => {
-            let (args, args_quoted) = parse_attr_args_string_with_origin(value)
-                .into_iter()
-                .unzip();
+            let (mut args, mut args_quoted): (Vec<_>, Vec<_>) =
+                parse_attr_args_string_with_origin(value)
+                    .into_iter()
+                    .unzip();
+            // `- unique: true` is `@unique`, `- unique: false` is no `@unique` — only for an attribute that is
+            // written bare (§10.8); a quoted "false" is a string argument, not the flag's truth value.
+            if BARE_ATTRIBUTES.contains(key) {
+                if let ([AttrArgValue::Bool(set)], [false]) =
+                    (args.as_slice(), args_quoted.as_slice())
+                {
+                    if !set {
+                        return;
+                    }
+                    args.clear();
+                    args_quoted.clear();
+                }
+            }
             let attrs = parse_raw_attributes(&[RawAttribute {
                 name: key.to_string(),
                 args,

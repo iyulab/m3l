@@ -522,7 +522,9 @@ Example:
 The extended format is another spelling of the basic one, not a second dialect: `type:` takes a type exactly as a
 field line writes it — parameters, generics, `?` and `[]` included (`- type: decimal(10,2)?`) — and an item's value is
 read as the arguments of the attribute it names, so `- check: "len > 0", name: "nonempty"` is
-`@check("len > 0", name: "nonempty")`.
+`@check("len > 0", name: "nonempty")`. For an attribute that is written bare (§10.8 — no arguments, or only
+optional ones), `true` is the bare attribute and `false` is its absence: `- unique: true` is `@unique`, `- index: false`
+declares no index. Any other attribute keeps a boolean as its argument — `- default: false` is `@default(false)`.
 
 #### 2.3.3 Field Metadata
 

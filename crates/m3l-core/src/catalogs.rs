@@ -89,6 +89,33 @@ pub static STANDARD_ATTRIBUTES: LazyLock<HashSet<&'static str>> = LazyLock::new(
     s
 });
 
+/// Standard attributes that may be written bare — no arguments, or only optional ones (§10.8). In the extended
+/// field format (§2.3.2) the item `- name: true` is that bare attribute and `- name: false` is its absence; any
+/// other attribute keeps a boolean as its argument (`- default: false` is `@default(false)`).
+pub static BARE_ATTRIBUTES: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
+    [
+        "pk",
+        "primary",
+        "unique",
+        "not_null",
+        "required",
+        "index",
+        "generated",
+        "immutable",
+        "searchable",
+        "public",
+        "private",
+        "ledger",
+        "materialized",
+        "override",
+        "persisted",
+        // `@computed` alone takes its expression from the fenced block under the field (§10.7.5).
+        "computed",
+    ]
+    .into_iter()
+    .collect()
+});
+
 /// Section names that change the current field kind.
 pub static KIND_SECTIONS: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
     let mut s = HashSet::new();

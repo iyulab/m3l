@@ -1,0 +1,59 @@
+{
+  "diagnostics": [
+    {
+      "code": "M3L-E028",
+      "line": 16,
+      "severity": "error"
+    },
+    {
+      "code": "M3L-E029",
+      "line": 27,
+      "severity": "error"
+    },
+    {
+      "code": "M3L-E031",
+      "line": 30,
+      "severity": "error"
+    },
+    {
+      "code": "M3L-E028",
+      "line": 18,
+      "severity": "error"
+    },
+    {
+      "code": "M3L-E029",
+      "line": 20,
+      "severity": "error"
+    },
+    {
+      "code": "M3L-E030",
+      "line": 21,
+      "severity": "error"
+    },
+    {
+      "code": "M3L-E030",
+      "line": 22,
+      "severity": "error"
+    },
+    {
+      "code": "M3L-E032",
+      "line": 23,
+      "severity": "error"
+    },
+    {
+      "code": "M3L-E032",
+      "line": 24,
+      "severity": "error"
+    },
+    {
+      "code": "M3L-E031",
+      "line": 25,
+      "severity": "error"
+    },
+    {
+      "code": "M3L-E031",
+      "line": 36,
+      "severity": "error"
+    }
+  ]
+}

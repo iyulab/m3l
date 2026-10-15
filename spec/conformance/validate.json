@@ -24,6 +24,12 @@
       "input": "validate/inputs/relation-entries.m3l.md",
       "expected": "validate/expected/relation-entries.json",
       "strict": false
+    },
+    {
+      "name": "rename-declarations",
+      "input": "validate/inputs/rename-declarations.m3l.md",
+      "expected": "validate/expected/rename-declarations.json",
+      "strict": false
     }
   ]
 }

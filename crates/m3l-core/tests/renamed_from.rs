@@ -4,7 +4,29 @@
 //! list — one fact, one place. A consumer that turns two versions of a model into storage changes reads
 //! the key; it never has to find the attribute among the others.
 
-use m3l_core::parse_string;
+use m3l_core::{parse_string, resolve, validate, ValidateOptions};
+
+/// An inherited field is copied into every model that inherits it; a problem with its declaration is
+/// reported once, where it is written — not once per model.
+#[test]
+fn an_inherited_declaration_is_reported_once() {
+    let src = "## Stamped ::interface\n- made_at: timestamp @renamed_from(made_at)\n\n\
+               ## A : Stamped\n- id: identifier @pk\n\n## B : Stamped\n- id: identifier @pk\n";
+    let ast = resolve(&[parse_string(src, "inherit.m3l.md")], None);
+    let result = validate(&ast, &ValidateOptions::default());
+    let own_name: Vec<_> = result
+        .errors
+        .iter()
+        .filter(|e| e.code == "M3L-E030")
+        .collect();
+    assert_eq!(own_name.len(), 1, "{:#?}", result.errors);
+    assert_eq!(own_name[0].line, 2);
+    assert!(
+        own_name[0].message.contains("Stamped.made_at"),
+        "{}",
+        own_name[0].message
+    );
+}
 
 const SOURCE: &str = "# Namespace: shop\n\n\
 ## Customer @renamed_from(Client) @description(\"buyer\")\n\

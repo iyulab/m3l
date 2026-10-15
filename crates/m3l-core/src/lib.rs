@@ -4,6 +4,7 @@ mod extend;
 pub mod ffi;
 pub mod lexer;
 pub mod parser;
+mod renames;
 pub mod resolver;
 pub mod types;
 pub mod validator;

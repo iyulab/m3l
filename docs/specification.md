@@ -428,8 +428,9 @@ keeps the stored data under the new name, a removal plus an addition starts the 
 | Enum value | ❌ | Renaming a value rewrites stored *data* — a data migration, not a rename |
 | Relationship name (`### Relations`, `@relation`) | ❌ | A navigation name is not stored |
 
-A declaration where it does not apply is an error, not ignored (§10.5): an author who writes it
-expects it to act.
+A declaration where it does not apply is an error, not ignored (`M3L-E031`, §10.5): an author who
+writes it expects it to act. On an `::extend` header it is reported as any attribute there is — the
+header takes none, so it is not read (`M3L-W010`).
 
 **Lifetime.** The language does not require a declaration to be removed and defines no point after
 which it is stale: a model cannot know which of its databases are already past a rename. Keeping one
@@ -3139,6 +3140,11 @@ Conforming parsers should use these error codes for consistent diagnostics.
 | `M3L-E025` | View `{view}` field `{field}`: `@from({target})` — {problem} | An `@from(Relation.field)` in a view names a relation that is not the view's `from` or a `join`, or a field that relation does not have (§4.7.1). A relation that is itself undefined is reported once, as `M3L-E004`; a view whose source is a SQL code block (§4.7.8) is not checked |
 | `M3L-E026` | `{what}` twice for platform `{platform}` — one expression per platform | A platform declared twice for one expression — two `@computed_raw` on a field, two `where_raw:` in a rollup, or two `- where_raw:` lines in a view's Source (§10.7.5). One expression per platform is what lets an implementation pick its own without guessing |
 | `M3L-E027` | `@lookup` chain loops back to itself: `{loop}` | A Lookup field's path ends on a Lookup field whose dependencies lead back to the first (§4.5.4). Reported once per loop, at the loop's first field in declaration order |
+| `M3L-E028` | `{element}` declares the former name `{name}`, but one of that name exists now | A former name (§2.2.6) is a current name: a model's, of a model, view or interface in the same namespace; a field's, of a field the model has now — its own, inherited, or added by `::extend`. The old name cannot be both gone and present |
+| `M3L-E029` | `{element}` and `{other}` both declare the former name `{name}` | Two models in one namespace, or two fields of one model, list the same former name (§2.2.6). Two elements cannot both have been the same element |
+| `M3L-E030` | `{element}` lists `{name}` twice / lists its own name | One `@renamed_from` names a former name twice, or names the element's current name (§2.2.6) |
+| `M3L-E031` | `@renamed_from` on `{element}`, which stores nothing under its name | The declaration is on a `::view` or `::flow`, on one of their fields, on a derived field without storage (`@computed` without `@persisted`, `@lookup`, `@rollup`), or on an enum value (§2.2.6). An inherited field is reported once, where it is written |
+| `M3L-E032` | `{element}`: the former name `{name}` is not a name | An argument of `@renamed_from` is empty, qualified (a rename stays within its namespace), or not an identifier — or the declaration names none (§2.2.6) |
 
 #### 10.5.2 Warnings
 

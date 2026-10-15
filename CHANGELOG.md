@@ -14,6 +14,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   a history, oldest first. The parser lifts the names into their own key — `renamed_from` on model and field nodes,
   absent when not declared — and does not repeat the attribute in `attributes`. `m3l format` writes it back from that
   key. The C# and TypeScript AST types carry `RenamedFrom` / `renamed_from`.
+- **The declaration is checked — five new errors** (§10.5.1): `M3L-E028` a former name that is a current name (a
+  model's against the models, views and interfaces of its namespace; a field's against the model's fields, inherited
+  and `::extend`-added ones included) · `M3L-E029` two models of a namespace, or two fields of a model, claiming the
+  same former name · `M3L-E030` a history naming one name twice or the element's own name · `M3L-E031` a declaration
+  where nothing is stored (a view or flow and their fields, a derived field without `@persisted`, an enum value) ·
+  `M3L-E032` an argument that is empty, qualified or not an identifier, or a declaration naming none. A declaration on an
+  inherited field is reported once, where it is written. On an `::extend` header it stays `M3L-W010` (the header takes
+  no attributes).
 
 ## [0.22.0] - 2026-10-15
 

@@ -200,6 +200,9 @@ pub fn validate(ast: &M3lAst, options: &ValidateOptions) -> ValidateResult {
         validate_relations_references(model, &model_map, &mut errors);
     }
 
+    // M3L-E028~E032: rename declarations (§2.2.6)
+    crate::renames::validate_rename_declarations(ast, &mut errors);
+
     // M3L-W009: Relationship notation written in the field list
     for model in &all_models {
         validate_relation_notation_placement(model, &mut warnings);

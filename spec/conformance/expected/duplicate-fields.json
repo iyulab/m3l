@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.14.0",
+  "parserVersion": "0.23.0",
   "astVersion": "1.0",
   "project": {},
   "sources": [
@@ -77,7 +77,7 @@
   "attributeRegistry": [],
   "errors": [
     {
-      "code": "M3L-E005",
+      "code": "M3L-E006",
       "severity": "error",
       "file": "spec/conformance/inputs/duplicate-fields.m3l.md",
       "line": 4,

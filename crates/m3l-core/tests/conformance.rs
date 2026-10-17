@@ -483,17 +483,12 @@ fn conformance_duplicate_fields() {
 
     assert_eq!(ast.models.len(), 1);
 
-    // Should produce E005 or E006 duplicate field error
-    assert!(
-        !ast.errors.is_empty(),
-        "Expected error for duplicate field 'name'"
-    );
-    assert!(
-        ast.errors
-            .iter()
-            .any(|e| e.code == "M3L-E005" || e.code == "M3L-E006"),
-        "Expected M3L-E005 or M3L-E006 for duplicate field, got: {:?}",
-        ast.errors.iter().map(|e| &e.code).collect::<Vec<_>>()
+    // A duplicate field is M3L-E006 (§10.5.1) — once. M3L-E005 is a duplicate name in the namespace.
+    let codes: Vec<&str> = ast.errors.iter().map(|e| e.code.as_str()).collect();
+    assert_eq!(
+        codes,
+        vec!["M3L-E006"],
+        "a duplicate field is reported once, as M3L-E006"
     );
 
     // Fields should still be parsed (3 fields including duplicate)

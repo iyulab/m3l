@@ -12,6 +12,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   AST nodes carried no `isStandard` while every other standard attribute's did. 🔇 They now carry `isStandard: true` — a
   consumer that told standard attributes apart by that key sees two more; one that reads attributes by name sees no change.
 
+- **A duplicate field is reported once, as `M3L-E006`.** The resolver reported it as `M3L-E005` — the code §10.5.1
+  gives a name declared twice in the namespace (two models, a view named like a model) — and `m3l validate` then
+  reported the same field a second time as `M3L-E006`. 🔇 `m3l parse` now reports `M3L-E006` where it reported
+  `M3L-E005` for a field, and `m3l validate` reports it once.
+
+### Added
+
+- **The validate conformance suite covers sixteen more diagnostics** — `M3L-E004`, `E006`, `E009`, `E023`–`E026`,
+  `W001`, `W003`, `W005`–`W009`, `W011`, `W012` — in six new inputs (`spec/conformance/validate/`), so an implementation
+  other than this parser can check them.
+
 ### Changed
 
 - **The specification's standard attribute catalog (§10.8) lists every attribute the parser treats as standard.** Ten

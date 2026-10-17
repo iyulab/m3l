@@ -1,0 +1,24 @@
+{
+  "diagnostics": [
+    {
+      "code": "M3L-W005",
+      "line": 16,
+      "severity": "warning"
+    },
+    {
+      "code": "M3L-W006",
+      "line": 17,
+      "severity": "warning"
+    },
+    {
+      "code": "M3L-W007",
+      "line": 18,
+      "severity": "warning"
+    },
+    {
+      "code": "M3L-W008",
+      "line": 20,
+      "severity": "warning"
+    }
+  ]
+}

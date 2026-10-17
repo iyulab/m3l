@@ -117,34 +117,8 @@ pub fn validate(ast: &M3lAst, options: &ValidateOptions) -> ValidateResult {
         }
     }
 
-    // M3L-E006: Duplicate field names (redundant re-check)
-    for model in &all_models {
-        let mut seen: HashSet<&str> = HashSet::new();
-        for field in &model.fields {
-            if seen.contains(field.name.as_str()) {
-                let model_type = match &model.model_type {
-                    ModelType::Model => "model",
-                    ModelType::View => "view",
-                    ModelType::Interface => "interface",
-                    ModelType::Enum => "enum",
-                    ModelType::Flow => "flow",
-                    ModelType::Extension(s) => s.as_str(),
-                };
-                errors.push(Diagnostic {
-                    code: "M3L-E006".into(),
-                    severity: DiagnosticSeverity::Error,
-                    file: field.loc.file.clone(),
-                    line: field.loc.line,
-                    col: 1,
-                    message: format!(
-                        "Duplicate field name \"{}\" in {} \"{}\"",
-                        field.name, model_type, model.name
-                    ),
-                });
-            }
-            seen.insert(&field.name);
-        }
-    }
+    // M3L-E006 (duplicate field names) is the resolver's — it sees the same models after `::extend` merges, and
+    // extension blocks besides. A second check here reported every duplicate twice.
 
     // Build defined names set for E009
     let mut defined_names: HashSet<&str> = HashSet::new();

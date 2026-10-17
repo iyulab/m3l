@@ -30,6 +30,42 @@
       "input": "validate/inputs/rename-declarations.m3l.md",
       "expected": "validate/expected/rename-declarations.json",
       "strict": false
+    },
+    {
+      "name": "structure-references",
+      "input": "validate/inputs/structure-references.m3l.md",
+      "expected": "validate/expected/structure-references.json",
+      "strict": false
+    },
+    {
+      "name": "rowversion-rules",
+      "input": "validate/inputs/rowversion-rules.m3l.md",
+      "expected": "validate/expected/rowversion-rules.json",
+      "strict": false
+    },
+    {
+      "name": "platform-expressions",
+      "input": "validate/inputs/platform-expressions.m3l.md",
+      "expected": "validate/expected/platform-expressions.json",
+      "strict": false
+    },
+    {
+      "name": "attribute-registry-usage",
+      "input": "validate/inputs/attribute-registry-usage.m3l.md",
+      "expected": "validate/expected/attribute-registry-usage.json",
+      "strict": false
+    },
+    {
+      "name": "deprecated-and-placement",
+      "input": "validate/inputs/deprecated-and-placement.m3l.md",
+      "expected": "validate/expected/deprecated-and-placement.json",
+      "strict": false
+    },
+    {
+      "name": "strict-style",
+      "input": "validate/inputs/strict-style.m3l.md",
+      "expected": "validate/expected/strict-style.json",
+      "strict": true
     }
   ]
 }

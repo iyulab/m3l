@@ -875,7 +875,8 @@ fn check_duplicate_fields(model: &ModelNode, errors: &mut Vec<Diagnostic>) {
                 ModelType::Extension(s) => s.as_str(),
             };
             errors.push(Diagnostic {
-                code: "M3L-E005".to_string(),
+                // §10.5.1: E006 is a duplicate field; E005 is a duplicate name in the namespace (models, views, …).
+                code: "M3L-E006".to_string(),
                 severity: DiagnosticSeverity::Error,
                 file: field.loc.file.clone(),
                 line: field.loc.line,

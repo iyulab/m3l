@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.19.0",
+  "parserVersion": "0.23.0",
   "astVersion": "1.0",
   "project": {
     "name": "sample.ecommerce"
@@ -66,7 +66,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "pk"
+              "name": "pk",
+              "isStandard": true
             },
             {
               "name": "generated",
@@ -279,7 +280,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "pk"
+              "name": "pk",
+              "isStandard": true
             },
             {
               "name": "generated",
@@ -550,7 +552,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "pk"
+              "name": "pk",
+              "isStandard": true
             },
             {
               "name": "generated",
@@ -825,7 +828,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "pk"
+              "name": "pk",
+              "isStandard": true
             },
             {
               "name": "generated",
@@ -1224,7 +1228,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "pk"
+              "name": "pk",
+              "isStandard": true
             },
             {
               "name": "generated",
@@ -1501,7 +1506,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "pk"
+              "name": "pk",
+              "isStandard": true
             },
             {
               "name": "generated",
@@ -1990,7 +1996,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "pk"
+              "name": "pk",
+              "isStandard": true
             },
             {
               "name": "generated",
@@ -2330,7 +2337,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "pk"
+              "name": "pk",
+              "isStandard": true
             },
             {
               "name": "generated",

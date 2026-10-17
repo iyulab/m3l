@@ -1281,13 +1281,10 @@ fn json_output_basic_model_structure() {
     assert!(field["loc"].is_object());
     assert_eq!(field["loc"]["col"], 1);
 
-    // Attribute without isStandard should NOT have the field
+    // @pk is standard (§10.8.1 — alias for @primary); a non-standard attribute carries no isStandard key at all
     let pk_attr = &field["attributes"][0];
     assert_eq!(pk_attr["name"], "pk");
-    assert!(
-        pk_attr.get("isStandard").is_none() || pk_attr["isStandard"].is_null(),
-        "@pk should not have isStandard"
-    );
+    assert_eq!(pk_attr["isStandard"], true, "@pk is a standard attribute");
 
     // Sections should have standard keys with empty arrays/objects
     let sections = &model["sections"];
@@ -1354,8 +1351,7 @@ fn json_output_field_names_match_ts() {
     // Check field-level names
     assert!(json.contains("\"arrayItemNullable\""));
 
-    // Check isStandard on standard attributes (@generated, @not_null)
-    // Note: @pk is NOT in STANDARD_ATTRIBUTES (matches TS behavior)
+    // Check isStandard on standard attributes (@pk, @generated, @not_null)
     assert!(
         json.contains("\"isStandard\""),
         "json should contain isStandard for @generated or @not_null"

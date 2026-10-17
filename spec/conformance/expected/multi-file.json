@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.18.0",
+  "parserVersion": "0.23.0",
   "astVersion": "1.0",
   "project": {
     "name": "sample.multi"
@@ -61,7 +61,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "pk"
+              "name": "pk",
+              "isStandard": true
             },
             {
               "name": "generated",
@@ -139,7 +140,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "pk"
+              "name": "pk",
+              "isStandard": true
             },
             {
               "name": "generated",
@@ -360,7 +362,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "pk"
+              "name": "pk",
+              "isStandard": true
             },
             {
               "name": "generated",
@@ -623,7 +626,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "pk"
+              "name": "pk",
+              "isStandard": true
             },
             {
               "name": "generated",
@@ -876,7 +880,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "pk"
+              "name": "pk",
+              "isStandard": true
             },
             {
               "name": "generated",
@@ -1376,7 +1381,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "pk"
+              "name": "pk",
+              "isStandard": true
             },
             {
               "name": "generated",

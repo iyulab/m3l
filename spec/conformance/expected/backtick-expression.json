@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.19.0",
+  "parserVersion": "0.23.0",
   "astVersion": "1.0",
   "project": {},
   "sources": [
@@ -23,7 +23,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "pk"
+              "name": "pk",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -191,7 +192,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "pk"
+              "name": "pk",
+              "isStandard": true
             }
           ],
           "loc": {
@@ -327,7 +329,8 @@
           "kind": "stored",
           "attributes": [
             {
-              "name": "pk"
+              "name": "pk",
+              "isStandard": true
             }
           ],
           "loc": {

@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Fixed
+
+- **`@pk` and `@default` are standard attributes, as §10.8.1 lists them.** The parser's catalog missed both, so their
+  AST nodes carried no `isStandard` while every other standard attribute's did. 🔇 They now carry `isStandard: true` — a
+  consumer that told standard attributes apart by that key sees two more; one that reads attributes by name sees no change.
+
+### Changed
+
+- **The specification's standard attribute catalog (§10.8) lists every attribute the parser treats as standard.** Ten
+  were recognized but not listed: `@required` and `@check` (§10.8.1), `@relation` (§10.8.2), `@description` (§10.8.3),
+  `@min_length`, `@max_length` and `@pattern` (§10.8.4), `@ledger`, `@behavior` and `@default_attribute` (§10.8.6). A test
+  now reads the table and the parser's catalog and fails when one has an attribute the other does not.
+
 ## [0.23.0] - 2026-10-16
 
 ### Added

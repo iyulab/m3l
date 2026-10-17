@@ -3361,10 +3361,12 @@ The following catalog lists all standard `@` attributes defined by M3L. Parsers 
 | `@primary` | `(order)?` | field | Primary key with optional ordering |
 | `@unique` | `(field_list)?` | field, model | Unique constraint |
 | `@not_null` | — | field | Required (non-nullable) |
+| `@required` | — | field | Value required — cannot be null or empty (§1.3) |
 | `@index` | `(field_list)?` | field, model | Database index |
 | `@generated` | — | field | Auto-generated value |
 | `@immutable` | — | field | Cannot be changed after creation |
 | `@default` | `(value)` | field | Default value (alternative to `= value` syntax) |
+| `@check` | `(expression, name: n?)` | field, model | CHECK constraint |
 
 #### 10.8.2 Reference and Relationship Attributes
 
@@ -3374,12 +3376,14 @@ The following catalog lists all standard `@` attributes defined by M3L. Parsers 
 | `@fk` | `(Model.field)` | field | Foreign key (explicit target field) |
 | `@on_delete` | `(action)` | field | Delete cascade action (cascade/set_null/restrict/no_action) |
 | `@on_update` | `(action)` | field | Update cascade action |
+| `@relation` | `(name, direction Model, from: key)` | model | Names a relationship (§3.2.5) |
 
 #### 10.8.3 Search and Display Attributes
 
 | Attribute | Arguments | Target | Description |
 |---|---|---|---|
 | `@searchable` | — | field | Full-text search target |
+| `@description` | `(text)` | field | Description (alternative to the quoted description) |
 | `@public` | — | model | Model visibility: public (see §2.2.4) |
 | `@private` | — | model | Model visibility: private (see §2.2.4) |
 
@@ -3389,6 +3393,9 @@ The following catalog lists all standard `@` attributes defined by M3L. Parsers 
 |---|---|---|---|
 | `@min` | `(value)` | field | Minimum value |
 | `@max` | `(value)` | field | Maximum value |
+| `@min_length` | `(n)` | field | Minimum text length |
+| `@max_length` | `(n)` | field | Maximum text length |
+| `@pattern` | `(regex)` | field | The value must match the pattern |
 | `@validate` | `(rule)` | field | Custom validation rule |
 
 #### 10.8.5 Derived Field Attributes
@@ -3408,6 +3415,9 @@ The following catalog lists all standard `@` attributes defined by M3L. Parsers 
 |---|---|---|---|
 | `@materialized` | — | view | Physically materialized view |
 | `@meta` | `(key, value)` | model | Arbitrary metadata key-value |
+| `@ledger` | — | model | Append-only: rows are inserted, never updated or deleted |
+| `@behavior` | `(event, action)` | model | Lifecycle behavior (§4.3) |
+| `@default_attribute` | `(attribute, value)` | model | Default for an attribute on every field of the model (§2.5.4) |
 | `@override` | — | field | Override inherited field definition |
 | `@renamed_from` | `(Name, …)` | model, stored field | Former names, oldest first (§2.2.6) — parsed into `renamed_from`, not kept in `attributes` |
 

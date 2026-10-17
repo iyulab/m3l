@@ -296,6 +296,37 @@ fn sections_default_with_custom() {
     assert_eq!(json["CustomSection"], serde_json::json!(["item1"]));
 }
 
+/// The specification's standard attribute catalog (§10.8.1–§10.8.6) and the parser's are one list. A table row
+/// the code does not carry leaves that attribute without `isStandard`; a code entry the table does not carry is a
+/// standard attribute no reader of the specification can find. Either way the two drift silently — this reads the
+/// table itself, so a row added on one side alone fails here.
+#[test]
+fn standard_catalog_matches_the_specification_table() {
+    use m3l_core::catalogs::STANDARD_ATTRIBUTES;
+    use std::collections::BTreeSet;
+
+    let spec = std::fs::read_to_string(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../docs/specification.md"
+    ))
+    .expect("docs/specification.md");
+    let start = spec
+        .find("### 10.8 Standard Attribute Catalog")
+        .expect("§10.8");
+    let end = start + spec[start..].find("#### 10.8.7").expect("§10.8.7");
+    let in_table: BTreeSet<&str> = spec[start..end]
+        .lines()
+        .filter_map(|line| line.strip_prefix("| `@"))
+        .filter_map(|rest| rest.split('`').next())
+        .collect();
+    let in_code: BTreeSet<&str> = STANDARD_ATTRIBUTES.iter().copied().collect();
+
+    assert_eq!(
+        in_table, in_code,
+        "spec §10.8 table (left) and STANDARD_ATTRIBUTES (right) differ"
+    );
+}
+
 #[test]
 fn catalogs_content() {
     use m3l_core::catalogs::{KIND_SECTIONS, STANDARD_ATTRIBUTES, TYPE_CATALOG};
@@ -317,7 +348,9 @@ fn catalogs_content() {
     assert!(!STANDARD_ATTRIBUTES.contains("custom_attr"));
     assert!(!STANDARD_ATTRIBUTES.contains("visibility")); // removed, spec §10.8.3 — superseded by @public/@private
     assert!(STANDARD_ATTRIBUTES.contains("renamed_from")); // spec §2.2.6 · §2.3.5 (RFC-0006)
-    assert_eq!(STANDARD_ATTRIBUTES.len(), 36);
+    assert!(STANDARD_ATTRIBUTES.contains("pk")); // spec §10.8.1 — alias for @primary
+    assert!(STANDARD_ATTRIBUTES.contains("default")); // spec §10.8.1
+    assert_eq!(STANDARD_ATTRIBUTES.len(), 38);
 
     // Kind sections
     assert!(KIND_SECTIONS.contains("Lookup"));

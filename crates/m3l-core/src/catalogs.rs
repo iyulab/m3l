@@ -46,7 +46,9 @@ pub static STANDARD_ATTRIBUTES: LazyLock<HashSet<&'static str>> = LazyLock::new(
     // that one written where it is not lifted (an enum value) is reported as misplaced, not as unknown.
     s.insert("renamed_from");
     // Field constraints
+    s.insert("pk"); // alias for @primary (§10.8.1)
     s.insert("primary");
+    s.insert("default"); // @default(value) — the attribute spelling of `= value` (§10.8.1)
     s.insert("unique");
     s.insert("required");
     s.insert("index");

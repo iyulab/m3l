@@ -392,9 +392,16 @@ pub fn resolve_with(
     }
 
     // Detect circular imports (E003)
-    let file_imports: Vec<(&str, &[String])> = files
+    let file_imports: Vec<(&str, Vec<(&str, usize)>)> = files
         .iter()
-        .map(|f| (f.source.as_str(), f.imports.as_slice()))
+        .map(|f| {
+            let imports = f
+                .imports
+                .iter()
+                .map(|i| (i.path.as_str(), i.line))
+                .collect();
+            (f.source.as_str(), imports)
+        })
         .collect();
     let circular_errors =
         detect_circular_imports_internal(&file_imports, options.project_root.as_deref());
@@ -904,17 +911,25 @@ fn check_duplicate_fields(model: &ModelNode, errors: &mut Vec<Diagnostic>) {
 ///
 /// Takes a list of (source_path, import_paths) pairs and returns diagnostics
 /// for any cycles detected using DFS. Import paths are resolved as [`resolve`] resolves them
-/// with no project root — see [`ResolveOptions::project_root`].
+/// with no project root — see [`ResolveOptions::project_root`]. The pairs carry no line numbers,
+/// so a cycle is reported at line 1 of the file that closes it; [`resolve`] reports it at the
+/// `@import` line.
 pub fn detect_circular_imports(file_imports: &[(String, Vec<String>)]) -> Vec<Diagnostic> {
-    let refs: Vec<(&str, &[String])> = file_imports
+    let refs: Vec<(&str, Vec<(&str, usize)>)> = file_imports
         .iter()
-        .map(|(src, imports)| (src.as_str(), imports.as_slice()))
+        .map(|(src, imports)| {
+            (
+                src.as_str(),
+                imports.iter().map(|i| (i.as_str(), 1)).collect(),
+            )
+        })
         .collect();
     detect_circular_imports_internal(&refs, None)
 }
 
+/// `file_imports`: each loaded file's source path with its imports as (path as written, line).
 fn detect_circular_imports_internal(
-    file_imports: &[(&str, &[String])],
+    file_imports: &[(&str, Vec<(&str, usize)>)],
     project_root: Option<&str>,
 ) -> Vec<Diagnostic> {
     let mut errors = Vec::new();
@@ -927,14 +942,16 @@ fn detect_circular_imports_internal(
         .iter()
         .map(|&(src, _)| (normalize_path(src), src))
         .collect();
-    let adj: HashMap<&str, Vec<&str>> = file_imports
+    let adj: HashMap<&str, Vec<(&str, usize)>> = file_imports
         .iter()
-        .map(|&(src, imports)| {
+        .map(|(src, imports)| {
             let targets = imports
                 .iter()
-                .filter_map(|import| import_target(src, import, project_root, &loaded))
+                .filter_map(|&(import, line)| {
+                    import_target(src, import, project_root, &loaded).map(|t| (t, line))
+                })
                 .collect();
-            (src, targets)
+            (*src, targets)
         })
         .collect();
 
@@ -952,7 +969,7 @@ fn detect_circular_imports_internal(
 
 fn dfs_detect_cycle<'a>(
     node: &'a str,
-    adj: &HashMap<&'a str, Vec<&'a str>>,
+    adj: &HashMap<&'a str, Vec<(&'a str, usize)>>,
     visited: &mut HashSet<&'a str>,
     rec_stack: &mut Vec<&'a str>,
     errors: &mut Vec<Diagnostic>,
@@ -961,7 +978,7 @@ fn dfs_detect_cycle<'a>(
     rec_stack.push(node);
 
     if let Some(imports) = adj.get(node) {
-        for &import_str in imports {
+        for &(import_str, import_line) in imports {
             if !visited.contains(import_str) {
                 dfs_detect_cycle(import_str, adj, visited, rec_stack, errors);
             } else if rec_stack.contains(&import_str) {
@@ -979,7 +996,7 @@ fn dfs_detect_cycle<'a>(
                     code: "M3L-E003".to_string(),
                     severity: DiagnosticSeverity::Error,
                     file: node.to_string(),
-                    line: 1,
+                    line: import_line,
                     col: 1,
                     message: format!("Circular import detected: {}", chain_str),
                 });
@@ -1331,6 +1348,33 @@ mod tests {
         assert!(cycle_codes(&files, None).is_empty());
     }
 
+    /// The cycle is reported where it closes: the `@import` line of the file whose import leads
+    /// back into the chain — not line 1, which is a comment or a namespace header as often as not.
+    #[test]
+    fn a_cycle_is_reported_at_the_import_line_that_closes_it() {
+        let parsed: Vec<_> = [
+            (
+                "a.m3l.md",
+                "# Namespace: t\n\n@import \"./b.m3l\"\n## A\n- id: identifier",
+            ),
+            (
+                "b.m3l.md",
+                "# Namespace: t\n> about b\n\n@import \"./a.m3l\"\n## B\n- id: identifier",
+            ),
+        ]
+        .iter()
+        .map(|(n, s)| parse_string(s, n))
+        .collect();
+        let ast = resolve(&parsed, None);
+        let at: Vec<(&str, usize)> = ast
+            .errors
+            .iter()
+            .filter(|e| e.code == "M3L-E003")
+            .map(|e| (e.file.as_str(), e.line))
+            .collect();
+        assert_eq!(at, [("b.m3l.md", 4)]);
+    }
+
     #[test]
     fn an_import_of_a_file_that_was_not_loaded_is_not_an_edge() {
         let messages = cycle_codes(
@@ -1375,7 +1419,7 @@ mod tests {
         let input = "@import \"base.m3l.md\"\n\n## User\n- id: identifier";
         let parsed = parse_string(input, "test.m3l.md");
         assert_eq!(parsed.imports.len(), 1);
-        assert_eq!(parsed.imports[0], "base.m3l.md");
+        assert_eq!(parsed.imports[0].path, "base.m3l.md");
     }
 
     #[test]

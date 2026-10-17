@@ -74,7 +74,7 @@ struct ParserState {
     attribute_registry: Vec<AttributeRegistryEntry>,
     current_attr_def: Option<AttrDef>,
     source_directives_done: bool,
-    imports: Vec<String>,
+    imports: Vec<ImportDecl>,
 }
 
 /// Parse M3L content string into a ParsedFile AST.
@@ -1461,7 +1461,10 @@ fn handle_text(token: &Token, state: &mut ParserState) {
     // Collect import directives
     if token.data.is_import {
         if let Some(ref path) = token.data.import_path {
-            state.imports.push(path.clone());
+            state.imports.push(ImportDecl {
+                path: path.clone(),
+                line: token.line,
+            });
         }
         return;
     }

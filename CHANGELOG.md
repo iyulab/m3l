@@ -28,8 +28,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   run from the project's parent, or the specification's own spelling `@import "./base.m3l"` for `base.m3l.md`, reported
   nothing. Imports are now resolved to files first — relative paths from the importing file's directory, package paths
   from the project root (the directory `m3l` reads, or a named file's directory) — and `.m3l` names a `.m3l.md` file.
-  🔇 A project that has a cycle now gets `M3L-E003`. `ResolveOptions` has a new `project_root`; without one, package
-  paths resolve from the directory the source paths are relative to.
+  🔇 A project that has a cycle now gets `M3L-E003`, at the `@import` line that closes it (it was always line 1).
+  `ResolveOptions` has a new `project_root`; without one, package paths resolve from the directory the source paths are
+  relative to. `ParsedFile.imports` holds `ImportDecl { path, line }` instead of the bare path.
 - **`m3l format` keeps an extend block's parent list.** `## Asset ::extend : Base` is an error (`M3L-E014`), but the
   formatter wrote the header back without `: Base`, fixing the error silently.
 

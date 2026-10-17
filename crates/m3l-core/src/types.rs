@@ -615,6 +615,13 @@ pub struct UnreadFieldText {
     pub file: String,
 }
 
+/// An `@import` line: the path as written, and where it was written.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ImportDecl {
+    pub path: String,
+    pub line: usize,
+}
+
 /// Intermediate result from parsing a single file (not directly serialized as final output).
 #[derive(Debug, Clone)]
 pub struct ParsedFile {
@@ -631,8 +638,8 @@ pub struct ParsedFile {
     pub flows: Vec<ModelNode>,
     pub extensions: BTreeMap<String, Vec<ModelNode>>,
     pub attribute_registry: Vec<AttributeRegistryEntry>,
-    /// Import paths found in this file (for circular import detection).
-    pub imports: Vec<String>,
+    /// Every `@import` in this file, in source order (for circular import detection).
+    pub imports: Vec<ImportDecl>,
     /// Every `# Prefix:` header the lexer found in this file, in source order.
     pub prefix_headers: Vec<PrefixHeader>,
     /// Every `::extend` header that carried a parenthesised argument, in source order.

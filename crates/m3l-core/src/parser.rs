@@ -60,6 +60,11 @@ struct ParserState {
     current_section: Option<String>,
     current_kind: FieldKind,
     last_field_idx: Option<usize>, // index into current model's fields
+    /// The object sub-fields open below the last field, outermost first: each one's indent and its index in its
+    /// parent's `fields` (§4.9 — an object field's own items nest under it, at any depth). Valid only while the field
+    /// on `object_path_root_line` is the last field; a nested item under another field starts from that field.
+    object_path: Vec<(usize, usize)>,
+    object_path_root_line: usize,
     models: Vec<ModelNode>,
     enums: Vec<EnumNode>,
     interfaces: Vec<ModelNode>,
@@ -92,6 +97,8 @@ pub fn parse_tokens(tokens: &[Token], file: &str) -> ParsedFile {
         current_section: None,
         current_kind: FieldKind::Stored,
         last_field_idx: None,
+        object_path: Vec::new(),
+        object_path_root_line: 0,
         models: Vec::new(),
         enums: Vec::new(),
         interfaces: Vec::new(),
@@ -1166,6 +1173,17 @@ fn handle_section_item(
     *last_field_idx = Some(usize::MAX); // sentinel for custom section nested items
 }
 
+/// The sub-field `path` names below `field` — each step an index into the `fields` of the one before. The path only
+/// ever holds object sub-fields this parser pushed, so every step exists.
+fn field_at_path<'a>(field: &'a mut FieldNode, path: &[usize]) -> &'a mut FieldNode {
+    path.iter().fold(field, |f, &i| {
+        &mut f
+            .fields
+            .as_mut()
+            .expect("an open object sub-field has fields")[i]
+    })
+}
+
 fn handle_nested_item(token: &Token, state: &mut ParserState) {
     let data = &token.data;
     let key = data.key.as_deref();
@@ -1317,9 +1335,26 @@ fn handle_nested_item(token: &Token, state: &mut ParserState) {
                         }
                     }
 
+                    // An item belongs to the innermost object sub-field open above it at a smaller indent, or to
+                    // the field itself (§4.9 — objects nest at any depth). The path is the last field's own.
+                    let model_name = model.name.clone();
+                    if model.fields[field_idx].loc.line != state.object_path_root_line {
+                        state.object_path.clear();
+                        state.object_path_root_line = model.fields[field_idx].loc.line;
+                    }
+                    while state
+                        .object_path
+                        .last()
+                        .is_some_and(|&(indent, _)| indent >= token.indent)
+                    {
+                        state.object_path.pop();
+                    }
+                    let path: Vec<usize> = state.object_path.iter().map(|&(_, i)| i).collect();
+                    let parent = field_at_path(&mut model.fields[field_idx], &path);
+
                     // Sub-field for object type
                     if let (Some(k), Some(v)) = (key, value) {
-                        if model.fields[field_idx].field_type.as_deref() == Some("object") {
+                        if parent.field_type.as_deref() == Some("object") {
                             let mut sub_data = TokenData::default();
                             sub_data.name = Some(k.to_string());
                             parse_type_and_attrs(v, &mut sub_data);
@@ -1334,37 +1369,26 @@ fn handle_nested_item(token: &Token, state: &mut ParserState) {
                                 );
                                 state.unread_field_text.extend(unread.into_iter().map(|u| {
                                     UnreadFieldText {
-                                        element: model.name.clone(),
+                                        element: model_name.clone(),
                                         ..u
                                     }
                                 }));
                                 let is_object = sub_field.field_type.as_deref() == Some("object");
-                                if model.fields[field_idx].fields.is_none() {
-                                    model.fields[field_idx].fields = Some(Vec::new());
-                                }
-                                model.fields[field_idx]
-                                    .fields
-                                    .as_mut()
-                                    .unwrap()
-                                    .push(sub_field);
+                                let siblings = parent.fields.get_or_insert_with(Vec::new);
+                                siblings.push(sub_field);
                                 if is_object {
-                                    let sub_idx =
-                                        model.fields[field_idx].fields.as_ref().unwrap().len() - 1;
-                                    // We can't easily track nested object lastField
-                                    // without more complex state. For now, nested objects
-                                    // at depth > 1 are handled via the existing logic.
-                                    let _ = sub_idx;
+                                    state.object_path.push((token.indent, siblings.len() - 1));
                                 }
                                 return;
                             }
                         }
                     }
 
-                    // Extended format field attributes
+                    // Extended format field attributes — of the field the item sits under
                     if let Some(k) = key {
                         let mut unread = Vec::new();
                         apply_extended_attribute(
-                            &mut model.fields[field_idx],
+                            parent,
                             k,
                             value.unwrap_or(""),
                             token.line,
@@ -1373,7 +1397,7 @@ fn handle_nested_item(token: &Token, state: &mut ParserState) {
                         );
                         state.unread_field_text.extend(unread.into_iter().map(|u| {
                             UnreadFieldText {
-                                element: model.name.clone(),
+                                element: model_name.clone(),
                                 ..u
                             }
                         }));

@@ -12,6 +12,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   AST nodes carried no `isStandard` while every other standard attribute's did. 🔇 They now carry `isStandard: true` — a
   consumer that told standard attributes apart by that key sees two more; one that reads attributes by name sees no change.
 
+- **An object field's items nest at any depth, as their indentation says (§4.9).** Below the first level the parser
+  attached every item to the top object field, so `- shipping: object` / `  - address: object` / `    - street: string`
+  put `street` beside `address` instead of inside it — the specification's own "acceptable (3 levels)" example (§4.9.4)
+  read as a different shape, and `M3L-W002` (nesting deeper than 3 levels, strict) could not fire. 🔇 A model with an
+  object inside an object now carries the inner object's fields in its `fields`; an extended-format item below a nested
+  object sub-field applies to that sub-field.
 - **A duplicate field is reported once, as `M3L-E006`.** The resolver reported it as `M3L-E005` — the code §10.5.1
   gives a name declared twice in the namespace (two models, a view named like a model) — and `m3l validate` then
   reported the same field a second time as `M3L-E006`. 🔇 `m3l parse` now reports `M3L-E006` where it reported
@@ -19,8 +25,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- **The validate conformance suite covers sixteen more diagnostics** — `M3L-E004`, `E006`, `E009`, `E023`–`E026`,
-  `W001`, `W003`, `W005`–`W009`, `W011`, `W012` — in six new inputs (`spec/conformance/validate/`), so an implementation
+- **The validate conformance suite covers seventeen more diagnostics** — `M3L-E004`, `E006`, `E009`, `E023`–`E026`,
+  `W001`–`W003`, `W005`–`W009`, `W011`, `W012` — in six new inputs (`spec/conformance/validate/`), so an implementation
   other than this parser can check them.
 
 ### Changed

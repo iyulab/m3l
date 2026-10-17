@@ -4,6 +4,16 @@
       "code": "M3L-W001",
       "line": 5,
       "severity": "warning"
+    },
+    {
+      "code": "M3L-W002",
+      "line": 12,
+      "severity": "warning"
+    },
+    {
+      "code": "M3L-W002",
+      "line": 13,
+      "severity": "warning"
     }
   ]
 }

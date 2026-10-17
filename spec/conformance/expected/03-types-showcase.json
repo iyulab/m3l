@@ -684,82 +684,86 @@
               "arrayItemNullable": false,
               "kind": "stored",
               "attributes": [],
+              "fields": [
+                {
+                  "name": "email",
+                  "type": "email",
+                  "nullable": false,
+                  "array": false,
+                  "arrayItemNullable": false,
+                  "kind": "stored",
+                  "attributes": [],
+                  "loc": {
+                    "file": "spec/conformance/inputs/03-types-showcase.m3l.md",
+                    "line": 76,
+                    "col": 1
+                  }
+                },
+                {
+                  "name": "phone",
+                  "type": "phone",
+                  "nullable": true,
+                  "array": false,
+                  "arrayItemNullable": false,
+                  "kind": "stored",
+                  "attributes": [],
+                  "loc": {
+                    "file": "spec/conformance/inputs/03-types-showcase.m3l.md",
+                    "line": 77,
+                    "col": 1
+                  }
+                },
+                {
+                  "name": "social",
+                  "type": "object",
+                  "nullable": false,
+                  "array": false,
+                  "arrayItemNullable": false,
+                  "kind": "stored",
+                  "attributes": [],
+                  "fields": [
+                    {
+                      "name": "twitter",
+                      "type": "string",
+                      "params": [
+                        50.0
+                      ],
+                      "nullable": true,
+                      "array": false,
+                      "arrayItemNullable": false,
+                      "kind": "stored",
+                      "attributes": [],
+                      "loc": {
+                        "file": "spec/conformance/inputs/03-types-showcase.m3l.md",
+                        "line": 79,
+                        "col": 1
+                      }
+                    },
+                    {
+                      "name": "linkedin",
+                      "type": "url",
+                      "nullable": true,
+                      "array": false,
+                      "arrayItemNullable": false,
+                      "kind": "stored",
+                      "attributes": [],
+                      "loc": {
+                        "file": "spec/conformance/inputs/03-types-showcase.m3l.md",
+                        "line": 80,
+                        "col": 1
+                      }
+                    }
+                  ],
+                  "loc": {
+                    "file": "spec/conformance/inputs/03-types-showcase.m3l.md",
+                    "line": 78,
+                    "col": 1
+                  }
+                }
+              ],
               "loc": {
                 "file": "spec/conformance/inputs/03-types-showcase.m3l.md",
                 "line": 75,
-                "col": 1
-              }
-            },
-            {
-              "name": "email",
-              "type": "email",
-              "nullable": false,
-              "array": false,
-              "arrayItemNullable": false,
-              "kind": "stored",
-              "attributes": [],
-              "loc": {
-                "file": "spec/conformance/inputs/03-types-showcase.m3l.md",
-                "line": 76,
-                "col": 1
-              }
-            },
-            {
-              "name": "phone",
-              "type": "phone",
-              "nullable": true,
-              "array": false,
-              "arrayItemNullable": false,
-              "kind": "stored",
-              "attributes": [],
-              "loc": {
-                "file": "spec/conformance/inputs/03-types-showcase.m3l.md",
-                "line": 77,
-                "col": 1
-              }
-            },
-            {
-              "name": "social",
-              "type": "object",
-              "nullable": false,
-              "array": false,
-              "arrayItemNullable": false,
-              "kind": "stored",
-              "attributes": [],
-              "loc": {
-                "file": "spec/conformance/inputs/03-types-showcase.m3l.md",
-                "line": 78,
-                "col": 1
-              }
-            },
-            {
-              "name": "twitter",
-              "type": "string",
-              "params": [
-                50.0
-              ],
-              "nullable": true,
-              "array": false,
-              "arrayItemNullable": false,
-              "kind": "stored",
-              "attributes": [],
-              "loc": {
-                "file": "spec/conformance/inputs/03-types-showcase.m3l.md",
-                "line": 79,
-                "col": 1
-              }
-            },
-            {
-              "name": "linkedin",
-              "type": "url",
-              "nullable": true,
-              "array": false,
-              "arrayItemNullable": false,
-              "kind": "stored",
-              "attributes": [],
-              "loc": {
-                "file": "spec/conformance/inputs/03-types-showcase.m3l.md",
-                "line": 80,
                 "col": 1
               }
             }

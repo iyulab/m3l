@@ -6,7 +6,7 @@ use crate::types::*;
 /// Resolve and merge multiple parsed file ASTs into a single M3lAst.
 /// Handles: inheritance resolution, duplicate detection, attribute registry tagging.
 /// Knobs for [`resolve_with`].
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct ResolveOptions {
     /// Copy each parent's fields into the child model (the default, and what
     /// every semantic consumer wants).
@@ -22,6 +22,12 @@ pub struct ResolveOptions {
     /// a merged field is indistinguishable from the model's own, so the block
     /// would be lost and its fields written into the base file.
     pub merge_extends: bool,
+    /// The directory package import paths (`@import "common/base.m3l"`) are resolved from
+    /// (§10.6.1), written the way the files' `source` paths are. `None` resolves them from the
+    /// directory the `source` paths are relative to — what a caller handing in in-memory files
+    /// named `a.m3l.md`, `common/b.m3l.md` means. Relative paths (`./`, `../`) never use it: they
+    /// are resolved from the importing file's own directory.
+    pub project_root: Option<String>,
 }
 
 impl Default for ResolveOptions {
@@ -29,6 +35,7 @@ impl Default for ResolveOptions {
         Self {
             inline_inherited: true,
             merge_extends: true,
+            project_root: None,
         }
     }
 }
@@ -389,7 +396,8 @@ pub fn resolve_with(
         .iter()
         .map(|f| (f.source.as_str(), f.imports.as_slice()))
         .collect();
-    let circular_errors = detect_circular_imports_internal(&file_imports);
+    let circular_errors =
+        detect_circular_imports_internal(&file_imports, options.project_root.as_deref());
     errors.extend(circular_errors);
 
     // Project info
@@ -895,22 +903,39 @@ fn check_duplicate_fields(model: &ModelNode, errors: &mut Vec<Diagnostic>) {
 /// Detect circular imports in a set of parsed files.
 ///
 /// Takes a list of (source_path, import_paths) pairs and returns diagnostics
-/// for any cycles detected using DFS.
+/// for any cycles detected using DFS. Import paths are resolved as [`resolve`] resolves them
+/// with no project root — see [`ResolveOptions::project_root`].
 pub fn detect_circular_imports(file_imports: &[(String, Vec<String>)]) -> Vec<Diagnostic> {
     let refs: Vec<(&str, &[String])> = file_imports
         .iter()
         .map(|(src, imports)| (src.as_str(), imports.as_slice()))
         .collect();
-    detect_circular_imports_internal(&refs)
+    detect_circular_imports_internal(&refs, None)
 }
 
-fn detect_circular_imports_internal(file_imports: &[(&str, &[String])]) -> Vec<Diagnostic> {
+fn detect_circular_imports_internal(
+    file_imports: &[(&str, &[String])],
+    project_root: Option<&str>,
+) -> Vec<Diagnostic> {
     let mut errors = Vec::new();
 
-    // Build adjacency map: source → imports
-    let adj: HashMap<&str, &[String]> = file_imports
+    // The graph's nodes are the loaded files, so each import is first turned into the file it
+    // names. Comparing the import text with the `source` text instead only matched when the files
+    // were named relative to the directory the imports are written from — a cycle between files
+    // read from any other directory, or imported as the spec writes it (`./b.m3l`), went unseen.
+    let loaded: HashMap<String, &str> = file_imports
         .iter()
-        .map(|&(src, imports)| (src, imports))
+        .map(|&(src, _)| (normalize_path(src), src))
+        .collect();
+    let adj: HashMap<&str, Vec<&str>> = file_imports
+        .iter()
+        .map(|&(src, imports)| {
+            let targets = imports
+                .iter()
+                .filter_map(|import| import_target(src, import, project_root, &loaded))
+                .collect();
+            (src, targets)
+        })
         .collect();
 
     let mut visited: HashSet<&str> = HashSet::new();
@@ -927,7 +952,7 @@ fn detect_circular_imports_internal(file_imports: &[(&str, &[String])]) -> Vec<D
 
 fn dfs_detect_cycle<'a>(
     node: &'a str,
-    adj: &HashMap<&'a str, &'a [String]>,
+    adj: &HashMap<&'a str, Vec<&'a str>>,
     visited: &mut HashSet<&'a str>,
     rec_stack: &mut Vec<&'a str>,
     errors: &mut Vec<Diagnostic>,
@@ -936,12 +961,9 @@ fn dfs_detect_cycle<'a>(
     rec_stack.push(node);
 
     if let Some(imports) = adj.get(node) {
-        for import in *imports {
-            let import_str = import.as_str();
+        for &import_str in imports {
             if !visited.contains(import_str) {
-                if adj.contains_key(import_str) {
-                    dfs_detect_cycle(import_str, adj, visited, rec_stack, errors);
-                }
+                dfs_detect_cycle(import_str, adj, visited, rec_stack, errors);
             } else if rec_stack.contains(&import_str) {
                 // Found a cycle — build the chain
                 let cycle_start = rec_stack.iter().position(|&n| n == import_str).unwrap();
@@ -966,6 +988,59 @@ fn dfs_detect_cycle<'a>(
     }
 
     rec_stack.pop();
+}
+
+/// The loaded file an `@import` path names (§10.6.1), or `None` when it names none of them. A
+/// relative path (`./`, `../`) is resolved from the importing file's directory, any other from the
+/// project root. The spec writes imports without the `.md` of a `.m3l.md` file
+/// (`@import "common/base.m3l"`), so both spellings are tried.
+fn import_target<'a>(
+    importer: &str,
+    import: &str,
+    project_root: Option<&str>,
+    loaded: &HashMap<String, &'a str>,
+) -> Option<&'a str> {
+    let import = import.replace('\\', "/");
+    let base = if import.starts_with("./") || import.starts_with("../") {
+        parent_dir(importer)
+    } else {
+        project_root.unwrap_or("")
+    };
+    let path = if base.is_empty() {
+        normalize_path(&import)
+    } else {
+        normalize_path(&format!("{base}/{import}"))
+    };
+    loaded
+        .get(&path)
+        .or_else(|| loaded.get(&format!("{path}.md")))
+        .copied()
+}
+
+fn parent_dir(path: &str) -> &str {
+    path.rfind(['/', '\\']).map_or("", |i| &path[..i])
+}
+
+/// A path with `/` separators and its `.` and `..` segments folded away, lexically — the files
+/// need not exist, and in-memory sources never do.
+fn normalize_path(path: &str) -> String {
+    let path = path.replace('\\', "/");
+    let mut parts: Vec<&str> = Vec::new();
+    for part in path.split('/') {
+        match part {
+            "" | "." => {}
+            ".." if parts.last().is_some_and(|p| *p != "..") => {
+                parts.pop();
+            }
+            _ => parts.push(part),
+        }
+    }
+    let joined = parts.join("/");
+    if path.starts_with('/') {
+        format!("/{joined}")
+    } else {
+        joined
+    }
 }
 
 #[cfg(test)]
@@ -1197,6 +1272,83 @@ mod tests {
         let errors = detect_circular_imports(&file_imports);
         assert!(!errors.is_empty(), "Should detect 3-way cycle");
         assert!(errors.iter().any(|e| e.code == "M3L-E003"));
+    }
+
+    fn cycle_codes(files: &[(&str, &str)], project_root: Option<&str>) -> Vec<String> {
+        let parsed: Vec<_> = files.iter().map(|(n, s)| parse_string(s, n)).collect();
+        let options = ResolveOptions {
+            project_root: project_root.map(str::to_string),
+            ..ResolveOptions::default()
+        };
+        resolve_with(&parsed, None, options)
+            .errors
+            .into_iter()
+            .filter(|e| e.code == "M3L-E003")
+            .map(|e| e.message)
+            .collect()
+    }
+
+    /// The imports are resolved to files before the graph is searched: a relative import is read
+    /// from the importing file's directory, and the spec's `.m3l` spelling names a `.m3l.md` file.
+    /// Comparing the import text with the `source` text found neither of these cycles.
+    #[test]
+    fn relative_imports_in_the_spec_spelling_form_a_cycle() {
+        let messages = cycle_codes(
+            &[
+                (
+                    "models/a.m3l.md",
+                    "@import \"./shared/b.m3l\"\n## A\n- id: identifier",
+                ),
+                (
+                    "models/shared/b.m3l.md",
+                    "@import \"../a.m3l\"\n## B\n- id: identifier",
+                ),
+            ],
+            None,
+        );
+        assert_eq!(
+            messages,
+            ["Circular import detected: models/a.m3l.md → models/shared/b.m3l.md → models/a.m3l.md"]
+        );
+    }
+
+    /// A package path is read from the project root — which is not where the files are named
+    /// from when they were read out of another directory.
+    #[test]
+    fn package_imports_resolve_from_the_project_root() {
+        let files = [
+            (
+                "proj/a.m3l.md",
+                "@import \"common/b.m3l\"\n## A\n- id: identifier",
+            ),
+            (
+                "proj/common/b.m3l.md",
+                "@import \"a.m3l.md\"\n## B\n- id: identifier",
+            ),
+        ];
+        assert_eq!(cycle_codes(&files, Some("proj")).len(), 1);
+        // Without the root those paths name files that were not loaded: no edge, no cycle.
+        assert!(cycle_codes(&files, None).is_empty());
+    }
+
+    #[test]
+    fn an_import_of_a_file_that_was_not_loaded_is_not_an_edge() {
+        let messages = cycle_codes(
+            &[(
+                "a.m3l.md",
+                "@import \"./missing.m3l\"\n## A\n- id: identifier",
+            )],
+            None,
+        );
+        assert!(messages.is_empty());
+    }
+
+    #[test]
+    fn paths_fold_dot_segments_lexically() {
+        assert_eq!(normalize_path("./a/../b/./c.m3l.md"), "b/c.m3l.md");
+        assert_eq!(normalize_path("../x/a.m3l"), "../x/a.m3l");
+        assert_eq!(normalize_path("C:\\p\\q\\..\\r.m3l.md"), "C:/p/r.m3l.md");
+        assert_eq!(normalize_path("/root/./a"), "/root/a");
     }
 
     #[test]
@@ -1453,6 +1605,7 @@ mod enum_inheritance_tests {
             ResolveOptions {
                 inline_inherited: false,
                 merge_extends: true,
+                project_root: None,
             },
         );
 

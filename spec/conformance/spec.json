@@ -157,6 +157,42 @@
       "input_dir": "inputs/multi",
       "expected": "expected/multi-file.json",
       "category": "multi"
+    },
+    {
+      "name": "extend-rules",
+      "input": "inputs/extend-rules.m3l.md",
+      "expected": "expected/extend-rules.json",
+      "category": "unit"
+    },
+    {
+      "name": "base-model-rules",
+      "input": "inputs/base-model-rules.m3l.md",
+      "expected": "expected/base-model-rules.json",
+      "category": "unit"
+    },
+    {
+      "name": "unresolved-parents",
+      "input": "inputs/unresolved-parents.m3l.md",
+      "expected": "expected/unresolved-parents.json",
+      "category": "unit"
+    },
+    {
+      "name": "prefix-headers",
+      "input_dir": "inputs/prefix-headers",
+      "expected": "expected/prefix-headers.json",
+      "category": "multi"
+    },
+    {
+      "name": "import-cycle",
+      "input_dir": "inputs/import-cycle",
+      "expected": "expected/import-cycle.json",
+      "category": "multi"
+    },
+    {
+      "name": "name-collisions",
+      "input_dir": "inputs/name-collisions",
+      "expected": "expected/name-collisions.json",
+      "category": "multi"
     }
   ]
 }

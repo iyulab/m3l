@@ -13,9 +13,36 @@ pub fn run_format(input_path: &Path) -> Result<String, String> {
         m3l_core::ResolveOptions {
             inline_inherited: false,
             merge_extends: false,
+            project_root: None,
         },
     )?;
+    let unrepresented = unrepresented(&ast);
+    if !unrepresented.is_empty() {
+        let lines: Vec<String> = unrepresented
+            .iter()
+            .map(|d| format!("  {}:{} {}: {}", d.file, d.line, d.code, d.message))
+            .collect();
+        return Err(format!(
+            "Not formatted: the source holds text the formatter would delete. Fix these first:\n{}",
+            lines.join("\n")
+        ));
+    }
     Ok(format_ast(&ast))
+}
+
+/// Diagnostics that mean the source holds text the AST does not carry: text no syntax read
+/// (`M3L-W010`), a `# Prefix:` header that was ignored or refused (`M3L-E019`), an `::extend`
+/// argument (`M3L-E021` — the name the author meant, which the block does not use). The
+/// formatter writes the document back from the AST, so formatting such a source would delete
+/// that text, and with it the evidence the diagnostic points at. It refuses instead, the way a
+/// formatter refuses a file it cannot parse.
+fn unrepresented(ast: &m3l_core::M3lAst) -> Vec<&m3l_core::Diagnostic> {
+    const CODES: [&str; 3] = ["M3L-W010", "M3L-E019", "M3L-E021"];
+    ast.errors
+        .iter()
+        .chain(&ast.warnings)
+        .filter(|d| CODES.contains(&d.code.as_str()))
+        .collect()
 }
 
 fn format_ast(ast: &m3l_core::M3lAst) -> String {
@@ -89,8 +116,15 @@ fn format_ast(ast: &m3l_core::M3lAst) -> String {
     // Extend blocks — kept as blocks: the formatter resolves with `merge_extends: false`.
     if let Some(blocks) = ast.extensions.get("extend") {
         for block in blocks {
+            // A parent list on an extend block is an error (`M3L-E014`), but it is the author's
+            // text: writing the header without it would make the format fix the error silently.
+            let parents = if block.inherits.is_empty() {
+                String::new()
+            } else {
+                format!(" : {}", block.inherits.join(", "))
+            };
             lines.push(format!(
-                "## {} ::extend{}",
+                "## {} ::extend{parents}{}",
                 labelled(&block.name, &block.label),
                 renamed_from(&block.renamed_from)
             ));
@@ -824,6 +858,7 @@ mod tests {
         let opts = m3l_core::ResolveOptions {
             inline_inherited: false,
             merge_extends: false,
+            project_root: None,
         };
         let ast = m3l_core::resolve_with(&[m3l_core::parse_string(src, "t.m3l.md")], None, opts);
         format_ast(&ast)
@@ -1088,13 +1123,14 @@ mod tests {
 /// `format_idempotent` compares two formatted outputs and a first-pass loss is in both.
 #[cfg(test)]
 mod lossless {
-    use super::format_ast;
+    use super::{format_ast, unrepresented};
     use serde_json::Value;
 
     fn options() -> m3l_core::ResolveOptions {
         m3l_core::ResolveOptions {
             inline_inherited: false,
             merge_extends: false,
+            project_root: None,
         }
     }
 
@@ -1301,6 +1337,7 @@ mod lossless {
         let opts = m3l_core::ResolveOptions {
             inline_inherited: false,
             merge_extends: false,
+            project_root: None,
         };
         let formatted = format_ast(&m3l_core::resolve_with(
             &[m3l_core::parse_string(src, "t.m3l.md")],
@@ -1333,13 +1370,46 @@ mod lossless {
         inputs.push(root.join("samples/test/format/full.m3l.md"));
 
         let mut failures = Vec::new();
+        let mut refused = Vec::new();
         for path in &inputs {
-            let losses = round_trip_losses(&std::fs::read_to_string(path).unwrap());
+            let src = std::fs::read_to_string(path).unwrap();
+            let ast = m3l_core::resolve_with(
+                &[m3l_core::parse_string(&src, "t.m3l.md")],
+                None,
+                options(),
+            );
+            if !unrepresented(&ast).is_empty() {
+                refused.push(path.file_name().unwrap().to_string_lossy().into_owned());
+                continue;
+            }
+            let losses = round_trip_losses(&src);
             if !losses.is_empty() {
                 failures.push(format!("{}:\n  {}", path.display(), losses.join("\n  ")));
             }
         }
         assert!(failures.is_empty(), "{}", failures.join("\n"));
+        // An input `m3l format` refuses is not round-tripped, so the list is pinned: a new entry
+        // is a document the formatter has stopped formatting, which is never an incidental change.
+        assert_eq!(refused, ["extend-rules.m3l.md"]);
+    }
+
+    /// The refusal names what would be deleted; the parent list of an extend block, which the
+    /// AST does carry, is written back rather than dropped.
+    #[test]
+    fn a_source_with_text_the_ast_does_not_carry_is_not_formatted() {
+        let src = "## Asset\n- id: identifier @pk\n\n## Other ::extend(Asset)\n- note: string?\n";
+        let ast =
+            m3l_core::resolve_with(&[m3l_core::parse_string(src, "t.m3l.md")], None, options());
+        let codes: Vec<&str> = unrepresented(&ast)
+            .iter()
+            .map(|d| d.code.as_str())
+            .collect();
+        assert_eq!(codes, ["M3L-E021"]);
+
+        let losses = round_trip_losses(
+            "## Asset\n- id: identifier @pk\n\n## Asset ::extend : Tracked\n- note: string?\n",
+        );
+        assert!(losses.is_empty(), "{losses:#?}");
     }
 }
 

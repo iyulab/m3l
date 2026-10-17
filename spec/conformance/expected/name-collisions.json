@@ -1,0 +1,149 @@
+{
+  "parserVersion": "0.23.0",
+  "astVersion": "1.0",
+  "project": {
+    "name": "sales"
+  },
+  "sources": [
+    "spec/conformance/inputs/name-collisions/reports.m3l.md",
+    "spec/conformance/inputs/name-collisions/sales.m3l.md"
+  ],
+  "models": [
+    {
+      "name": "Product",
+      "type": "model",
+      "source": "spec/conformance/inputs/name-collisions/sales.m3l.md",
+      "namespace": "sales",
+      "line": 3,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/name-collisions/sales.m3l.md",
+            "line": 4,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/name-collisions/sales.m3l.md",
+        "line": 3,
+        "col": 1
+      }
+    },
+    {
+      "name": "Order",
+      "type": "model",
+      "source": "spec/conformance/inputs/name-collisions/sales.m3l.md",
+      "namespace": "sales",
+      "line": 6,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/name-collisions/sales.m3l.md",
+            "line": 7,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/name-collisions/sales.m3l.md",
+        "line": 6,
+        "col": 1
+      }
+    }
+  ],
+  "enums": [],
+  "interfaces": [],
+  "views": [
+    {
+      "name": "Order",
+      "type": "view",
+      "source": "spec/conformance/inputs/name-collisions/reports.m3l.md",
+      "namespace": "sales",
+      "line": 3,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/name-collisions/reports.m3l.md",
+            "line": 4,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "materialized": false,
+      "loc": {
+        "file": "spec/conformance/inputs/name-collisions/reports.m3l.md",
+        "line": 3,
+        "col": 1
+      }
+    }
+  ],
+  "flows": [],
+  "attributeRegistry": [],
+  "errors": [
+    {
+      "code": "M3L-E005",
+      "severity": "error",
+      "file": "spec/conformance/inputs/name-collisions/reports.m3l.md",
+      "line": 3,
+      "col": 1,
+      "message": "Duplicate view name \"Order\" (first defined in spec/conformance/inputs/name-collisions/sales.m3l.md:6)"
+    }
+  ],
+  "warnings": []
+}

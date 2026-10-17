@@ -1,0 +1,163 @@
+{
+  "parserVersion": "0.23.0",
+  "astVersion": "1.0",
+  "project": {},
+  "sources": [
+    "spec/conformance/inputs/unresolved-parents.m3l.md"
+  ],
+  "models": [
+    {
+      "name": "Child",
+      "type": "model",
+      "source": "spec/conformance/inputs/unresolved-parents.m3l.md",
+      "line": 1,
+      "inherits": [
+        "Ghost"
+      ],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/unresolved-parents.m3l.md",
+            "line": 2,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/unresolved-parents.m3l.md",
+        "line": 1,
+        "col": 1
+      }
+    }
+  ],
+  "enums": [
+    {
+      "name": "Kind",
+      "type": "enum",
+      "source": "spec/conformance/inputs/unresolved-parents.m3l.md",
+      "line": 4,
+      "inherits": [
+        "Missing"
+      ],
+      "values": [
+        {
+          "name": "one",
+          "description": "One"
+        }
+      ],
+      "loc": {
+        "file": "spec/conformance/inputs/unresolved-parents.m3l.md",
+        "line": 4,
+        "col": 1
+      }
+    },
+    {
+      "name": "Base",
+      "type": "enum",
+      "source": "spec/conformance/inputs/unresolved-parents.m3l.md",
+      "line": 7,
+      "inherits": [],
+      "values": [
+        {
+          "name": "active",
+          "description": "Active"
+        }
+      ],
+      "loc": {
+        "file": "spec/conformance/inputs/unresolved-parents.m3l.md",
+        "line": 7,
+        "col": 1
+      }
+    },
+    {
+      "name": "Status",
+      "type": "enum",
+      "source": "spec/conformance/inputs/unresolved-parents.m3l.md",
+      "line": 10,
+      "inherits": [
+        "Base"
+      ],
+      "values": [
+        {
+          "name": "active",
+          "description": "Active"
+        },
+        {
+          "name": "active",
+          "description": "Active"
+        },
+        {
+          "name": "closed",
+          "description": "Closed"
+        },
+        {
+          "name": "closed",
+          "description": "Closed again"
+        }
+      ],
+      "loc": {
+        "file": "spec/conformance/inputs/unresolved-parents.m3l.md",
+        "line": 10,
+        "col": 1
+      }
+    }
+  ],
+  "interfaces": [],
+  "views": [],
+  "flows": [],
+  "attributeRegistry": [],
+  "errors": [
+    {
+      "code": "M3L-E007",
+      "severity": "error",
+      "file": "spec/conformance/inputs/unresolved-parents.m3l.md",
+      "line": 1,
+      "col": 1,
+      "message": "Unresolved inheritance reference \"Ghost\" in model \"Child\""
+    },
+    {
+      "code": "M3L-E007",
+      "severity": "error",
+      "file": "spec/conformance/inputs/unresolved-parents.m3l.md",
+      "line": 4,
+      "col": 1,
+      "message": "Unresolved inheritance reference \"Missing\" in enum \"Kind\""
+    },
+    {
+      "code": "M3L-E020",
+      "severity": "error",
+      "file": "spec/conformance/inputs/unresolved-parents.m3l.md",
+      "line": 10,
+      "col": 1,
+      "message": "Duplicate enum value \"active\" in enum \"Status\""
+    },
+    {
+      "code": "M3L-E020",
+      "severity": "error",
+      "file": "spec/conformance/inputs/unresolved-parents.m3l.md",
+      "line": 10,
+      "col": 1,
+      "message": "Duplicate enum value \"closed\" in enum \"Status\""
+    }
+  ],
+  "warnings": []
+}

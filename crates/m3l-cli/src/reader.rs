@@ -31,6 +31,9 @@ pub struct ProjectInput {
     pub files: Vec<M3lFile>,
     pub config: Option<M3lConfig>,
     pub warnings: Vec<String>,
+    /// The project root package imports resolve from (§10.6.1): the directory read,
+    /// or the named file's directory, written the way the files' paths are.
+    pub root: String,
 }
 
 /// The path recorded as a file's `source` in the AST, with `/` separators on every platform.
@@ -68,6 +71,7 @@ pub fn read_project(input_path: &Path) -> Result<ProjectInput, String> {
             }],
             config: None,
             warnings: Vec::new(),
+            root: source_path(input_path.parent().unwrap_or(Path::new(""))),
         });
     }
 
@@ -81,6 +85,7 @@ pub fn read_project(input_path: &Path) -> Result<ProjectInput, String> {
                 files,
                 config: Some(config),
                 warnings,
+                root: source_path(input_path),
             });
         }
 
@@ -89,6 +94,7 @@ pub fn read_project(input_path: &Path) -> Result<ProjectInput, String> {
             files: scan_directory(input_path)?,
             config: None,
             warnings: Vec::new(),
+            root: source_path(input_path),
         });
     }
 

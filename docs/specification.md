@@ -3191,6 +3191,7 @@ Conforming parsers should use these error codes for consistent diagnostics.
 
 - Relative paths start with `./` or `../`
 - Package paths are resolved from the project root (determined by `.m3lroot` file, `m3l.config.yaml`, or CLI option)
+- A path ending in `.m3l` also names the `.m3l.md` file of that name — the examples above import `common/base.m3l.md`
 
 #### 10.6.2 Aliases
 

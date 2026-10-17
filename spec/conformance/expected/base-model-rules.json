@@ -1,0 +1,240 @@
+{
+  "parserVersion": "0.23.0",
+  "astVersion": "1.0",
+  "project": {},
+  "sources": [
+    "spec/conformance/inputs/base-model-rules.m3l.md"
+  ],
+  "models": [
+    {
+      "name": "Product",
+      "type": "model",
+      "source": "spec/conformance/inputs/base-model-rules.m3l.md",
+      "line": 1,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/base-model-rules.m3l.md",
+            "line": 2,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/base-model-rules.m3l.md",
+        "line": 1,
+        "col": 1
+      }
+    },
+    {
+      "name": "Audit",
+      "type": "model",
+      "source": "spec/conformance/inputs/base-model-rules.m3l.md",
+      "base": {
+        "kind": "aspect",
+        "model": ""
+      },
+      "line": 4,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "reviewed",
+          "type": "boolean",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "false",
+          "default_value_type": "literal",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/base-model-rules.m3l.md",
+            "line": 5,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/base-model-rules.m3l.md",
+        "line": 4,
+        "col": 1
+      }
+    },
+    {
+      "name": "Stray",
+      "type": "model",
+      "source": "spec/conformance/inputs/base-model-rules.m3l.md",
+      "base": {
+        "kind": "aspect",
+        "model": "Nowhere"
+      },
+      "line": 7,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "note",
+          "type": "string",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/base-model-rules.m3l.md",
+            "line": 8,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/base-model-rules.m3l.md",
+        "line": 7,
+        "col": 1
+      }
+    },
+    {
+      "name": "Note",
+      "type": "model",
+      "source": "spec/conformance/inputs/base-model-rules.m3l.md",
+      "base": {
+        "kind": "aspect",
+        "model": "Product"
+      },
+      "line": 10,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "text",
+          "type": "string",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/base-model-rules.m3l.md",
+            "line": 11,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/base-model-rules.m3l.md",
+        "line": 10,
+        "col": 1
+      }
+    },
+    {
+      "name": "Remark",
+      "type": "model",
+      "source": "spec/conformance/inputs/base-model-rules.m3l.md",
+      "base": {
+        "kind": "subtype",
+        "model": "Note"
+      },
+      "line": 13,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "extra",
+          "type": "string",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/base-model-rules.m3l.md",
+            "line": 14,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/base-model-rules.m3l.md",
+        "line": 13,
+        "col": 1
+      }
+    }
+  ],
+  "enums": [],
+  "interfaces": [],
+  "views": [],
+  "flows": [],
+  "attributeRegistry": [],
+  "errors": [
+    {
+      "code": "M3L-E016",
+      "severity": "error",
+      "file": "spec/conformance/inputs/base-model-rules.m3l.md",
+      "line": 4,
+      "col": 1,
+      "message": "\"Audit\" ::aspect needs a base model — write ::aspect(Base)"
+    },
+    {
+      "code": "M3L-E017",
+      "severity": "error",
+      "file": "spec/conformance/inputs/base-model-rules.m3l.md",
+      "line": 7,
+      "col": 1,
+      "message": "Base model \"Nowhere\" of \"Stray\" is not a model in this project"
+    },
+    {
+      "code": "M3L-E018",
+      "severity": "error",
+      "file": "spec/conformance/inputs/base-model-rules.m3l.md",
+      "line": 13,
+      "col": 1,
+      "message": "\"Remark\" cannot use \"Note\" as its base — an aspect cannot be a base"
+    }
+  ],
+  "warnings": []
+}

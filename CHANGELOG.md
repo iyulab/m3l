@@ -22,8 +22,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   gives a name declared twice in the namespace (two models, a view named like a model) — and `m3l validate` then
   reported the same field a second time as `M3L-E006`. 🔇 `m3l parse` now reports `M3L-E006` where it reported
   `M3L-E005` for a field, and `m3l validate` reports it once.
+- **A circular import is reported wherever the files are read from and however the imports are written (§10.6).** The
+  cycle check compared each `@import` path with the files' paths as text, so it found a cycle only when the files were
+  read from the directory the imports are written from and each import spelled out the file name: `m3l validate models/`
+  run from the project's parent, or the specification's own spelling `@import "./base.m3l"` for `base.m3l.md`, reported
+  nothing. Imports are now resolved to files first — relative paths from the importing file's directory, package paths
+  from the project root (the directory `m3l` reads, or a named file's directory) — and `.m3l` names a `.m3l.md` file.
+  🔇 A project that has a cycle now gets `M3L-E003`. `ResolveOptions` has a new `project_root`; without one, package
+  paths resolve from the directory the source paths are relative to.
+- **`m3l format` keeps an extend block's parent list.** `## Asset ::extend : Base` is an error (`M3L-E014`), but the
+  formatter wrote the header back without `: Base`, fixing the error silently.
 
 ### Added
+
+- **The parse conformance suite covers the resolver's diagnostics** — `M3L-E003`, `E005`, `E007`, `E011`–`E021` — in six
+  new inputs (`spec/conformance/inputs/`), three of them multi-file directories. `M3L-E008` is not among them.
 
 - **The validate conformance suite covers seventeen more diagnostics** — `M3L-E004`, `E006`, `E009`, `E023`–`E026`,
   `W001`–`W003`, `W005`–`W009`, `W011`, `W012` — in six new inputs (`spec/conformance/validate/`), so an implementation
@@ -35,6 +48,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   were recognized but not listed: `@required` and `@check` (§10.8.1), `@relation` (§10.8.2), `@description` (§10.8.3),
   `@min_length`, `@max_length` and `@pattern` (§10.8.4), `@ledger`, `@behavior` and `@default_attribute` (§10.8.6). A test
   now reads the table and the parser's catalog and fails when one has an attribute the other does not.
+- **`m3l format` refuses a source that holds text the AST does not carry** — text no syntax read (`M3L-W010`), an ignored
+  or refused `# Prefix:` header (`M3L-E019`), an `::extend` argument (`M3L-E021`). The formatter writes the document back
+  from the AST, so it deleted that text, and with it what the diagnostic points at. It now exits with an error that lists
+  the diagnostics, and formats once they are fixed.
 
 ## [0.23.0] - 2026-10-16
 

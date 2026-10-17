@@ -300,6 +300,7 @@ fn merge_extends_off_keeps_blocks_in_the_bucket() {
         ResolveOptions {
             inline_inherited: false,
             merge_extends: false,
+            project_root: None,
         },
     );
     assert!(ast.errors.is_empty(), "{:?}", ast.errors);

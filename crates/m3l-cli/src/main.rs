@@ -6,7 +6,7 @@ use std::process;
 
 use clap::{Parser, Subcommand};
 
-use m3l_core::{parse_string, resolve, validate, ProjectInfo, ValidateOptions};
+use m3l_core::{parse_string, validate, ProjectInfo, ValidateOptions};
 use reader::read_project;
 
 #[derive(Parser)]
@@ -165,7 +165,7 @@ pub fn build_ast(input_path: &Path) -> Result<m3l_core::M3lAst, String> {
 
 pub fn build_ast_with(
     input_path: &Path,
-    options: m3l_core::ResolveOptions,
+    mut options: m3l_core::ResolveOptions,
 ) -> Result<m3l_core::M3lAst, String> {
     let input = read_project(input_path)?;
     for warning in &input.warnings {
@@ -190,6 +190,7 @@ pub fn build_ast_with(
         version: c.version,
     });
 
+    options.project_root = Some(input.root);
     let ast = m3l_core::resolve_with(&parsed_files, project_info, options);
 
     Ok(ast)
@@ -350,30 +351,9 @@ fn run_diff(left_path: &Path, right_path: &Path) -> Result<String, String> {
 }
 
 fn run_validate(input_path: &Path, strict: bool, format: &str) -> Result<(String, usize), String> {
-    let input = read_project(input_path)?;
-    for warning in &input.warnings {
-        eprintln!("Warning: {warning}");
-    }
-    let files = input.files;
-
-    if files.is_empty() {
-        return Err(format!(
-            "No M3L files (.m3l, .m3l.md, .md) found at: {}",
-            input_path.display()
-        ));
-    }
-
-    let parsed_files: Vec<_> = files
-        .iter()
-        .map(|f| parse_string(&f.content, &f.path))
-        .collect();
-
-    let project_info = input.config.map(|c| ProjectInfo {
-        name: c.name,
-        version: c.version,
-    });
-
-    let ast = resolve(&parsed_files, project_info);
+    // The same AST `parse` prints — the two commands used to build it separately, and the copy
+    // here is where a resolver input added to one of them would have gone missing.
+    let ast = build_ast(input_path)?;
     let result = validate(&ast, &ValidateOptions { strict });
 
     // ValidateResult already includes resolver diagnostics (cloned from AST)

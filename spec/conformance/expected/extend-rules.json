@@ -1,0 +1,150 @@
+{
+  "parserVersion": "0.23.0",
+  "astVersion": "1.0",
+  "project": {},
+  "sources": [
+    "spec/conformance/inputs/extend-rules.m3l.md"
+  ],
+  "models": [
+    {
+      "name": "Asset",
+      "type": "model",
+      "source": "spec/conformance/inputs/extend-rules.m3l.md",
+      "extended_by": [
+        {
+          "source": "spec/conformance/inputs/extend-rules.m3l.md",
+          "fields": 0
+        },
+        {
+          "source": "spec/conformance/inputs/extend-rules.m3l.md",
+          "fields": 1
+        }
+      ],
+      "line": 1,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/extend-rules.m3l.md",
+            "line": 2,
+            "col": 1
+          }
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "params": [
+            100.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/extend-rules.m3l.md",
+            "line": 3,
+            "col": 1
+          }
+        },
+        {
+          "name": "label",
+          "type": "string",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "origin": {
+            "source": "spec/conformance/inputs/extend-rules.m3l.md"
+          },
+          "loc": {
+            "file": "spec/conformance/inputs/extend-rules.m3l.md",
+            "line": 22,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/extend-rules.m3l.md",
+        "line": 1,
+        "col": 1
+      }
+    }
+  ],
+  "enums": [],
+  "interfaces": [],
+  "views": [],
+  "flows": [],
+  "attributeRegistry": [],
+  "errors": [
+    {
+      "code": "M3L-E021",
+      "severity": "error",
+      "file": "spec/conformance/inputs/extend-rules.m3l.md",
+      "line": 21,
+      "col": 1,
+      "message": "\"::extend()\" takes no argument. An extend block names its target with the declaration name, so this block extends \"Asset\" — rename the heading if that is not the target, and remove the parentheses either way."
+    },
+    {
+      "code": "M3L-E012",
+      "severity": "error",
+      "file": "spec/conformance/inputs/extend-rules.m3l.md",
+      "line": 6,
+      "col": 1,
+      "message": "Extend field \"name\" collides with an existing field of \"Asset\""
+    },
+    {
+      "code": "M3L-E013",
+      "severity": "error",
+      "file": "spec/conformance/inputs/extend-rules.m3l.md",
+      "line": 7,
+      "col": 1,
+      "message": "@pk is not allowed on \"code\" — an extend block cannot change the key or override a field of \"Asset\""
+    },
+    {
+      "code": "M3L-E011",
+      "severity": "error",
+      "file": "spec/conformance/inputs/extend-rules.m3l.md",
+      "line": 9,
+      "col": 1,
+      "message": "Extend target \"Ghost\" is not a model in this project"
+    },
+    {
+      "code": "M3L-E014",
+      "severity": "error",
+      "file": "spec/conformance/inputs/extend-rules.m3l.md",
+      "line": 12,
+      "col": 1,
+      "message": "Extend block \"Asset\" cannot declare parents — inheritance belongs to the model itself"
+    },
+    {
+      "code": "M3L-E015",
+      "severity": "error",
+      "file": "spec/conformance/inputs/extend-rules.m3l.md",
+      "line": 15,
+      "col": 1,
+      "message": "Extend block \"Asset\" declares a section — extend blocks may declare fields only"
+    }
+  ],
+  "warnings": []
+}

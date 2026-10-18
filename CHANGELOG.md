@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **`M3L-E033` — an `@import` that names no file of the set read together.** An import of a file that was not loaded
+  was silent: a mistyped or forgotten path showed up, if at all, as an unrelated "undefined" error where a name from
+  that file was used. When the files handed in are the whole set — a project or directory read by the CLI, the
+  multi-file entry points of the bindings — such an import is now an error at its line. A file read on its own does not
+  follow its imports and is not judged. 🔇 A project whose imports name files it does not read stops at `M3L-E033`.
+  New in the Rust API: `ResolveOptions::complete_file_set` (off by default — set by the CLI and the multi-file entry
+  points).
+
 ### Fixed
 
 - **The same short name in two namespaces is reported once, as `M3L-E008`.** It was reported twice — `M3L-E005`

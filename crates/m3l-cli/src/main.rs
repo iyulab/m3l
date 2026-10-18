@@ -191,6 +191,8 @@ pub fn build_ast_with(
     });
 
     options.project_root = Some(input.root);
+    // A directory (or its m3l.config.yaml) is the whole set its imports may name; a single file is read on its own.
+    options.complete_file_set = input_path.is_dir();
     let ast = m3l_core::resolve_with(&parsed_files, project_info, options);
 
     Ok(ast)

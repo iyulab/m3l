@@ -4,7 +4,7 @@
 //! minimizing the FFI surface area.
 
 use crate::types::*;
-use crate::{parse_string, resolve, validate};
+use crate::{parse_string, resolve, resolve_with, validate, ResolveOptions};
 use serde::{Deserialize, Serialize};
 
 // ---------------------------------------------------------------------------
@@ -97,6 +97,15 @@ pub fn parse_to_json(content: &str, filename: &str) -> String {
 ///
 /// Input: JSON array of `{ "content": "...", "filename": "..." }` objects
 /// Output: JSON string containing the resolved AST
+/// The files a multi-file call hands in are the set its imports may name (`M3L-E033` applies); a single-file call's
+/// are not.
+fn complete_set() -> ResolveOptions {
+    ResolveOptions {
+        complete_file_set: true,
+        ..ResolveOptions::default()
+    }
+}
+
 pub fn parse_multi_to_json(files_json: &str) -> String {
     let files: Vec<FileInput> = match serde_json::from_str(files_json) {
         Ok(f) => f,
@@ -115,7 +124,7 @@ pub fn parse_multi_to_json(files_json: &str) -> String {
             .iter()
             .map(|f| parse_string(&f.content, &f.filename))
             .collect();
-        resolve(&parsed_files, None)
+        resolve_with(&parsed_files, None, complete_set())
     });
 
     match result {
@@ -243,7 +252,7 @@ pub fn validate_multi_to_json(files_json: &str, options_json: &str) -> String {
             .iter()
             .map(|f| parse_string(&f.content, &f.filename))
             .collect();
-        let ast = resolve(&parsed_files, None);
+        let ast = resolve_with(&parsed_files, None, complete_set());
         let validate_opts = ValidateOptions {
             strict: opts.strict,
         };

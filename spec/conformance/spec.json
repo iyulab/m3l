@@ -199,6 +199,12 @@
       "input_dir": "inputs/cross-namespace-name",
       "expected": "expected/cross-namespace-name.json",
       "category": "multi"
+    },
+    {
+      "name": "import-unmatched",
+      "input_dir": "inputs/import-unmatched",
+      "expected": "expected/import-unmatched.json",
+      "category": "multi"
     }
   ]
 }

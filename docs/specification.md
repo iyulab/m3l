@@ -2318,6 +2318,7 @@ Importing definitions from other M3L files.
 - **Aliases** (`as name`): Qualify references with the alias (e.g., `interfaces.Timestampable`)
 - **Without alias**: All exported models are available by short name in the current scope
 - **Circular imports**: Detected by the parser and raised as error `M3L-E003`
+- **Unmatched imports**: When the files read together are the whole set (a project or directory), an `@import` that names none of them is error `M3L-E033`, at the import's line
 - **Diamond dependency**: Same file imported through multiple paths is loaded once
 
 See [10.6 Import Resolution](#106-import-resolution) for detailed rules.
@@ -3163,6 +3164,7 @@ Conforming parsers should use these error codes for consistent diagnostics.
 | `M3L-E030` | `{element}` lists `{name}` twice / lists its own name | One `@renamed_from` names a former name twice, or names the element's current name (§2.2.6) |
 | `M3L-E031` | `@renamed_from` on `{element}`, which stores nothing under its name | The declaration is on a `::view` or `::flow`, on one of their fields, on a derived field without storage (`@computed` without `@persisted`, `@lookup`, `@rollup`), or on an enum value (§2.2.6). An inherited field is reported once, where it is written |
 | `M3L-E032` | `{element}`: the former name `{name}` is not a name | An argument of `@renamed_from` is empty, qualified (a rename stays within its namespace), or not an identifier — or the declaration names none (§2.2.6) |
+| `M3L-E033` | `@import "{path}"` names no file of this set | An import, resolved like the circular-import check resolves it (§10.6.1 — relative to the importing file, or to the project root; `.md` may be left off), names none of the files read together. Judged only when the files handed in are the whole set — a project or directory, or a tool's multi-file call; a file read on its own does not follow its imports |
 
 #### 10.5.2 Warnings
 

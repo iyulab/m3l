@@ -28,6 +28,10 @@ pub struct ResolveOptions {
     /// named `a.m3l.md`, `common/b.m3l.md` means. Relative paths (`./`, `../`) never use it: they
     /// are resolved from the importing file's own directory.
     pub project_root: Option<String>,
+    /// Whether the files handed in are the whole set the imports may name — a project, a directory, the files a
+    /// tool loads together. Then an `@import` that names none of them is `M3L-E033`. Off for a single file read on its
+    /// own: nothing follows its imports, so a file it imports being absent says nothing about the import.
+    pub complete_file_set: bool,
 }
 
 impl Default for ResolveOptions {
@@ -36,6 +40,7 @@ impl Default for ResolveOptions {
             inline_inherited: true,
             merge_extends: true,
             project_root: None,
+            complete_file_set: false,
         }
     }
 }
@@ -416,6 +421,12 @@ pub fn resolve_with(
     let circular_errors =
         detect_circular_imports_internal(&file_imports, options.project_root.as_deref());
     errors.extend(circular_errors);
+    if options.complete_file_set {
+        errors.extend(detect_unmatched_imports(
+            &file_imports,
+            options.project_root.as_deref(),
+        ));
+    }
 
     // Project info
     let mut project_info = project.unwrap_or(ProjectInfo {
@@ -985,6 +996,37 @@ fn detect_circular_imports_internal(
     errors
 }
 
+/// `M3L-E033` — an `@import` that names no file of the set, at the import's line. The same resolution the cycle
+/// check uses (relative to the importing file, or to the project root for a package path; `.md` may be left off),
+/// so an import is unmatched exactly when the cycle check could not follow it.
+fn detect_unmatched_imports(
+    file_imports: &[(&str, Vec<(&str, usize)>)],
+    project_root: Option<&str>,
+) -> Vec<Diagnostic> {
+    let loaded: HashMap<String, &str> = file_imports
+        .iter()
+        .map(|&(src, _)| (normalize_path(src), src))
+        .collect();
+    let mut errors = Vec::new();
+    for &(src, ref imports) in file_imports {
+        for &(import, line) in imports {
+            if import_target(src, import, project_root, &loaded).is_none() {
+                errors.push(Diagnostic {
+                    code: "M3L-E033".to_string(),
+                    severity: DiagnosticSeverity::Error,
+                    file: src.to_string(),
+                    line,
+                    col: 1,
+                    message: format!(
+                        "@import \"{import}\" names no file of this set — check the path, or add the file to what is read together"
+                    ),
+                });
+            }
+        }
+    }
+    errors
+}
+
 fn dfs_detect_cycle<'a>(
     node: &'a str,
     adj: &HashMap<&'a str, Vec<(&'a str, usize)>>,
@@ -1281,6 +1323,55 @@ mod tests {
         );
     }
 
+    fn complete_set() -> ResolveOptions {
+        ResolveOptions {
+            complete_file_set: true,
+            ..ResolveOptions::default()
+        }
+    }
+
+    #[test]
+    fn an_import_naming_no_file_of_a_complete_set_is_e033_at_its_line() {
+        let a = parse_string(
+            "@import \"./missing.m3l\"\n\n## A\n- id: identifier",
+            "app/a.m3l.md",
+        );
+        let b = parse_string("## B\n- id: identifier", "app/b.m3l.md");
+        let ast = resolve_with(&[a, b], None, complete_set());
+        let e033: Vec<_> = ast.errors.iter().filter(|e| e.code == "M3L-E033").collect();
+        assert_eq!(e033.len(), 1, "{:?}", ast.errors);
+        assert_eq!(e033[0].file, "app/a.m3l.md");
+        assert_eq!(e033[0].line, 1);
+        assert!(e033[0].message.contains("./missing.m3l"));
+    }
+
+    #[test]
+    fn an_import_of_a_file_in_the_set_is_not_e033_with_or_without_md() {
+        let a = parse_string(
+            "@import \"./b.m3l\"\n@import \"./b.m3l.md\"\n\n## A\n- id: identifier",
+            "app/a.m3l.md",
+        );
+        let b = parse_string("## B\n- id: identifier", "app/b.m3l.md");
+        let ast = resolve_with(&[a, b], None, complete_set());
+        assert!(
+            !ast.errors.iter().any(|e| e.code == "M3L-E033"),
+            "{:?}",
+            ast.errors
+        );
+    }
+
+    /// A file read on its own: nothing followed its imports, so their files being absent is no finding.
+    #[test]
+    fn a_single_file_read_on_its_own_does_not_judge_its_imports() {
+        let a = parse_string("@import \"./b.m3l\"\n\n## A\n- id: identifier", "a.m3l.md");
+        let ast = resolve(&[a], None);
+        assert!(
+            !ast.errors.iter().any(|e| e.code == "M3L-E033"),
+            "{:?}",
+            ast.errors
+        );
+    }
+
     #[test]
     fn detect_no_circular_imports() {
         let file_imports = vec![
@@ -1320,6 +1411,7 @@ mod tests {
         let parsed: Vec<_> = files.iter().map(|(n, s)| parse_string(s, n)).collect();
         let options = ResolveOptions {
             project_root: project_root.map(str::to_string),
+            complete_file_set: false,
             ..ResolveOptions::default()
         };
         resolve_with(&parsed, None, options)
@@ -1675,6 +1767,7 @@ mod enum_inheritance_tests {
                 inline_inherited: false,
                 merge_extends: true,
                 project_root: None,
+                complete_file_set: false,
             },
         );
 

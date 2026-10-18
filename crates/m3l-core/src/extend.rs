@@ -43,14 +43,48 @@ pub(crate) fn merge_extend_blocks(
     blocks: Vec<ModelNode>,
     errors: &mut Vec<Diagnostic>,
 ) {
-    let index: HashMap<String, usize> = models
-        .iter()
-        .enumerate()
-        .map(|(i, m)| (m.name.clone(), i))
-        .collect();
+    // Each model by short name, with what the lookup reads — copied, since the models are written below.
+    let mut index: HashMap<String, Vec<(usize, Option<String>, String)>> = HashMap::new();
+    for (i, m) in models.iter().enumerate() {
+        index
+            .entry(m.name.clone())
+            .or_default()
+            .push((i, m.namespace.clone(), m.source.clone()));
+    }
 
     for block in blocks {
-        let Some(&target) = index.get(&block.name) else {
+        // The block names its target the way a reference does (§2.1.3): qualified, or short and
+        // read from the block's own namespace and file.
+        let candidates = index
+            .get(crate::names::short_name(&block.name))
+            .map(Vec::as_slice)
+            .unwrap_or_default();
+        let found = crate::names::pick(
+            candidates,
+            &block.name,
+            block.namespace.as_deref(),
+            &block.source,
+            |c| c.1.as_deref(),
+            |c| c.2.as_str(),
+        );
+        let target = match found {
+            crate::names::Lookup::Found(&(i, _, _)) => Some(i),
+            crate::names::Lookup::Ambiguous(namespaces) => {
+                errors.push(error(
+                    "M3L-E008",
+                    &block.source,
+                    block.line,
+                    format!(
+                        "Ambiguous extend target \"{}\" in namespaces {} — write the qualified name",
+                        block.name,
+                        namespaces.join(", ")
+                    ),
+                ));
+                continue;
+            }
+            crate::names::Lookup::Missing => None,
+        };
+        let Some(target) = target else {
             errors.push(error(
                 "M3L-E011",
                 &block.source,
@@ -145,7 +179,10 @@ pub(crate) fn merge_extend_blocks(
 
 /// E016–E018 for every model that carries a `base`.
 pub(crate) fn check_model_bases(models: &[ModelNode], errors: &mut Vec<Diagnostic>) {
-    let by_name: HashMap<&str, &ModelNode> = models.iter().map(|m| (m.name.as_str(), m)).collect();
+    let mut by_name: HashMap<&str, Vec<&ModelNode>> = HashMap::new();
+    for m in models {
+        by_name.entry(m.name.as_str()).or_default().push(m);
+    }
     for model in models {
         let Some(base) = &model.base else { continue };
         if base.model.is_empty() {
@@ -160,7 +197,37 @@ pub(crate) fn check_model_bases(models: &[ModelNode], errors: &mut Vec<Diagnosti
             ));
             continue;
         }
-        match by_name.get(base.model.as_str()) {
+        // Read from the model that names its base (§2.1.3), qualified or short.
+        let candidates = by_name
+            .get(crate::names::short_name(&base.model))
+            .map(Vec::as_slice)
+            .unwrap_or_default();
+        let found = match crate::names::pick(
+            candidates,
+            &base.model,
+            model.namespace.as_deref(),
+            &model.source,
+            |m| m.namespace.as_deref(),
+            |m| m.source.as_str(),
+        ) {
+            crate::names::Lookup::Found(b) => Some(*b),
+            crate::names::Lookup::Ambiguous(namespaces) => {
+                errors.push(error(
+                    "M3L-E008",
+                    &model.source,
+                    model.line,
+                    format!(
+                        "Ambiguous base model \"{}\" of \"{}\" in namespaces {} — write the qualified name",
+                        base.model,
+                        model.name,
+                        namespaces.join(", ")
+                    ),
+                ));
+                continue;
+            }
+            crate::names::Lookup::Missing => None,
+        };
+        match found {
             None => errors.push(error(
                 "M3L-E017",
                 &model.source,

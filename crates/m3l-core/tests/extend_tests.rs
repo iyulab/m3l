@@ -316,3 +316,46 @@ fn merge_extends_off_keeps_blocks_in_the_bucket() {
         2
     );
 }
+
+#[test]
+fn a_qualified_base_model_resolves_in_its_namespace() {
+    let base = parse_string(
+        "# Namespace: core\n## Asset\n- id: identifier @pk\n",
+        "core.m3l.md",
+    );
+    let app = parse_string(
+        "# Namespace: maint\n## AssetProfile ::aspect(core.Asset)\n- interval_days: integer\n",
+        "maint.m3l.md",
+    );
+    let ast = resolve(&[base, app], None);
+    assert!(ast.errors.is_empty(), "{:?}", ast.errors);
+}
+
+#[test]
+fn a_qualified_base_model_in_no_such_namespace_is_e017() {
+    let base = parse_string(
+        "# Namespace: core\n## Asset\n- id: identifier @pk\n",
+        "core.m3l.md",
+    );
+    let app = parse_string(
+        "# Namespace: maint\n## AssetProfile ::aspect(other.Asset)\n- interval_days: integer\n",
+        "maint.m3l.md",
+    );
+    assert_eq!(codes(&resolve(&[base, app], None)), ["M3L-E017"]);
+}
+
+#[test]
+fn a_qualified_extend_target_resolves_in_its_namespace() {
+    let base = parse_string(
+        "# Namespace: core\n## Asset\n- id: identifier @pk\n",
+        "core.m3l.md",
+    );
+    let ext = parse_string(
+        "# Namespace: maint\n## core.Asset ::extend\n- serial: string(20)\n",
+        "maint.m3l.md",
+    );
+    let ast = resolve(&[base, ext], None);
+    assert!(ast.errors.is_empty(), "{:?}", ast.errors);
+    let asset = ast.models.iter().find(|m| m.name == "Asset").unwrap();
+    assert!(asset.fields.iter().any(|f| f.name == "serial"));
+}

@@ -19,6 +19,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   namespace, and a short name is read from the model that wrote it. 🔇 A qualified `@reference` used to be cut at its
   first dot, so a lookup through it stopped without a word; now a field the target lacks is `M3L-E022`, and the
   checks of the target's key (`M3L-E001`, `M3L-E002`, `M3L-E010`) see the right model.
+- **Base models and extend targets too** — `## AssetProfile ::aspect(core.Asset)` and `## core.Asset ::extend` name the
+  model in namespace `core` (a base in no such namespace is `M3L-E017`, an extend target `M3L-E011`); a short one is read
+  from the declaration that writes it.
 
 ## [0.24.0] - 2026-10-18
 

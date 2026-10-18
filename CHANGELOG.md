@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.24.0] - 2026-10-18
+
 ### Added
 
 - **`M3L-E033` — an `@import` that names no file of the set read together.** An import of a file that was not loaded
@@ -15,6 +17,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   follow its imports and is not judged. 🔇 A project whose imports name files it does not read stops at `M3L-E033`.
   New in the Rust API: `ResolveOptions::complete_file_set` (off by default — set by the CLI and the multi-file entry
   points).
+- **The parse conformance suite covers the resolver's diagnostics** — `M3L-E003`, `E005`, `E007`, `E011`–`E021` — in six
+  new inputs (`spec/conformance/inputs/`), three of them multi-file directories. `M3L-E008` is not among them.
+
+- **The validate conformance suite covers seventeen more diagnostics** — `M3L-E004`, `E006`, `E009`, `E023`–`E026`,
+  `W001`–`W003`, `W005`–`W009`, `W011`, `W012` — in six new inputs (`spec/conformance/validate/`), so an implementation
+  other than this parser can check them.
 
 ### Fixed
 
@@ -24,9 +32,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   another namespace is `M3L-E008` alone, and its message says the short name must be unique across namespaces (the
   resolver does not yet resolve qualified references — §2.1.3 Rule 4 now notes the status). The namespaces in the
   message are listed in a fixed order. The parse conformance suite covers the case.
-
-### Fixed
-
 - **`@pk` and `@default` are standard attributes, as §10.8.1 lists them.** The parser's catalog missed both, so their
   AST nodes carried no `isStandard` while every other standard attribute's did. 🔇 They now carry `isStandard: true` — a
   consumer that told standard attributes apart by that key sees two more; one that reads attributes by name sees no change.
@@ -52,15 +57,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   relative to. `ParsedFile.imports` holds `ImportDecl { path, line }` instead of the bare path.
 - **`m3l format` keeps an extend block's parent list.** `## Asset ::extend : Base` is an error (`M3L-E014`), but the
   formatter wrote the header back without `: Base`, fixing the error silently.
-
-### Added
-
-- **The parse conformance suite covers the resolver's diagnostics** — `M3L-E003`, `E005`, `E007`, `E011`–`E021` — in six
-  new inputs (`spec/conformance/inputs/`), three of them multi-file directories. `M3L-E008` is not among them.
-
-- **The validate conformance suite covers seventeen more diagnostics** — `M3L-E004`, `E006`, `E009`, `E023`–`E026`,
-  `W001`–`W003`, `W005`–`W009`, `W011`, `W012` — in six new inputs (`spec/conformance/validate/`), so an implementation
-  other than this parser can check them.
 
 ### Changed
 

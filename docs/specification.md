@@ -288,13 +288,14 @@ For multiple namespaces in a single document:
 - product_id: identifier @reference(domain.inventory.Product)
 ```
 
-> **Status: Partially implemented** — inheritance parents (`: Parent`, including an enum's) resolve by these rules:
-> a qualified name names its namespace, and a short name is looked up in the referring namespace, then the referring
-> file, then every file read, and is `M3L-E008` when declarations in more than one namespace still fit. Other
-> references (`@reference`, lookups, rollups, `::aspect` bases) still resolve by short name, so the reference
-> implementation reports a short name declared in a second namespace once, as `M3L-E008` at that declaration (never
-> also as `M3L-E005`, which is for a name declared twice in one namespace). Until that lands, keep short names unique
-> across namespaces.
+> **Status: Partially implemented** — inheritance parents (`: Parent`, including an enum's) and model references
+> (`@reference`, `@fk`, lookup hops, rollup targets, a view's `from`/`join` and `@from`) resolve by these rules: a
+> qualified name names its namespace, and a short name is looked up in the referring namespace, then the referring
+> file, then every file read (a parent that is still ambiguous is `M3L-E008` at the referring declaration). Base
+> models (`::aspect` / `::subtype`) and aliases (`@import … as`) do not yet, so the reference implementation still
+> reports a short name declared in a second namespace once, as `M3L-E008` at that declaration (never also as
+> `M3L-E005`, which is for a name declared twice in one namespace). Until that lands, keep short names unique across
+> namespaces.
 
 ### 2.2 Model Definition
 > **Status: Implemented** — Fully supported in `m3l-core` parser.

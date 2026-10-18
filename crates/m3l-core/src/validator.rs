@@ -17,8 +17,7 @@ pub fn validate(ast: &M3lAst, options: &ValidateOptions) -> ValidateResult {
         .chain(ast.views.iter())
         .chain(ast.flows.iter())
         .collect();
-    let model_map: HashMap<&str, &ModelNode> =
-        all_models.iter().map(|m| (m.name.as_str(), *m)).collect();
+    let model_map = Models::new(&all_models);
 
     // M3L-E001: @rollup FK missing @reference
     for model in &all_models {
@@ -68,7 +67,7 @@ pub fn validate(ast: &M3lAst, options: &ValidateOptions) -> ValidateResult {
             .chain(sd.joins.iter().flatten().map(|j| j.model.as_str()))
         {
             relations.push(name);
-            if !model_map.contains_key(name) {
+            if model_map.get(name, view).is_none() {
                 errors.push(Diagnostic {
                     code: "M3L-E004".into(),
                     severity: DiagnosticSeverity::Error,
@@ -90,12 +89,12 @@ pub fn validate(ast: &M3lAst, options: &ValidateOptions) -> ValidateResult {
             let Some(target) = from_argument(field) else {
                 continue;
             };
-            let Some((relation, column)) = target.split_once('.') else {
+            let Some((relation, column)) = target.rsplit_once('.') else {
                 continue;
             };
             let problem = if !relations.contains(&relation) {
                 Some(format!("\"{relation}\" is not the view's from or join"))
-            } else if let Some(model) = model_map.get(relation) {
+            } else if let Some(model) = model_map.get(relation, view) {
                 (!model.fields.iter().any(|f| f.name == column))
                     .then(|| format!("\"{relation}\" has no field \"{column}\""))
             } else {
@@ -463,12 +462,12 @@ fn validate_relation_notation_placement(model: &ModelNode, warnings: &mut Vec<Di
 
 fn validate_rollup_reference(
     field: &FieldNode,
-    _model: &ModelNode,
+    model: &ModelNode,
     rollup: &RollupDef,
-    model_map: &HashMap<&str, &ModelNode>,
+    model_map: &Models<'_>,
     errors: &mut Vec<Diagnostic>,
 ) {
-    let target_model = match model_map.get(rollup.target.as_str()) {
+    let target_model = match model_map.get(&rollup.target, model) {
         Some(m) => m,
         None => return,
     };
@@ -504,7 +503,7 @@ fn validate_lookup_reference<'a>(
     field: &FieldNode,
     model: &'a ModelNode,
     lookup: &LookupDef,
-    model_map: &HashMap<&str, &'a ModelNode>,
+    model_map: &Models<'a>,
     errors: &mut Vec<Diagnostic>,
 ) -> Option<(&'a ModelNode, &'a FieldNode)> {
     let segments: Vec<&str> = lookup.path.split('.').collect();
@@ -538,39 +537,33 @@ fn validate_lookup_reference<'a>(
             }
         };
 
-        let reference = fk_field
+        let has_reference = fk_field
             .attributes
             .iter()
-            .find(|a| a.name == "reference" || a.name == "fk");
-        let reference = match reference {
-            Some(r) => r,
-            None => {
-                let location = if hop == 0 {
-                    String::new()
-                } else {
-                    format!(" (on \"{}\")", current.name)
-                };
-                errors.push(Diagnostic {
-                    code: "M3L-E002".into(),
-                    severity: DiagnosticSeverity::Error,
-                    file: field.loc.file.clone(),
-                    line: field.loc.line,
-                    col: 1,
-                    message: format!(
-                        "@lookup on \"{}\" references FK \"{}\"{} which has no @reference or @fk attribute",
-                        field.name, fk_field_name, location
-                    ),
-                });
-                return None;
-            }
-        };
+            .any(|a| a.name == "reference" || a.name == "fk");
+        if !has_reference {
+            let location = if hop == 0 {
+                String::new()
+            } else {
+                format!(" (on \"{}\")", current.name)
+            };
+            errors.push(Diagnostic {
+                code: "M3L-E002".into(),
+                severity: DiagnosticSeverity::Error,
+                file: field.loc.file.clone(),
+                line: field.loc.line,
+                col: 1,
+                message: format!(
+                    "@lookup on \"{}\" references FK \"{}\"{} which has no @reference or @fk attribute",
+                    field.name, fk_field_name, location
+                ),
+            });
+            return None;
+        }
 
-        // `@reference(Model)` names the model; `@fk(Model.field)` names it before the dot.
-        let target = match reference.args.as_deref() {
-            Some([AttrArgValue::String(arg), ..]) => arg.split('.').next().unwrap_or(arg),
-            _ => return None,
-        };
-        current = model_map.get(target)?;
+        let target = referenced_model(fk_field)?;
+        // The reference is written on `current`'s key, so it resolves from there (§2.1.3 Rule 2).
+        current = model_map.get(target, current)?;
     }
 
     let last = segments[segments.len() - 1];
@@ -583,15 +576,59 @@ fn validate_lookup_reference<'a>(
     }
 }
 
-/// The model a key's `@reference(Model)` / `@fk(Model.field)` points at, if the field is such a key.
+/// The model a key's `@reference(Model)` / `@fk(Model.field)` points at, as written — qualified or
+/// short — if the field is such a key. `@reference` names only the model, so a dot in it is a
+/// namespace's; `@fk` names the field last.
 fn referenced_model(field: &FieldNode) -> Option<&str> {
     let reference = field
         .attributes
         .iter()
         .find(|a| a.name == "reference" || a.name == "fk")?;
     match reference.args.as_deref() {
-        Some([AttrArgValue::String(arg), ..]) => Some(arg.split('.').next().unwrap_or(arg)),
+        Some([AttrArgValue::String(arg), ..]) if reference.name == "fk" => Some(
+            arg.rsplit_once('.')
+                .map_or(arg.as_str(), |(model, _)| model),
+        ),
+        Some([AttrArgValue::String(arg), ..]) => Some(arg.as_str()),
         _ => None,
+    }
+}
+
+/// Models, views and flows found by the name a reference writes — the rules the resolver uses for
+/// parents (§2.1.3, [`crate::names::pick`]), so a qualified name names its namespace and a short one
+/// is read from the model that wrote it.
+struct Models<'a> {
+    by_name: HashMap<&'a str, Vec<&'a ModelNode>>,
+}
+
+impl<'a> Models<'a> {
+    fn new(all: &[&'a ModelNode]) -> Self {
+        let mut by_name: HashMap<&'a str, Vec<&'a ModelNode>> = HashMap::new();
+        for model in all {
+            by_name.entry(model.name.as_str()).or_default().push(model);
+        }
+        Self { by_name }
+    }
+
+    /// The declaration `written` names, read from `from` — none when it names none, or more than one
+    /// (an ambiguity the resolver reports).
+    fn get(&self, written: &str, from: &ModelNode) -> Option<&'a ModelNode> {
+        let candidates = self
+            .by_name
+            .get(crate::names::short_name(written))
+            .map(Vec::as_slice)
+            .unwrap_or_default();
+        match crate::names::pick(
+            candidates,
+            written,
+            from.namespace.as_deref(),
+            &from.source,
+            |m| m.namespace.as_deref(),
+            |m| m.source.as_str(),
+        ) {
+            crate::names::Lookup::Found(model) => Some(*model),
+            _ => None,
+        }
     }
 }
 
@@ -601,9 +638,16 @@ fn referenced_model(field: &FieldNode) -> Option<&str> {
 /// relationship that is not there.
 fn validate_relations_references(
     model: &ModelNode,
-    model_map: &HashMap<&str, &ModelNode>,
+    model_map: &Models<'_>,
     errors: &mut Vec<Diagnostic>,
 ) {
+    // Whether two names written in two places refer to one model — by declaration, not by text: a
+    // qualified and a short name can be the same model, and one short name two different ones.
+    let same = |a: &str, a_from: &ModelNode, b: &ModelNode| {
+        model_map
+            .get(a, a_from)
+            .is_some_and(|found| std::ptr::eq(found, b))
+    };
     for entry in &model.sections.relations {
         let Some(obj) = entry.as_object() else {
             continue;
@@ -629,18 +673,27 @@ fn validate_relations_references(
                 )),
                 Some(field) => match referenced_model(field) {
                     None => Some(format!("\"{key}\" has no @reference or @fk attribute")),
-                    Some(target) => text("target").filter(|t| *t != target).map(|t| {
-                        format!("the target is \"{t}\" but \"{key}\" references \"{target}\"")
-                    }),
+                    Some(target) => text("target")
+                        .filter(|t| {
+                            *t != target
+                                && !model_map
+                                    .get(target, model)
+                                    .is_some_and(|referenced| same(t, model, referenced))
+                        })
+                        .map(|t| {
+                            format!("the target is \"{t}\" but \"{key}\" references \"{target}\"")
+                        }),
                 },
             },
             (Some("from"), Some(key)) => match text("target") {
                 None => None,
-                Some(dependent) => match model_map.get(dependent) {
+                Some(dependent) => match model_map.get(dependent, model) {
                     None => None, // an undefined model is reported where models are resolved
                     Some(dep) => match dep.fields.iter().find(|f| f.name == key) {
                         None => Some(format!("\"{dependent}\" has no field \"{key}\"")),
-                        Some(field) if referenced_model(field) != Some(model.name.as_str()) => {
+                        Some(field)
+                            if !referenced_model(field).is_some_and(|r| same(r, dep, model)) =>
+                        {
                             Some(format!(
                                 "\"{dependent}.{key}\" does not reference \"{}\"",
                                 model.name
@@ -1096,7 +1149,7 @@ fn is_text_field(field: &FieldNode) -> bool {
 /// meant for one platform says so with `@computed_raw`.
 fn validate_portable_expressions(
     model: &ModelNode,
-    model_map: &HashMap<&str, &ModelNode>,
+    model_map: &Models<'_>,
     reported: &mut HashSet<(String, usize)>,
     warnings: &mut Vec<Diagnostic>,
 ) {
@@ -1155,7 +1208,7 @@ fn validate_portable_expressions(
             .and_then(|r| r.where_clause.as_ref().map(|w| (r, w)))
         {
             let (rollup, expression) = where_clause;
-            let target = model_map.get(rollup.target.as_str()).copied();
+            let target = model_map.get(&rollup.target, model);
             let constructs =
                 crate::expressions::non_portable_constructs(expression, &|name| match name
                     .strip_prefix("$parent.")
@@ -1175,15 +1228,12 @@ fn validate_portable_expressions(
 
     if let Some(source) = &model.source_def {
         if let Some(expression) = &source.where_clause {
-            let from = source
-                .from
-                .as_deref()
-                .and_then(|f| model_map.get(f).copied());
+            let from = source.from.as_deref().and_then(|f| model_map.get(f, model));
             let constructs =
                 crate::expressions::non_portable_constructs(expression, &|name| match name
-                    .split_once('.')
+                    .rsplit_once('.')
                 {
-                    Some((relation, field)) => text_in(model_map.get(relation).copied(), field),
+                    Some((relation, field)) => text_in(model_map.get(relation, model), field),
                     None => text_in(from, name),
                 });
             warn(
@@ -1207,6 +1257,53 @@ mod tests {
         let parsed = parse_string(input, "test.m3l.md");
         let ast = resolver::resolve(&[parsed], None);
         validate(&ast, &ValidateOptions::default())
+    }
+
+    fn validate_files(files: &[(&str, &str)]) -> ValidateResult {
+        let parsed: Vec<_> = files
+            .iter()
+            .map(|(source, text)| parse_string(text, source))
+            .collect();
+        let ast = resolver::resolve(&parsed, None);
+        validate(&ast, &ValidateOptions::default())
+    }
+
+    const BASE_ASSET: (&str, &str) = (
+        "base.m3l.md",
+        "# Namespace: base\n## Asset\n- id: identifier @pk\n- name: string",
+    );
+
+    #[test]
+    fn a_lookup_walks_through_a_qualified_reference() {
+        // The walk reaches base.Asset, so a field it does not have is named there — before, the
+        // qualified name was cut at its first dot and the walk stopped without a word.
+        let result = validate_files(&[
+            BASE_ASSET,
+            (
+                "app.m3l.md",
+                "# Namespace: app\n## Order\n- id: identifier @pk\n- asset_id: identifier @reference(base.Asset)\n- asset_name: string @lookup(asset_id.nope)",
+            ),
+        ]);
+        assert!(
+            result
+                .errors
+                .iter()
+                .any(|e| e.code == "M3L-E022" && e.message.contains("\"Asset\"")),
+            "{:?}",
+            result.errors
+        );
+    }
+
+    #[test]
+    fn a_lookup_through_a_qualified_fk_ends_on_the_field() {
+        let result = validate_files(&[
+            BASE_ASSET,
+            (
+                "app.m3l.md",
+                "# Namespace: app\n## Order\n- id: identifier @pk\n- asset_id: identifier @fk(base.Asset.id)\n- asset_name: string @lookup(asset_id.name)",
+            ),
+        ]);
+        assert!(result.errors.is_empty(), "{:?}", result.errors);
     }
 
     #[test]

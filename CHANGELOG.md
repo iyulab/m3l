@@ -14,6 +14,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   file, then every file read — and, when that still leaves declarations in more than one namespace, it is `M3L-E008` at
   the referring declaration, asking for the qualified name (Rule 4). Declaring the same short name in two namespaces is
   still `M3L-E008` at the second declaration until the rest of the references resolve this way.
+- **Model references resolve the same way** — `@reference(base.Asset)`, `@fk(base.Asset.id)`, a lookup hop through
+  such a key, a rollup target, and a view's `from`, `join` and `@from(base.Asset.name)` name the declaration in that
+  namespace, and a short name is read from the model that wrote it. 🔇 A qualified `@reference` used to be cut at its
+  first dot, so a lookup through it stopped without a word; now a field the target lacks is `M3L-E022`, and the
+  checks of the target's key (`M3L-E001`, `M3L-E002`, `M3L-E010`) see the right model.
 
 ## [0.24.0] - 2026-10-18
 

@@ -3,6 +3,7 @@ pub mod expressions;
 mod extend;
 pub mod ffi;
 pub mod lexer;
+mod names;
 pub mod parser;
 mod renames;
 pub mod resolver;

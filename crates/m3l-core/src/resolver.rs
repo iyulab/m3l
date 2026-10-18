@@ -634,20 +634,10 @@ impl Declared {
     }
 }
 
-/// What a name written in a reference refers to (§2.1.3).
-#[derive(Debug)]
-enum Lookup<'a> {
-    Found(&'a Declared),
-    /// More than one declaration fits a short name, and neither the referring namespace nor the
-    /// referring file picks one (Rule 4) — the namespaces, sorted.
-    Ambiguous(Vec<String>),
-    Missing,
-}
+type Lookup<'a> = crate::names::Lookup<'a, Declared>;
 
-/// Declarations of one kind, found by the name a reference writes: a qualified name
-/// (`domain.inventory.Product`) names its namespace; a short name is looked up in the referring
-/// namespace first, then the referring file, then the whole set (Rules 2 and 3), and is ambiguous
-/// when that leaves more than one (Rule 4).
+/// Declarations of one kind, found by the name a reference writes — the rules are
+/// [`crate::names::pick`]'s, shared with the validator.
 #[derive(Debug, Default)]
 struct NameIndex {
     by_name: HashMap<String, Vec<Declared>>,
@@ -662,40 +652,19 @@ impl NameIndex {
     }
 
     fn lookup(&self, written: &str, from_ns: Option<&str>, from_source: &str) -> Lookup<'_> {
-        if let Some((ns, short)) = written.rsplit_once('.') {
-            return match self
-                .by_name
-                .get(short)
-                .and_then(|all| all.iter().find(|d| d.namespace.as_deref() == Some(ns)))
-            {
-                Some(d) => Lookup::Found(d),
-                None => Lookup::Missing,
-            };
-        }
-        let Some(all) = self.by_name.get(written) else {
-            return Lookup::Missing;
-        };
-        if let [only] = all.as_slice() {
-            return Lookup::Found(only);
-        }
-        let in_namespace: Vec<&Declared> = all
-            .iter()
-            .filter(|d| d.namespace.as_deref() == from_ns)
-            .collect();
-        if let [only] = in_namespace.as_slice() {
-            return Lookup::Found(only);
-        }
-        let in_file: Vec<&Declared> = all.iter().filter(|d| d.source == from_source).collect();
-        if let [only] = in_file.as_slice() {
-            return Lookup::Found(only);
-        }
-        let mut namespaces: Vec<String> = all
-            .iter()
-            .map(|d| d.namespace.clone().unwrap_or_else(|| "(none)".to_string()))
-            .collect();
-        namespaces.sort();
-        namespaces.dedup();
-        Lookup::Ambiguous(namespaces)
+        let candidates = self
+            .by_name
+            .get(short_name(written))
+            .map(Vec::as_slice)
+            .unwrap_or_default();
+        crate::names::pick(
+            candidates,
+            written,
+            from_ns,
+            from_source,
+            |d| d.namespace.as_deref(),
+            |d| d.source.as_str(),
+        )
     }
 }
 
@@ -703,10 +672,7 @@ impl NameIndex {
 /// when no enum of that name exists.
 type ParentLookup = Result<usize, Option<Vec<String>>>;
 
-/// The short name a reference writes — the last part of a qualified name.
-fn short_name(written: &str) -> &str {
-    written.rsplit_once('.').map_or(written, |(_, short)| short)
-}
+use crate::names::short_name;
 
 /// `M3L-E005` — a name declared twice in one namespace. The same name in two different namespaces is not a
 /// duplicate (§2.1.3 Rule 1 gives each its own qualified name); that case is `M3L-E008`'s alone, so one

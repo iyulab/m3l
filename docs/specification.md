@@ -288,6 +288,11 @@ For multiple namespaces in a single document:
 - product_id: identifier @reference(domain.inventory.Product)
 ```
 
+> **Status: Partially implemented** — the reference implementation keys declarations by short name, so it cannot yet
+> hold two declarations of one short name in different namespaces: it reports the second declaration once, as
+> `M3L-E008` (never also as `M3L-E005`, which is for a name declared twice in one namespace). Until qualified
+> resolution lands, keep short names unique across namespaces.
+
 ### 2.2 Model Definition
 > **Status: Implemented** — Fully supported in `m3l-core` parser.
 
@@ -3130,10 +3135,10 @@ Conforming parsers should use these error codes for consistent diagnostics.
 | `M3L-E002` | Lookup FK `{field}` missing `@reference` | Lookup references a FK field that lacks `@reference` |
 | `M3L-E003` | Circular import detected: {chain} | Import graph contains a cycle |
 | `M3L-E004` | View references non-existent model `{model}` | View `from` or `join` targets undefined model |
-| `M3L-E005` | Duplicate {kind} name `{name}` | Same name declared more than once — models, enums, interfaces, views and flows share one namespace of names |
+| `M3L-E005` | Duplicate {kind} name `{name}` | Same name declared more than once in one namespace — models, enums, interfaces, views and flows share one set of names there. The same name in two namespaces is `M3L-E008`, not this |
 | `M3L-E006` | Duplicate field `{field}` in model `{model}` | Same field name within a model |
 | `M3L-E007` | Unresolved parent `{parent}` in inheritance | `## Child : Parent` where Parent is not defined |
-| `M3L-E008` | Ambiguous model reference `{name}` in namespaces {ns1}, {ns2} | Short name exists in multiple namespaces |
+| `M3L-E008` | Ambiguous model reference `{name}` in namespaces {ns1}, {ns2} | Short name declared in more than one namespace — reported once, at the second declaration (§2.1.3 Rule 4 status) |
 | `M3L-E009` | Undefined type `{type}` | Type not in catalog and not a known model/enum |
 | `M3L-E010` | Relationship entry `{entry}` matches no `@reference` key: {problem} | A `### Relations` entry or `@relation` (§3.2.6) that names a key the model does not have, a key with no `@reference`/`@fk`, or a target other than the one the key references — or, for a reverse entry, a key on the named model that does not reference this one. `@reference` defines the relationship; an entry only supplements one that exists |
 | `M3L-E011` | Extend target `{model}` not found | `## {model} ::extend` references a model that is not defined |

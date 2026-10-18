@@ -1,0 +1,111 @@
+{
+  "parserVersion": "0.23.0",
+  "astVersion": "1.0",
+  "project": {
+    "name": "inventory"
+  },
+  "sources": [
+    "spec/conformance/inputs/cross-namespace-name/inventory.m3l.md",
+    "spec/conformance/inputs/cross-namespace-name/sales.m3l.md"
+  ],
+  "models": [
+    {
+      "name": "Product",
+      "type": "model",
+      "source": "spec/conformance/inputs/cross-namespace-name/inventory.m3l.md",
+      "namespace": "inventory",
+      "line": 3,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/cross-namespace-name/inventory.m3l.md",
+            "line": 4,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/cross-namespace-name/inventory.m3l.md",
+        "line": 3,
+        "col": 1
+      }
+    },
+    {
+      "name": "Product",
+      "type": "model",
+      "source": "spec/conformance/inputs/cross-namespace-name/sales.m3l.md",
+      "namespace": "sales",
+      "line": 3,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/cross-namespace-name/sales.m3l.md",
+            "line": 4,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/cross-namespace-name/sales.m3l.md",
+        "line": 3,
+        "col": 1
+      }
+    }
+  ],
+  "enums": [],
+  "interfaces": [],
+  "views": [],
+  "flows": [],
+  "attributeRegistry": [],
+  "errors": [
+    {
+      "code": "M3L-E008",
+      "severity": "error",
+      "file": "spec/conformance/inputs/cross-namespace-name/sales.m3l.md",
+      "line": 3,
+      "col": 1,
+      "message": "Ambiguous model reference \"Product\" in namespaces inventory, sales — a short name must be unique across namespaces here; rename one of the declarations"
+    }
+  ],
+  "warnings": []
+}

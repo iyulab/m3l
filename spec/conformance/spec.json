@@ -193,6 +193,12 @@
       "input_dir": "inputs/name-collisions",
       "expected": "expected/name-collisions.json",
       "category": "multi"
+    },
+    {
+      "name": "cross-namespace-name",
+      "input_dir": "inputs/cross-namespace-name",
+      "expected": "expected/cross-namespace-name.json",
+      "category": "multi"
     }
   ]
 }

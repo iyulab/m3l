@@ -107,6 +107,7 @@ pub fn resolve_with(
 
     for (i, model) in all_models.iter().enumerate() {
         check_duplicate(
+            &source_ns,
             &model.name,
             "model",
             &model.source,
@@ -133,6 +134,7 @@ pub fn resolve_with(
 
     for en in all_enums.iter() {
         check_duplicate(
+            &source_ns,
             &en.name,
             "enum",
             &en.source,
@@ -154,6 +156,7 @@ pub fn resolve_with(
 
     for (i, iface) in all_interfaces.iter().enumerate() {
         check_duplicate(
+            &source_ns,
             &iface.name,
             "interface",
             &iface.source,
@@ -180,6 +183,7 @@ pub fn resolve_with(
 
     for view in &all_views {
         check_duplicate(
+            &source_ns,
             &view.name,
             "view",
             &view.source,
@@ -205,6 +209,7 @@ pub fn resolve_with(
 
     for flow in &all_flows {
         check_duplicate(
+            &source_ns,
             &flow.name,
             "flow",
             &flow.source,
@@ -234,6 +239,7 @@ pub fn resolve_with(
         }
         for ext in ext_nodes {
             check_duplicate(
+                &source_ns,
                 &ext.name,
                 "extension",
                 &ext.source,
@@ -258,7 +264,9 @@ pub fn resolve_with(
         }
     }
 
-    // E008: Ambiguous model reference — same name in multiple namespaces
+    // E008: the same short name in more than one namespace. The specification makes each namespace its own scope
+    // and an error only of a reference that cannot tell them apart (§2.1.3 Rule 4); this resolver keys declarations by
+    // short name, so it cannot yet hold two of one name — it refuses the second declaration, once, saying so.
     for (name, entries) in &name_ns_map {
         if entries.len() < 2 {
             continue;
@@ -267,10 +275,12 @@ pub fn resolve_with(
         let distinct_ns: HashSet<Option<&str>> =
             entries.iter().map(|(ns, _, _)| ns.as_deref()).collect();
         if distinct_ns.len() >= 2 {
-            let ns_list: Vec<String> = distinct_ns
+            // Sorted: the set has no order, and the message must read the same on every run.
+            let mut ns_list: Vec<String> = distinct_ns
                 .iter()
                 .map(|ns| ns.unwrap_or("(none)").to_string())
                 .collect();
+            ns_list.sort();
             let ns_display = ns_list.join(", ");
             // Report on the second occurrence
             let (_, file, line) = &entries[1];
@@ -281,7 +291,7 @@ pub fn resolve_with(
                 line: *line,
                 col: 1,
                 message: format!(
-                    "Ambiguous model reference \"{}\" in namespaces {}",
+                    "Ambiguous model reference \"{}\" in namespaces {} — a short name must be unique across namespaces here; rename one of the declarations",
                     name, ns_display
                 ),
             });
@@ -560,7 +570,11 @@ fn check_prefix_headers(files: &[ParsedFile], errors: &mut Vec<Diagnostic>) {
     }
 }
 
+/// `M3L-E005` — a name declared twice in one namespace. The same name in two different namespaces is not a
+/// duplicate (§2.1.3 Rule 1 gives each its own qualified name); that case is `M3L-E008`'s alone, so one
+/// declaration never draws both.
 fn check_duplicate(
+    source_ns: &HashMap<&str, Option<&str>>,
     name: &str,
     kind: &str,
     source: &str,
@@ -569,6 +583,10 @@ fn check_duplicate(
     errors: &mut Vec<Diagnostic>,
 ) {
     if let Some((_, existing_file, existing_line)) = all_named.get(name) {
+        let namespace_of = |file: &str| source_ns.get(file).copied().flatten();
+        if namespace_of(existing_file) != namespace_of(source) {
+            return;
+        }
         errors.push(Diagnostic {
             code: "M3L-E005".to_string(),
             severity: DiagnosticSeverity::Error,
@@ -1221,6 +1239,13 @@ mod tests {
             ast.errors.iter().any(|e| e.code == "M3L-E008"),
             "Expected E008 for same name 'Product' in different namespaces"
         );
+        // One declaration, one diagnostic: the cross-namespace name is not also a duplicate.
+        assert!(
+            !ast.errors.iter().any(|e| e.code == "M3L-E005"),
+            "E005 must not fire for the same name in different namespaces: {:?}",
+            ast.errors
+        );
+        assert_eq!(ast.errors.len(), 1, "{:?}", ast.errors);
     }
 
     #[test]

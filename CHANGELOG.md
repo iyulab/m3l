@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **The same short name in two namespaces is reported once, as `M3L-E008`.** It was reported twice — `M3L-E005`
+  ("duplicate name") and `M3L-E008` — though §2.1.3 gives each namespace its own names, so it is not a duplicate. 🔇
+  `M3L-E005` is now for a name declared twice in one namespace; the second declaration of a name already declared in
+  another namespace is `M3L-E008` alone, and its message says the short name must be unique across namespaces (the
+  resolver does not yet resolve qualified references — §2.1.3 Rule 4 now notes the status). The namespaces in the
+  message are listed in a fixed order. The parse conformance suite covers the case.
+
+### Fixed
+
 - **`@pk` and `@default` are standard attributes, as §10.8.1 lists them.** The parser's catalog missed both, so their
   AST nodes carried no `isStandard` while every other standard attribute's did. 🔇 They now carry `isStandard: true` — a
   consumer that told standard attributes apart by that key sees two more; one that reads attributes by name sees no change.

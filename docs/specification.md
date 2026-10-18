@@ -288,10 +288,13 @@ For multiple namespaces in a single document:
 - product_id: identifier @reference(domain.inventory.Product)
 ```
 
-> **Status: Partially implemented** — the reference implementation keys declarations by short name, so it cannot yet
-> hold two declarations of one short name in different namespaces: it reports the second declaration once, as
-> `M3L-E008` (never also as `M3L-E005`, which is for a name declared twice in one namespace). Until qualified
-> resolution lands, keep short names unique across namespaces.
+> **Status: Partially implemented** — inheritance parents (`: Parent`, including an enum's) resolve by these rules:
+> a qualified name names its namespace, and a short name is looked up in the referring namespace, then the referring
+> file, then every file read, and is `M3L-E008` when declarations in more than one namespace still fit. Other
+> references (`@reference`, lookups, rollups, `::aspect` bases) still resolve by short name, so the reference
+> implementation reports a short name declared in a second namespace once, as `M3L-E008` at that declaration (never
+> also as `M3L-E005`, which is for a name declared twice in one namespace). Until that lands, keep short names unique
+> across namespaces.
 
 ### 2.2 Model Definition
 > **Status: Implemented** — Fully supported in `m3l-core` parser.

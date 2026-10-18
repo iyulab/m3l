@@ -303,15 +303,41 @@ pub fn resolve_with(
         }
     }
 
-    // Resolve inheritance
+    // Resolve inheritance — a parent is a model or an interface, found by the name the header writes.
     if options.inline_inherited {
+        let namespace_of = |source: &str| -> Option<String> {
+            source_ns.get(source).copied().flatten().map(String::from)
+        };
+        let mut parents = NameIndex::default();
+        for (idx, model) in all_models.iter().enumerate() {
+            parents.add(
+                &model.name,
+                Declared {
+                    idx,
+                    namespace: namespace_of(&model.source),
+                    source: model.source.clone(),
+                    interface: false,
+                },
+            );
+        }
+        for (idx, iface) in all_interfaces.iter().enumerate() {
+            parents.add(
+                &iface.name,
+                Declared {
+                    idx,
+                    namespace: namespace_of(&iface.source),
+                    source: iface.source.clone(),
+                    interface: true,
+                },
+            );
+        }
         for i in 0..all_models.len() {
             resolve_inheritance(
                 i,
                 &mut all_models,
-                &model_map,
                 &all_interfaces,
-                &interface_map,
+                &parents,
+                &namespace_of,
                 &all_named,
                 &mut errors,
             );
@@ -323,13 +349,23 @@ pub fn resolve_with(
     // re-emit the inherited values *and* the `: Parent` header and duplicate them on every
     // round-trip — the failure this option exists to prevent, one type over.
     if options.inline_inherited {
-        let enum_map: HashMap<String, usize> = all_enums
-            .iter()
-            .enumerate()
-            .map(|(i, e)| (e.name.clone(), i))
-            .collect();
+        let namespace_of = |source: &str| -> Option<String> {
+            source_ns.get(source).copied().flatten().map(String::from)
+        };
+        let mut enum_index = NameIndex::default();
+        for (idx, en) in all_enums.iter().enumerate() {
+            enum_index.add(
+                &en.name,
+                Declared {
+                    idx,
+                    namespace: namespace_of(&en.source),
+                    source: en.source.clone(),
+                    interface: false,
+                },
+            );
+        }
         for i in 0..all_enums.len() {
-            resolve_enum_inheritance(i, &mut all_enums, &enum_map, &mut errors);
+            resolve_enum_inheritance(i, &mut all_enums, &enum_index, &namespace_of, &mut errors);
         }
     }
 
@@ -581,6 +617,97 @@ fn check_prefix_headers(files: &[ParsedFile], errors: &mut Vec<Diagnostic>) {
     }
 }
 
+/// One declaration a name can refer to: its index in its kind's list, its namespace and its file.
+#[derive(Debug, Clone)]
+struct Declared {
+    idx: usize,
+    namespace: Option<String>,
+    source: String,
+    /// For an inheritance parent: an interface rather than a model.
+    interface: bool,
+}
+
+impl Declared {
+    /// A key no other declaration of the index shares — the namespace and the index together.
+    fn key(&self) -> (Option<String>, usize, bool) {
+        (self.namespace.clone(), self.idx, self.interface)
+    }
+}
+
+/// What a name written in a reference refers to (§2.1.3).
+#[derive(Debug)]
+enum Lookup<'a> {
+    Found(&'a Declared),
+    /// More than one declaration fits a short name, and neither the referring namespace nor the
+    /// referring file picks one (Rule 4) — the namespaces, sorted.
+    Ambiguous(Vec<String>),
+    Missing,
+}
+
+/// Declarations of one kind, found by the name a reference writes: a qualified name
+/// (`domain.inventory.Product`) names its namespace; a short name is looked up in the referring
+/// namespace first, then the referring file, then the whole set (Rules 2 and 3), and is ambiguous
+/// when that leaves more than one (Rule 4).
+#[derive(Debug, Default)]
+struct NameIndex {
+    by_name: HashMap<String, Vec<Declared>>,
+}
+
+impl NameIndex {
+    fn add(&mut self, name: &str, declared: Declared) {
+        self.by_name
+            .entry(name.to_string())
+            .or_default()
+            .push(declared);
+    }
+
+    fn lookup(&self, written: &str, from_ns: Option<&str>, from_source: &str) -> Lookup<'_> {
+        if let Some((ns, short)) = written.rsplit_once('.') {
+            return match self
+                .by_name
+                .get(short)
+                .and_then(|all| all.iter().find(|d| d.namespace.as_deref() == Some(ns)))
+            {
+                Some(d) => Lookup::Found(d),
+                None => Lookup::Missing,
+            };
+        }
+        let Some(all) = self.by_name.get(written) else {
+            return Lookup::Missing;
+        };
+        if let [only] = all.as_slice() {
+            return Lookup::Found(only);
+        }
+        let in_namespace: Vec<&Declared> = all
+            .iter()
+            .filter(|d| d.namespace.as_deref() == from_ns)
+            .collect();
+        if let [only] = in_namespace.as_slice() {
+            return Lookup::Found(only);
+        }
+        let in_file: Vec<&Declared> = all.iter().filter(|d| d.source == from_source).collect();
+        if let [only] = in_file.as_slice() {
+            return Lookup::Found(only);
+        }
+        let mut namespaces: Vec<String> = all
+            .iter()
+            .map(|d| d.namespace.clone().unwrap_or_else(|| "(none)".to_string()))
+            .collect();
+        namespaces.sort();
+        namespaces.dedup();
+        Lookup::Ambiguous(namespaces)
+    }
+}
+
+/// An enum parent's index, or why it has none: the namespaces that make it ambiguous, or nothing
+/// when no enum of that name exists.
+type ParentLookup = Result<usize, Option<Vec<String>>>;
+
+/// The short name a reference writes — the last part of a qualified name.
+fn short_name(written: &str) -> &str {
+    written.rsplit_once('.').map_or(written, |(_, short)| short)
+}
+
 /// `M3L-E005` — a name declared twice in one namespace. The same name in two different namespaces is not a
 /// duplicate (§2.1.3 Rule 1 gives each its own qualified name); that case is `M3L-E008`'s alone, so one
 /// declaration never draws both.
@@ -612,13 +739,15 @@ fn check_duplicate(
     }
 }
 
-#[allow(clippy::too_many_arguments)]
+/// Copies each parent's fields into the model (§2.3), parents found by the names its header
+/// writes — qualified or short, through [`NameIndex`]. A parent's own parents are looked up from
+/// the parent's namespace and file: a name resolves where it is written (Rule 2).
 fn resolve_inheritance(
     model_idx: usize,
     all_models: &mut [ModelNode],
-    model_map: &HashMap<String, usize>,
     all_interfaces: &[ModelNode],
-    interface_map: &HashMap<String, usize>,
+    parents: &NameIndex,
+    namespace_of: &dyn Fn(&str) -> Option<String>,
     all_named: &HashMap<String, (String, String, usize)>,
     errors: &mut Vec<Diagnostic>,
 ) {
@@ -627,109 +756,114 @@ fn resolve_inheritance(
         return;
     }
 
-    let mut inherited_fields: Vec<FieldNode> = Vec::new();
-    let mut resolved: HashSet<String> = HashSet::new();
-    let mut visiting: HashSet<String> = HashSet::new();
-
     let model_source = all_models[model_idx].source.clone();
     let model_line = all_models[model_idx].line;
     let model_name = all_models[model_idx].name.clone();
 
-    fn collect_fields(
-        name: &str,
-        model_source: &str,
+    struct Walk<'a> {
+        model_source: &'a str,
         model_line: usize,
-        model_name: &str,
-        all_models: &[ModelNode],
-        model_map: &HashMap<String, usize>,
-        all_interfaces: &[ModelNode],
-        interface_map: &HashMap<String, usize>,
-        all_named: &HashMap<String, (String, String, usize)>,
-        inherited_fields: &mut Vec<FieldNode>,
-        resolved: &mut HashSet<String>,
-        visiting: &mut HashSet<String>,
-        errors: &mut Vec<Diagnostic>,
-    ) {
-        if resolved.contains(name) || visiting.contains(name) {
-            return;
-        }
-        visiting.insert(name.to_string());
+        model_name: &'a str,
+        all_models: &'a [ModelNode],
+        all_interfaces: &'a [ModelNode],
+        parents: &'a NameIndex,
+        namespace_of: &'a dyn Fn(&str) -> Option<String>,
+        all_named: &'a HashMap<String, (String, String, usize)>,
+        inherited_fields: Vec<FieldNode>,
+        resolved: HashSet<(Option<String>, usize, bool)>,
+        visiting: HashSet<(Option<String>, usize, bool)>,
+        errors: &'a mut Vec<Diagnostic>,
+    }
 
-        let parent = model_map
-            .get(name)
-            .map(|&idx| &all_models[idx])
-            .or_else(|| interface_map.get(name).map(|&idx| &all_interfaces[idx]));
-
-        match parent {
-            None => {
-                if !all_named.contains_key(name) {
-                    errors.push(Diagnostic {
-                        code: "M3L-E007".to_string(),
+    impl Walk<'_> {
+        fn collect(&mut self, written: &str, from_source: &str) {
+            let from_ns = (self.namespace_of)(from_source);
+            let parent = match self
+                .parents
+                .lookup(written, from_ns.as_deref(), from_source)
+            {
+                Lookup::Found(declared) => declared.clone(),
+                Lookup::Ambiguous(namespaces) => {
+                    self.errors.push(Diagnostic {
+                        code: "M3L-E008".to_string(),
                         severity: DiagnosticSeverity::Error,
-                        file: model_source.to_string(),
-                        line: model_line,
+                        file: self.model_source.to_string(),
+                        line: self.model_line,
                         col: 1,
                         message: format!(
-                            "Unresolved inheritance reference \"{}\" in model \"{}\"",
-                            name, model_name
+                            "Ambiguous model reference \"{}\" in namespaces {} — write the qualified name of the parent of \"{}\"",
+                            written,
+                            namespaces.join(", "),
+                            self.model_name
                         ),
                     });
+                    return;
                 }
-                visiting.remove(name);
+                Lookup::Missing => {
+                    // A name declared as something else (an enum, a view) is reported by the check that
+                    // owns that kind of reference, not as an unresolved parent.
+                    if !self.all_named.contains_key(short_name(written)) || written.contains('.') {
+                        self.errors.push(Diagnostic {
+                            code: "M3L-E007".to_string(),
+                            severity: DiagnosticSeverity::Error,
+                            file: self.model_source.to_string(),
+                            line: self.model_line,
+                            col: 1,
+                            message: format!(
+                                "Unresolved inheritance reference \"{}\" in model \"{}\"",
+                                written, self.model_name
+                            ),
+                        });
+                    }
+                    return;
+                }
+            };
+            let key = parent.key();
+            if self.resolved.contains(&key) || !self.visiting.insert(key.clone()) {
                 return;
             }
-            Some(parent_model) => {
-                // Resolve grandparents first
-                let parent_inherits = parent_model.inherits.clone();
-                for grandparent in &parent_inherits {
-                    collect_fields(
-                        grandparent,
-                        model_source,
-                        model_line,
-                        model_name,
-                        all_models,
-                        model_map,
-                        all_interfaces,
-                        interface_map,
-                        all_named,
-                        inherited_fields,
-                        resolved,
-                        visiting,
-                        errors,
-                    );
-                }
-
-                // Add parent's fields
-                let parent_fields = parent_model.fields.clone();
-                for field in &parent_fields {
-                    if !inherited_fields.iter().any(|f| f.name == field.name) {
-                        inherited_fields.push(field.clone());
-                    }
+            let node = if parent.interface {
+                &self.all_interfaces[parent.idx]
+            } else {
+                &self.all_models[parent.idx]
+            };
+            // Grandparents first, looked up from where the parent wrote them.
+            for grandparent in node.inherits.clone() {
+                self.collect(&grandparent, &parent.source);
+            }
+            let node = if parent.interface {
+                &self.all_interfaces[parent.idx]
+            } else {
+                &self.all_models[parent.idx]
+            };
+            for field in &node.fields {
+                if !self.inherited_fields.iter().any(|f| f.name == field.name) {
+                    self.inherited_fields.push(field.clone());
                 }
             }
+            self.visiting.remove(&key);
+            self.resolved.insert(key);
         }
-
-        visiting.remove(name);
-        resolved.insert(name.to_string());
     }
 
+    let mut walk = Walk {
+        model_source: &model_source,
+        model_line,
+        model_name: &model_name,
+        all_models,
+        all_interfaces,
+        parents,
+        namespace_of,
+        all_named,
+        inherited_fields: Vec::new(),
+        resolved: HashSet::new(),
+        visiting: HashSet::new(),
+        errors,
+    };
     for parent_name in &inherits {
-        collect_fields(
-            parent_name,
-            &model_source,
-            model_line,
-            &model_name,
-            all_models,
-            model_map,
-            all_interfaces,
-            interface_map,
-            all_named,
-            &mut inherited_fields,
-            &mut resolved,
-            &mut visiting,
-            errors,
-        );
+        walk.collect(parent_name, &model_source);
     }
+    let inherited_fields = walk.inherited_fields;
 
     // Handle @override
     let override_names: HashSet<String> = all_models[model_idx]
@@ -765,9 +899,19 @@ fn resolve_inheritance(
 fn resolve_enum_inheritance(
     enum_idx: usize,
     all_enums: &mut [EnumNode],
-    enum_map: &HashMap<String, usize>,
+    enum_index: &NameIndex,
+    namespace_of: &dyn Fn(&str) -> Option<String>,
     errors: &mut Vec<Diagnostic>,
 ) {
+    // A parent named by its header, looked up from the file that wrote the name (Rule 2) —
+    // its index, or the reason it has none.
+    let find = |written: &str, from_source: &str| -> ParentLookup {
+        match enum_index.lookup(written, namespace_of(from_source).as_deref(), from_source) {
+            Lookup::Found(declared) => Ok(declared.idx),
+            Lookup::Ambiguous(namespaces) => Err(Some(namespaces)),
+            Lookup::Missing => Err(None),
+        }
+    };
     let inherits = all_enums[enum_idx].inherits.clone();
     if inherits.is_empty() {
         return;
@@ -778,29 +922,42 @@ fn resolve_enum_inheritance(
     let enum_line = all_enums[enum_idx].line;
 
     let mut inherited: Vec<EnumValue> = Vec::new();
-    let mut resolved: HashSet<String> = HashSet::new();
-    let mut visiting: HashSet<String> = HashSet::new();
+    let mut resolved: HashSet<usize> = HashSet::new();
+    let mut visiting: HashSet<usize> = HashSet::new();
 
     #[allow(clippy::too_many_arguments)]
     fn collect_values(
         name: &str,
+        from_source: &str,
         enum_name: &str,
         enum_source: &str,
         enum_line: usize,
         all_enums: &[EnumNode],
-        enum_map: &HashMap<String, usize>,
+        find: &dyn Fn(&str, &str) -> ParentLookup,
         inherited: &mut Vec<EnumValue>,
-        resolved: &mut HashSet<String>,
-        visiting: &mut HashSet<String>,
+        resolved: &mut HashSet<usize>,
+        visiting: &mut HashSet<usize>,
         errors: &mut Vec<Diagnostic>,
     ) {
-        if resolved.contains(name) || visiting.contains(name) {
-            return;
-        }
-        visiting.insert(name.to_string());
-
-        match enum_map.get(name) {
-            None => {
+        let idx = match find(name, from_source) {
+            Ok(idx) => idx,
+            Err(Some(namespaces)) => {
+                errors.push(Diagnostic {
+                    code: "M3L-E008".to_string(),
+                    severity: DiagnosticSeverity::Error,
+                    file: enum_source.to_string(),
+                    line: enum_line,
+                    col: 1,
+                    message: format!(
+                        "Ambiguous enum reference \"{}\" in namespaces {} — write the qualified name of the parent of \"{}\"",
+                        name,
+                        namespaces.join(", "),
+                        enum_name
+                    ),
+                });
+                return;
+            }
+            Err(None) => {
                 errors.push(Diagnostic {
                     code: "M3L-E007".to_string(),
                     severity: DiagnosticSeverity::Error,
@@ -812,62 +969,68 @@ fn resolve_enum_inheritance(
                         name, enum_name
                     ),
                 });
+                return;
             }
-            Some(&idx) => {
-                let parent_inherits = all_enums[idx].inherits.clone();
-                for grandparent in &parent_inherits {
-                    collect_values(
-                        grandparent,
-                        enum_name,
-                        enum_source,
-                        enum_line,
-                        all_enums,
-                        enum_map,
-                        inherited,
-                        resolved,
-                        visiting,
-                        errors,
-                    );
-                }
+        };
+        if resolved.contains(&idx) || !visiting.insert(idx) {
+            return;
+        }
 
-                for value in &all_enums[idx].values {
-                    match inherited.iter().find(|v| v.name == value.name) {
-                        // The same value reached by two paths is one value — the diamond case,
-                        // kept once in the position it was first reached.
-                        Some(existing) if *existing == *value => {}
-                        // Two parents disagree about what the name means. Nothing in the source
-                        // says which label wins, and choosing by parent order would make the
-                        // enum's meaning depend on the order the parents happen to be listed in.
-                        Some(_) => errors.push(Diagnostic {
-                            code: "M3L-E020".to_string(),
-                            severity: DiagnosticSeverity::Error,
-                            file: enum_source.to_string(),
-                            line: enum_line,
-                            col: 1,
-                            message: format!(
-                                "Duplicate enum value \"{}\" in enum \"{}\": two parents declare \
+        let parent_inherits = all_enums[idx].inherits.clone();
+        let parent_source = all_enums[idx].source.clone();
+        for grandparent in &parent_inherits {
+            collect_values(
+                grandparent,
+                &parent_source,
+                enum_name,
+                enum_source,
+                enum_line,
+                all_enums,
+                find,
+                inherited,
+                resolved,
+                visiting,
+                errors,
+            );
+        }
+
+        for value in &all_enums[idx].values {
+            match inherited.iter().find(|v| v.name == value.name) {
+                // The same value reached by two paths is one value — the diamond case,
+                // kept once in the position it was first reached.
+                Some(existing) if *existing == *value => {}
+                // Two parents disagree about what the name means. Nothing in the source
+                // says which label wins, and choosing by parent order would make the
+                // enum's meaning depend on the order the parents happen to be listed in.
+                Some(_) => errors.push(Diagnostic {
+                    code: "M3L-E020".to_string(),
+                    severity: DiagnosticSeverity::Error,
+                    file: enum_source.to_string(),
+                    line: enum_line,
+                    col: 1,
+                    message: format!(
+                        "Duplicate enum value \"{}\" in enum \"{}\": two parents declare \
                                  it differently",
-                                value.name, enum_name
-                            ),
-                        }),
-                        None => inherited.push(value.clone()),
-                    }
-                }
+                        value.name, enum_name
+                    ),
+                }),
+                None => inherited.push(value.clone()),
             }
         }
 
-        visiting.remove(name);
-        resolved.insert(name.to_string());
+        visiting.remove(&idx);
+        resolved.insert(idx);
     }
 
     for parent_name in &inherits {
         collect_values(
             parent_name,
+            &enum_source,
             &enum_name,
             &enum_source,
             enum_line,
             all_enums,
-            enum_map,
+            &find,
             &mut inherited,
             &mut resolved,
             &mut visiting,
@@ -1264,6 +1427,107 @@ mod tests {
             .and_then(|attrs| attrs.iter().find(|a| a.name == "help"));
         assert!(help_attr.is_some());
         assert_eq!(help_attr.unwrap().is_registered, Some(true));
+    }
+
+    fn field_names(model: &ModelNode) -> Vec<&str> {
+        model.fields.iter().map(|f| f.name.as_str()).collect()
+    }
+
+    #[test]
+    fn a_qualified_parent_resolves_in_its_namespace() {
+        let base = parse_string(
+            "# Namespace: base\n## Stamped ::interface\n- created_at: timestamp",
+            "base.m3l.md",
+        );
+        let app = parse_string(
+            "# Namespace: app\n## Order : base.Stamped\n- id: identifier",
+            "app.m3l.md",
+        );
+        let ast = resolve(&[base, app], None);
+        assert!(ast.errors.is_empty(), "{:?}", ast.errors);
+        let order = ast.models.iter().find(|m| m.name == "Order").unwrap();
+        assert_eq!(field_names(order), vec!["created_at", "id"]);
+        // The header keeps what was written.
+        assert_eq!(order.inherits, vec!["base.Stamped".to_string()]);
+    }
+
+    #[test]
+    fn a_qualified_enum_parent_resolves_in_its_namespace() {
+        let base = parse_string(
+            "# Namespace: base\n## Level ::enum\n- low: \"Low\"",
+            "base.m3l.md",
+        );
+        let app = parse_string(
+            "# Namespace: app\n## Priority ::enum : base.Level\n- high: \"High\"",
+            "app.m3l.md",
+        );
+        let ast = resolve(&[base, app], None);
+        assert!(ast.errors.is_empty(), "{:?}", ast.errors);
+        let priority = ast.enums.iter().find(|e| e.name == "Priority").unwrap();
+        let names: Vec<&str> = priority.values.iter().map(|v| v.name.as_str()).collect();
+        assert_eq!(names, vec!["low", "high"]);
+    }
+
+    #[test]
+    fn a_qualified_parent_in_no_such_namespace_is_unresolved() {
+        let base = parse_string(
+            "# Namespace: base\n## Stamped ::interface\n- created_at: timestamp",
+            "base.m3l.md",
+        );
+        let app = parse_string(
+            "# Namespace: app\n## Order : other.Stamped\n- id: identifier",
+            "app.m3l.md",
+        );
+        let ast = resolve(&[base, app], None);
+        assert!(
+            ast.errors
+                .iter()
+                .any(|e| e.code == "M3L-E007" && e.message.contains("other.Stamped")),
+            "{:?}",
+            ast.errors
+        );
+    }
+
+    #[test]
+    fn a_short_parent_name_prefers_the_referring_namespace() {
+        let a = parse_string(
+            "# Namespace: a\n## Stamp ::interface\n- from_a: string",
+            "a.m3l.md",
+        );
+        let b = parse_string(
+            "# Namespace: b\n## Stamp ::interface\n- from_b: string\n\n## Thing : Stamp\n- id: identifier",
+            "b.m3l.md",
+        );
+        let ast = resolve(&[a, b], None);
+        let thing = ast.models.iter().find(|m| m.name == "Thing").unwrap();
+        assert_eq!(field_names(thing), vec!["from_b", "id"]);
+    }
+
+    #[test]
+    fn a_short_parent_name_two_other_namespaces_declare_is_ambiguous() {
+        let a = parse_string(
+            "# Namespace: a\n## Stamp ::interface\n- from_a: string",
+            "a.m3l.md",
+        );
+        let b = parse_string(
+            "# Namespace: b\n## Stamp ::interface\n- from_b: string",
+            "b.m3l.md",
+        );
+        let c = parse_string(
+            "# Namespace: c\n## Thing : Stamp\n- id: identifier",
+            "c.m3l.md",
+        );
+        let ast = resolve(&[a, b, c], None);
+        let ambiguous: Vec<_> = ast
+            .errors
+            .iter()
+            .filter(|e| e.code == "M3L-E008" && e.file == "c.m3l.md")
+            .collect();
+        assert_eq!(ambiguous.len(), 1, "{:?}", ast.errors);
+        assert!(ambiguous[0].message.contains("a, b"));
+        assert!(ambiguous[0].message.contains("qualified name"));
+        let thing = ast.models.iter().find(|m| m.name == "Thing").unwrap();
+        assert_eq!(field_names(thing), vec!["id"]);
     }
 
     #[test]

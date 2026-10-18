@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **A parent can be named by its qualified name (§2.1.3).** `## Order : base.Stamped` and `## Priority ::enum : base.Level`
+  inherit from the declaration in namespace `base`; a qualified name that names no declaration in that namespace is
+  `M3L-E007`. A short parent name is looked up where it is written — the referring namespace first, then the referring
+  file, then every file read — and, when that still leaves declarations in more than one namespace, it is `M3L-E008` at
+  the referring declaration, asking for the qualified name (Rule 4). Declaring the same short name in two namespaces is
+  still `M3L-E008` at the second declaration until the rest of the references resolve this way.
+
 ## [0.24.0] - 2026-10-18
 
 ### Added

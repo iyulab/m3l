@@ -237,18 +237,37 @@ fn run_diff(left_path: &Path, right_path: &Path) -> Result<String, String> {
 
     let mut lines: Vec<String> = Vec::new();
 
-    // Build name maps
-    let left_models: std::collections::HashMap<&str, &m3l_core::ModelNode> = left_ast
+    // Each declaration by the name it is shown under: its short name, or `namespace.Name` when the short name is
+    // declared in more than one namespace on either side — one namespace is one scope, so two declarations of one
+    // short name are two entries, not one replacing the other.
+    let shared: std::collections::HashSet<&str> = [&left_ast, &right_ast]
+        .iter()
+        .flat_map(|ast| {
+            let mut seen = std::collections::HashSet::new();
+            ast.models
+                .iter()
+                .chain(ast.views.iter())
+                .map(|m| m.name.as_str())
+                .chain(ast.enums.iter().map(|e| e.name.as_str()))
+                .filter(move |name| !seen.insert(*name))
+                .collect::<Vec<_>>()
+        })
+        .collect();
+    let shown = |name: &str, namespace: Option<&str>| match namespace {
+        Some(ns) if shared.contains(name) => format!("{ns}.{name}"),
+        _ => name.to_string(),
+    };
+    let left_models: std::collections::HashMap<String, &m3l_core::ModelNode> = left_ast
         .models
         .iter()
         .chain(left_ast.views.iter())
-        .map(|m| (m.name.as_str(), m))
+        .map(|m| (shown(&m.name, m.namespace.as_deref()), m))
         .collect();
-    let right_models: std::collections::HashMap<&str, &m3l_core::ModelNode> = right_ast
+    let right_models: std::collections::HashMap<String, &m3l_core::ModelNode> = right_ast
         .models
         .iter()
         .chain(right_ast.views.iter())
-        .map(|m| (m.name.as_str(), m))
+        .map(|m| (shown(&m.name, m.namespace.as_deref()), m))
         .collect();
 
     // Added models
@@ -314,15 +333,15 @@ fn run_diff(left_path: &Path, right_path: &Path) -> Result<String, String> {
     }
 
     // Enum diff
-    let left_enums: std::collections::HashMap<&str, &m3l_core::EnumNode> = left_ast
+    let left_enums: std::collections::HashMap<String, &m3l_core::EnumNode> = left_ast
         .enums
         .iter()
-        .map(|e| (e.name.as_str(), e))
+        .map(|e| (shown(&e.name, e.namespace.as_deref()), e))
         .collect();
-    let right_enums: std::collections::HashMap<&str, &m3l_core::EnumNode> = right_ast
+    let right_enums: std::collections::HashMap<String, &m3l_core::EnumNode> = right_ast
         .enums
         .iter()
-        .map(|e| (e.name.as_str(), e))
+        .map(|e| (shown(&e.name, e.namespace.as_deref()), e))
         .collect();
 
     for name in right_enums.keys() {

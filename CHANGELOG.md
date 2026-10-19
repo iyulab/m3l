@@ -32,6 +32,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `alias`, and the `target` file read that the path names (none when it names no file of the set). The key is left out
   when nothing is imported. The C# (`M3lAst.Imports`) and TypeScript (`imports?`) types have it.
 
+### Changed
+
+- **The same short name in two namespaces is two declarations (§2.1.3 Rule 1).** `## Product` in namespace `inventory`
+  and `## Product` in namespace `sales` no longer draw `M3L-E008` at the second declaration — each namespace is its own
+  scope. A reference that cannot tell them apart is `M3L-E008` where it is written: a parent, base or extend target (as
+  before), and now a `@reference`/`@fk`, a lookup hop, a rollup target or a view's `from`/`join`/`@from` — at the
+  referring declaration, once per name. A view source that fits two declarations is that `M3L-E008`, not `M3L-E004`.
+  🔇 An AST can now hold two models of one `name` — a consumer that keys models by `name` alone sees the second replace
+  the first; key by `namespace` and `name`. `m3l diff` does: a short name declared in two namespaces is shown
+  qualified (`- sales.Product.name`), any other as before.
+
 ### Fixed
 
 - **`m3l format` deleted every `@import` line.** The formatter writes the document back from the AST, which did not hold

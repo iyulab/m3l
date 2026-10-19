@@ -1,0 +1,14 @@
+{
+  "diagnostics": [
+    {
+      "code": "M3L-E008",
+      "line": 3,
+      "severity": "error"
+    },
+    {
+      "code": "M3L-E008",
+      "line": 9,
+      "severity": "error"
+    }
+  ]
+}

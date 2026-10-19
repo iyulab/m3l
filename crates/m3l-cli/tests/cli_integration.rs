@@ -782,6 +782,28 @@ fn lint_clean_fixture() {
 // Diff — dedicated fixtures
 // ══════════════════════════════════════════════════════════════
 
+/// The same short name in two namespaces is two declarations: diff keeps both, shown qualified.
+#[test]
+fn diff_keeps_one_short_name_in_two_namespaces_apart() {
+    let output = m3l_bin()
+        .args([
+            "diff",
+            "spec/conformance/validate/inputs/qualified-names",
+            "spec/conformance/inputs/cross-namespace-name",
+        ])
+        .output()
+        .expect("failed to run");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("- inventory.Product.name"),
+        "stdout: {stdout}"
+    );
+    assert!(stdout.contains("- sales.Product.name"), "stdout: {stdout}");
+    // A short name declared once is shown as it is written.
+    assert!(stdout.contains("- model Order\n"), "stdout: {stdout}");
+}
+
 #[test]
 fn diff_known_changes() {
     let output = m3l_bin()

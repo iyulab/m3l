@@ -66,6 +66,12 @@
       "input": "validate/inputs/strict-style.m3l.md",
       "expected": "validate/expected/strict-style.json",
       "strict": true
+    },
+    {
+      "name": "qualified-names",
+      "input": "validate/inputs/qualified-names",
+      "expected": "validate/expected/qualified-names.json",
+      "strict": false
     }
   ]
 }

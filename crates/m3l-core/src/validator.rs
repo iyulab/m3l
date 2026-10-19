@@ -19,6 +19,16 @@ pub fn validate(ast: &M3lAst, options: &ValidateOptions) -> ValidateResult {
         .collect();
     let model_map = Models::new(&all_models, crate::names::Aliases::of_imports(&ast.imports));
 
+    // M3L-E008: a key's `@reference`/`@fk` that more than one declaration fits (§2.1.3 Rule 4). The other checks read
+    // the target only when they need it — a key nothing looks through would otherwise never be read.
+    for model in &all_models {
+        for field in &model.fields {
+            if let Some(target) = referenced_model(field) {
+                model_map.get(target, model);
+            }
+        }
+    }
+
     // M3L-E001: @rollup FK missing @reference
     for model in &all_models {
         for field in &model.fields {
@@ -67,7 +77,7 @@ pub fn validate(ast: &M3lAst, options: &ValidateOptions) -> ValidateResult {
             .chain(sd.joins.iter().flatten().map(|j| j.model.as_str()))
         {
             relations.push(name);
-            if model_map.get(name, view).is_none() {
+            if model_map.get(name, view).is_none() && !model_map.is_ambiguous(name, view) {
                 errors.push(Diagnostic {
                     code: "M3L-E004".into(),
                     severity: DiagnosticSeverity::Error,
@@ -231,6 +241,7 @@ pub fn validate(ast: &M3lAst, options: &ValidateOptions) -> ValidateResult {
         }
     }
 
+    errors.extend(model_map.into_ambiguities());
     ValidateResult { errors, warnings }
 }
 
@@ -601,6 +612,10 @@ struct Models<'a> {
     by_name: HashMap<&'a str, Vec<&'a ModelNode>>,
     /// The aliases the files give their imports — read from the AST, as the resolver resolved them.
     aliases: crate::names::Aliases,
+    /// `M3L-E008` for each name a declaration writes that more than one declaration fits (Rule 4) — once per
+    /// declaration and name, however many checks read it.
+    ambiguous: std::cell::RefCell<Vec<Diagnostic>>,
+    reported: std::cell::RefCell<HashSet<(String, usize, String)>>,
 }
 
 impl<'a> Models<'a> {
@@ -609,7 +624,24 @@ impl<'a> Models<'a> {
         for model in all {
             by_name.entry(model.name.as_str()).or_default().push(model);
         }
-        Self { by_name, aliases }
+        Self {
+            by_name,
+            aliases,
+            ambiguous: Default::default(),
+            reported: Default::default(),
+        }
+    }
+
+    /// The `M3L-E008`s the lookups found.
+    fn into_ambiguities(self) -> Vec<Diagnostic> {
+        self.ambiguous.into_inner()
+    }
+
+    /// Whether `written`, read from `from`, names more than one declaration (already reported as `M3L-E008`).
+    fn is_ambiguous(&self, written: &str, from: &ModelNode) -> bool {
+        self.reported
+            .borrow()
+            .contains(&(from.source.clone(), from.line, written.to_string()))
     }
 
     /// The declaration `written` names, read from `from` — none when it names none, or more than one
@@ -633,7 +665,26 @@ impl<'a> Models<'a> {
             |m| m.source.as_str(),
         ) {
             crate::names::Lookup::Found(model) => Some(*model),
-            _ => None,
+            crate::names::Lookup::Ambiguous(namespaces) => {
+                let key = (from.source.clone(), from.line, written.to_string());
+                if self.reported.borrow_mut().insert(key) {
+                    self.ambiguous.borrow_mut().push(Diagnostic {
+                        code: "M3L-E008".to_string(),
+                        severity: DiagnosticSeverity::Error,
+                        file: from.source.clone(),
+                        line: from.line,
+                        col: 1,
+                        message: format!(
+                            "Ambiguous model reference \"{}\" in \"{}\" — declared in namespaces {}; write the qualified name",
+                            written,
+                            from.name,
+                            namespaces.join(", ")
+                        ),
+                    });
+                }
+                None
+            }
+            crate::names::Lookup::Missing => None,
         }
     }
 }

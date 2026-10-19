@@ -288,16 +288,13 @@ For multiple namespaces in a single document:
 - product_id: identifier @reference(domain.inventory.Product)
 ```
 
-> **Status: Partially implemented** — inheritance parents (`: Parent`, including an enum's) and model references
-> (`@reference`, `@fk`, lookup hops, rollup targets, a view's `from`/`join` and `@from`) resolve by these rules: a
-> qualified name names its namespace, and a short name is looked up in the referring namespace, then the referring
-> file, then every file read (a parent, base model or extend target that is still ambiguous is `M3L-E008` at the
-> referring declaration). So do base models (`::aspect(core.Asset)` / `::subtype`) and extend targets
-> (`## core.Asset ::extend`), and so do names qualified by an import's alias (`inventory.Product` after
-> `@import "inventory/models.m3l" as inventory`, Rule 3 — §10.6.2). The reference implementation still
-> reports a short name declared in a second namespace once, as `M3L-E008` at that declaration (never also as
-> `M3L-E005`, which is for a name declared twice in one namespace). Until that lands, keep short names unique across
-> namespaces.
+> **Status: Implemented** — inheritance parents (`: Parent`, including an enum's), model references (`@reference`,
+> `@fk`, lookup hops, rollup targets, a view's `from`/`join` and `@from`), base models (`::aspect(core.Asset)` /
+> `::subtype`) and extend targets (`## core.Asset ::extend`) resolve by these rules: a name qualified by an import's
+> alias names the declaration in the imported file (Rule 3, §10.6.2), any other qualified name its namespace, and a
+> short name is looked up in the referring namespace, then the referring file, then every file read. The same short
+> name declared in two namespaces is two declarations, not an error; a reference that still fits more than one is
+> `M3L-E008` at the referring declaration (Rule 4).
 
 ### 2.2 Model Definition
 > **Status: Implemented** — Fully supported in `m3l-core` parser.
@@ -3142,10 +3139,10 @@ Conforming parsers should use these error codes for consistent diagnostics.
 | `M3L-E002` | Lookup FK `{field}` missing `@reference` | Lookup references a FK field that lacks `@reference` |
 | `M3L-E003` | Circular import detected: {chain} | Import graph contains a cycle |
 | `M3L-E004` | View references non-existent model `{model}` | View `from` or `join` targets undefined model |
-| `M3L-E005` | Duplicate {kind} name `{name}` | Same name declared more than once in one namespace — models, enums, interfaces, views and flows share one set of names there. The same name in two namespaces is `M3L-E008`, not this |
+| `M3L-E005` | Duplicate {kind} name `{name}` | Same name declared more than once in one namespace — models, enums, interfaces, views and flows share one set of names there. The same name in two namespaces is two declarations (§2.1.3 Rule 1), not this |
 | `M3L-E006` | Duplicate field `{field}` in model `{model}` | Same field name within a model |
 | `M3L-E007` | Unresolved parent `{parent}` in inheritance | `## Child : Parent` where Parent is not defined |
-| `M3L-E008` | Ambiguous model reference `{name}` in namespaces {ns1}, {ns2} | Short name declared in more than one namespace — reported once, at the second declaration (§2.1.3 Rule 4 status) |
+| `M3L-E008` | Ambiguous model reference `{name}` — declared in namespaces {ns1}, {ns2} | A short name written as a parent, base, extend target, `@reference`/`@fk`, lookup or rollup target or view source fits declarations in more than one namespace, and neither the referring namespace nor the referring file picks one (§2.1.3 Rule 4) — at the referring declaration, once per name it writes |
 | `M3L-E009` | Undefined type `{type}` | Type not in catalog and not a known model/enum |
 | `M3L-E010` | Relationship entry `{entry}` matches no `@reference` key: {problem} | A `### Relations` entry or `@relation` (§3.2.6) that names a key the model does not have, a key with no `@reference`/`@fk`, or a target other than the one the key references — or, for a reverse entry, a key on the named model that does not reference this one. `@reference` defines the relationship; an entry only supplements one that exists |
 | `M3L-E011` | Extend target `{model}` not found | `## {model} ::extend` references a model that is not defined |

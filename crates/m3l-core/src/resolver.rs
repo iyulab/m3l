@@ -98,211 +98,68 @@ pub fn resolve_with(
         Vec::new()
     };
 
-    // Build source → namespace map for E008 ambiguity detection
+    // Each declaration's namespace, from its file.
     let source_ns: HashMap<&str, Option<&str>> = files
         .iter()
         .map(|f| (f.source.as_str(), f.namespace.as_deref()))
         .collect();
 
-    // name → Vec<(namespace, file, line)> for E008 cross-namespace ambiguity
-    let mut name_ns_map: HashMap<String, Vec<(Option<String>, String, usize)>> = HashMap::new();
-
-    // Build name maps and check duplicates
-    let mut model_map: HashMap<String, usize> = HashMap::new(); // name → index in all_models
-    let mut interface_map: HashMap<String, usize> = HashMap::new();
-    let mut all_named: HashMap<String, (String, String, usize)> = HashMap::new(); // name → (type, file, line)
-
-    for (i, model) in all_models.iter().enumerate() {
-        check_duplicate(
-            &source_ns,
-            &model.name,
-            "model",
-            &model.source,
-            model.line,
-            &all_named,
-            &mut errors,
-        );
-        model_map.insert(model.name.clone(), i);
-        all_named.insert(
-            model.name.clone(),
-            ("model".into(), model.source.clone(), model.line),
-        );
-        let ns = source_ns
-            .get(model.source.as_str())
-            .copied()
-            .flatten()
-            .map(String::from);
-        name_ns_map.entry(model.name.clone()).or_default().push((
-            ns,
-            model.source.clone(),
-            model.line,
-        ));
-    }
-
-    for en in all_enums.iter() {
-        check_duplicate(
-            &source_ns,
-            &en.name,
-            "enum",
-            &en.source,
-            en.line,
-            &all_named,
-            &mut errors,
-        );
-        all_named.insert(en.name.clone(), ("enum".into(), en.source.clone(), en.line));
-        let ns = source_ns
-            .get(en.source.as_str())
-            .copied()
-            .flatten()
-            .map(String::from);
-        name_ns_map
-            .entry(en.name.clone())
-            .or_default()
-            .push((ns, en.source.clone(), en.line));
-    }
-
-    for (i, iface) in all_interfaces.iter().enumerate() {
-        check_duplicate(
-            &source_ns,
-            &iface.name,
-            "interface",
-            &iface.source,
-            iface.line,
-            &all_named,
-            &mut errors,
-        );
-        interface_map.insert(iface.name.clone(), i);
-        all_named.insert(
-            iface.name.clone(),
-            ("interface".into(), iface.source.clone(), iface.line),
-        );
-        let ns = source_ns
-            .get(iface.source.as_str())
-            .copied()
-            .flatten()
-            .map(String::from);
-        name_ns_map.entry(iface.name.clone()).or_default().push((
-            ns,
-            iface.source.clone(),
-            iface.line,
-        ));
-    }
-
-    for view in &all_views {
-        check_duplicate(
-            &source_ns,
-            &view.name,
-            "view",
-            &view.source,
-            view.line,
-            &all_named,
-            &mut errors,
-        );
-        all_named.insert(
-            view.name.clone(),
-            ("view".into(), view.source.clone(), view.line),
-        );
-        let ns = source_ns
-            .get(view.source.as_str())
-            .copied()
-            .flatten()
-            .map(String::from);
-        name_ns_map.entry(view.name.clone()).or_default().push((
-            ns,
-            view.source.clone(),
-            view.line,
-        ));
-    }
-
-    for flow in &all_flows {
-        check_duplicate(
-            &source_ns,
-            &flow.name,
-            "flow",
-            &flow.source,
-            flow.line,
-            &all_named,
-            &mut errors,
-        );
-        all_named.insert(
-            flow.name.clone(),
-            ("flow".into(), flow.source.clone(), flow.line),
-        );
-        let ns = source_ns
-            .get(flow.source.as_str())
-            .copied()
-            .flatten()
-            .map(String::from);
-        name_ns_map.entry(flow.name.clone()).or_default().push((
-            ns,
-            flow.source.clone(),
-            flow.line,
-        ));
-    }
-
-    for (kind, ext_nodes) in &all_extensions {
-        if kind == "extend" {
-            continue;
-        }
-        for ext in ext_nodes {
-            check_duplicate(
-                &source_ns,
-                &ext.name,
-                "extension",
-                &ext.source,
-                ext.line,
-                &all_named,
-                &mut errors,
-            );
-            all_named.insert(
-                ext.name.clone(),
-                ("extension".into(), ext.source.clone(), ext.line),
-            );
-            let ns = source_ns
-                .get(ext.source.as_str())
-                .copied()
-                .flatten()
-                .map(String::from);
-            name_ns_map.entry(ext.name.clone()).or_default().push((
-                ns,
-                ext.source.clone(),
-                ext.line,
-            ));
-        }
-    }
-
-    // E008: the same short name in more than one namespace. The specification makes each namespace its own scope
-    // and an error only of a reference that cannot tell them apart (§2.1.3 Rule 4); this resolver keys declarations by
-    // short name, so it cannot yet hold two of one name — it refuses the second declaration, once, saying so.
-    for (name, entries) in &name_ns_map {
-        if entries.len() < 2 {
-            continue;
-        }
-        // Collect distinct namespaces (only if at least 2 different namespaces)
-        let distinct_ns: HashSet<Option<&str>> =
-            entries.iter().map(|(ns, _, _)| ns.as_deref()).collect();
-        if distinct_ns.len() >= 2 {
-            // Sorted: the set has no order, and the message must read the same on every run.
-            let mut ns_list: Vec<String> = distinct_ns
+    // Declarations by (namespace, name). One namespace is one scope (§2.1.3 Rule 1): a name declared twice in it is
+    // `M3L-E005`, and the same name in two namespaces is two declarations — a reference that cannot tell them apart is
+    // `M3L-E008` where it is written (Rule 4). `declared` is every short name declared as anything, so a parent name
+    // that is some other kind of declaration is left to the check that owns that kind.
+    let mut all_named: HashMap<(Option<String>, String), (&str, String, usize)> = HashMap::new();
+    let mut declared: HashSet<String> = HashSet::new();
+    let extension_nodes = all_extensions
+        .iter()
+        .filter(|(kind, _)| kind.as_str() != "extend")
+        .flat_map(|(_, nodes)| nodes.iter());
+    let declarations = all_models
+        .iter()
+        .map(|m| ("model", m.name.as_str(), m.source.as_str(), m.line))
+        .chain(
+            all_enums
                 .iter()
-                .map(|ns| ns.unwrap_or("(none)").to_string())
-                .collect();
-            ns_list.sort();
-            let ns_display = ns_list.join(", ");
-            // Report on the second occurrence
-            let (_, file, line) = &entries[1];
-            errors.push(Diagnostic {
-                code: "M3L-E008".to_string(),
-                severity: DiagnosticSeverity::Error,
-                file: file.clone(),
-                line: *line,
-                col: 1,
-                message: format!(
-                    "Ambiguous model reference \"{}\" in namespaces {} — a short name must be unique across namespaces here; rename one of the declarations",
-                    name, ns_display
-                ),
-            });
+                .map(|e| ("enum", e.name.as_str(), e.source.as_str(), e.line)),
+        )
+        .chain(
+            all_interfaces
+                .iter()
+                .map(|i| ("interface", i.name.as_str(), i.source.as_str(), i.line)),
+        )
+        .chain(
+            all_views
+                .iter()
+                .map(|v| ("view", v.name.as_str(), v.source.as_str(), v.line)),
+        )
+        .chain(
+            all_flows
+                .iter()
+                .map(|f| ("flow", f.name.as_str(), f.source.as_str(), f.line)),
+        )
+        .chain(extension_nodes.map(|x| ("extension", x.name.as_str(), x.source.as_str(), x.line)));
+    for (kind, name, source, line) in declarations {
+        let ns = source_ns.get(source).copied().flatten().map(String::from);
+        match all_named.entry((ns, name.to_string())) {
+            std::collections::hash_map::Entry::Occupied(first) => {
+                let (_, first_file, first_line) = first.get();
+                errors.push(Diagnostic {
+                    code: "M3L-E005".to_string(),
+                    severity: DiagnosticSeverity::Error,
+                    file: source.to_string(),
+                    line,
+                    col: 1,
+                    message: format!(
+                        "Duplicate {} name \"{}\" (first defined in {}:{})",
+                        kind, name, first_file, first_line
+                    ),
+                });
+            }
+            std::collections::hash_map::Entry::Vacant(slot) => {
+                slot.insert((kind, source.to_string(), line));
+            }
         }
+        declared.insert(name.to_string());
     }
 
     // Resolve inheritance — a parent is a model or an interface, found by the name the header writes.
@@ -340,7 +197,7 @@ pub fn resolve_with(
                 &all_interfaces,
                 &parents,
                 &namespace_of,
-                &all_named,
+                &declared,
                 &mut errors,
             );
         }
@@ -740,37 +597,6 @@ fn file_imports(
     (aliases, nodes)
 }
 
-/// `M3L-E005` — a name declared twice in one namespace. The same name in two different namespaces is not a
-/// duplicate (§2.1.3 Rule 1 gives each its own qualified name); that case is `M3L-E008`'s alone, so one
-/// declaration never draws both.
-fn check_duplicate(
-    source_ns: &HashMap<&str, Option<&str>>,
-    name: &str,
-    kind: &str,
-    source: &str,
-    line: usize,
-    all_named: &HashMap<String, (String, String, usize)>,
-    errors: &mut Vec<Diagnostic>,
-) {
-    if let Some((_, existing_file, existing_line)) = all_named.get(name) {
-        let namespace_of = |file: &str| source_ns.get(file).copied().flatten();
-        if namespace_of(existing_file) != namespace_of(source) {
-            return;
-        }
-        errors.push(Diagnostic {
-            code: "M3L-E005".to_string(),
-            severity: DiagnosticSeverity::Error,
-            file: source.to_string(),
-            line,
-            col: 1,
-            message: format!(
-                "Duplicate {} name \"{}\" (first defined in {}:{})",
-                kind, name, existing_file, existing_line
-            ),
-        });
-    }
-}
-
 /// Copies each parent's fields into the model (§2.3), parents found by the names its header
 /// writes — qualified or short, through [`NameIndex`]. A parent's own parents are looked up from
 /// the parent's namespace and file: a name resolves where it is written (Rule 2).
@@ -780,7 +606,7 @@ fn resolve_inheritance(
     all_interfaces: &[ModelNode],
     parents: &NameIndex,
     namespace_of: &dyn Fn(&str) -> Option<String>,
-    all_named: &HashMap<String, (String, String, usize)>,
+    declared: &HashSet<String>,
     errors: &mut Vec<Diagnostic>,
 ) {
     let inherits = all_models[model_idx].inherits.clone();
@@ -800,7 +626,7 @@ fn resolve_inheritance(
         all_interfaces: &'a [ModelNode],
         parents: &'a NameIndex,
         namespace_of: &'a dyn Fn(&str) -> Option<String>,
-        all_named: &'a HashMap<String, (String, String, usize)>,
+        declared: &'a HashSet<String>,
         inherited_fields: Vec<FieldNode>,
         resolved: HashSet<(Option<String>, usize, bool)>,
         visiting: HashSet<(Option<String>, usize, bool)>,
@@ -834,7 +660,7 @@ fn resolve_inheritance(
                 Lookup::Missing => {
                     // A name declared as something else (an enum, a view) is reported by the check that
                     // owns that kind of reference, not as an unresolved parent.
-                    if !self.all_named.contains_key(short_name(written)) || written.contains('.') {
+                    if !self.declared.contains(short_name(written)) || written.contains('.') {
                         self.errors.push(Diagnostic {
                             code: "M3L-E007".to_string(),
                             severity: DiagnosticSeverity::Error,
@@ -886,7 +712,7 @@ fn resolve_inheritance(
         all_interfaces,
         parents,
         namespace_of,
-        all_named,
+        declared,
         inherited_fields: Vec::new(),
         resolved: HashSet::new(),
         visiting: HashSet::new(),
@@ -1563,7 +1389,9 @@ mod tests {
     }
 
     #[test]
-    fn detect_ambiguous_cross_namespace_e008() {
+    fn the_same_name_in_two_namespaces_is_two_declarations() {
+        // One namespace is one scope (§2.1.3 Rule 1): neither declaration is an error. A reference that cannot tell
+        // them apart is M3L-E008 where it is written (the validator's check).
         let f1 = parse_string(
             "# Namespace: sales\n## Product\n- id: identifier",
             "sales.m3l.md",
@@ -1573,17 +1401,8 @@ mod tests {
             "inventory.m3l.md",
         );
         let ast = resolve(&[f1, f2], None);
-        assert!(
-            ast.errors.iter().any(|e| e.code == "M3L-E008"),
-            "Expected E008 for same name 'Product' in different namespaces"
-        );
-        // One declaration, one diagnostic: the cross-namespace name is not also a duplicate.
-        assert!(
-            !ast.errors.iter().any(|e| e.code == "M3L-E005"),
-            "E005 must not fire for the same name in different namespaces: {:?}",
-            ast.errors
-        );
-        assert_eq!(ast.errors.len(), 1, "{:?}", ast.errors);
+        assert!(ast.errors.is_empty(), "{:?}", ast.errors);
+        assert_eq!(ast.models.len(), 2);
     }
 
     #[test]

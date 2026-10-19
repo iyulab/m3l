@@ -293,7 +293,8 @@ For multiple namespaces in a single document:
 > qualified name names its namespace, and a short name is looked up in the referring namespace, then the referring
 > file, then every file read (a parent, base model or extend target that is still ambiguous is `M3L-E008` at the
 > referring declaration). So do base models (`::aspect(core.Asset)` / `::subtype`) and extend targets
-> (`## core.Asset ::extend`). Aliases (`@import … as`) do not yet, so the reference implementation still
+> (`## core.Asset ::extend`), and so do names qualified by an import's alias (`inventory.Product` after
+> `@import "inventory/models.m3l" as inventory`, Rule 3 — §10.6.2). The reference implementation still
 > reports a short name declared in a second namespace once, as `M3L-E008` at that declaration (never also as
 > `M3L-E005`, which is for a name declared twice in one namespace). Until that lands, keep short names unique across
 > namespaces.
@@ -3170,6 +3171,7 @@ Conforming parsers should use these error codes for consistent diagnostics.
 | `M3L-E031` | `@renamed_from` on `{element}`, which stores nothing under its name | The declaration is on a `::view` or `::flow`, on one of their fields, on a derived field without storage (`@computed` without `@persisted`, `@lookup`, `@rollup`), or on an enum value (§2.2.6). An inherited field is reported once, where it is written |
 | `M3L-E032` | `{element}`: the former name `{name}` is not a name | An argument of `@renamed_from` is empty, qualified (a rename stays within its namespace), or not an identifier — or the declaration names none (§2.2.6) |
 | `M3L-E033` | `@import "{path}"` names no file of this set | An import, resolved like the circular-import check resolves it (§10.6.1 — relative to the importing file, or to the project root; `.md` may be left off), names none of the files read together. Judged only when the files handed in are the whole set — a project or directory, or a tool's multi-file call; a file read on its own does not follow its imports |
+| `M3L-E034` | `@import "{path}" as {alias}`: the alias is already given to the import at line {line} | One file gives one alias to two imports (§10.6.2) — an alias names one file |
 
 #### 10.5.2 Warnings
 
@@ -3215,6 +3217,11 @@ Conforming parsers should use these error codes for consistent diagnostics.
 ```
 
 Without an alias, all models from the imported file are exposed directly in the current scope.
+
+A name qualified by an alias (`base.BaseModel`) names the declaration of that name in the file the import names —
+whatever namespace that file declares. The alias belongs to the importing file: another file reads the same text as a
+namespace. An alias is read before a namespace of the same text. An alias is an identifier (`[A-Za-z_][A-Za-z0-9_]*`);
+one file giving one alias to two imports is `M3L-E034`, at the second.
 
 #### 10.6.3 Circular Import Detection
 

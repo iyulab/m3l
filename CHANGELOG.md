@@ -22,6 +22,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Base models and extend targets too** — `## AssetProfile ::aspect(core.Asset)` and `## core.Asset ::extend` name the
   model in namespace `core` (a base in no such namespace is `M3L-E017`, an extend target `M3L-E011`); a short one is read
   from the declaration that writes it.
+- **Import aliases (§10.6.2).** `@import "inventory/models.m3l" as inventory` is read: `inventory.Product` written in
+  that file names the `Product` declared in the imported file, whatever its namespace — as a parent, a base model, an
+  extend target, a `@reference`, a lookup hop, a rollup target or a view's `from`/`join`/`@from`. An alias belongs to the
+  file that declares it and is read before a namespace of the same text. The specification described aliases as
+  implemented; the line was not recognised as an import at all. One file giving one alias to two imports is the new
+  `M3L-E034`.
+- **The AST carries the imports** — `imports`: for each `@import`, the importing `file`, `line`, `path` as written, its
+  `alias`, and the `target` file read that the path names (none when it names no file of the set). The key is left out
+  when nothing is imported. The C# (`M3lAst.Imports`) and TypeScript (`imports?`) types have it.
+
+### Fixed
+
+- **`m3l format` deleted every `@import` line.** The formatter writes the document back from the AST, which did not hold
+  the imports, so a formatted file lost them and named declarations it no longer read. It now writes them, alias and
+  all, after the header.
 
 ## [0.24.0] - 2026-10-18
 

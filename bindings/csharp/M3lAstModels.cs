@@ -680,11 +680,40 @@ public class M3lAst
     [JsonPropertyName("attributeRegistry")]
     public List<AttributeRegistryEntry> AttributeRegistry { get; set; } = [];
 
+    /// <summary>Every <c>@import</c> of the files read, in file then source order (empty when there are none).</summary>
+    [JsonPropertyName("imports")]
+    public List<ImportNode> Imports { get; set; } = [];
+
     [JsonPropertyName("errors")]
     public List<Diagnostic> Errors { get; set; } = [];
 
     [JsonPropertyName("warnings")]
     public List<Diagnostic> Warnings { get; set; } = [];
+}
+
+/// <summary>
+/// An <c>@import</c> as the resolver read it: where it was written, what it wrote, and the file it names.
+/// </summary>
+public class ImportNode
+{
+    /// <summary>The importing file (a <c>Sources</c> entry).</summary>
+    [JsonPropertyName("file")]
+    public string File { get; set; } = "";
+
+    [JsonPropertyName("line")]
+    public int Line { get; set; }
+
+    /// <summary>The path as written.</summary>
+    [JsonPropertyName("path")]
+    public string Path { get; set; } = "";
+
+    /// <summary><c>as &lt;alias&gt;</c> — names written <c>alias.Name</c> in the importing file name the declarations of <see cref="Target"/>.</summary>
+    [JsonPropertyName("alias")]
+    public string? Alias { get; set; }
+
+    /// <summary>The file read that the path names, or null when it names no file of the set.</summary>
+    [JsonPropertyName("target")]
+    public string? Target { get; set; }
 }
 
 // ---------------------------------------------------------------------------

@@ -254,6 +254,7 @@ mod tests {
             flows: vec![],
             extensions: std::collections::BTreeMap::new(),
             attribute_registry: vec![],
+            imports: vec![],
             errors: vec![],
             warnings: vec![],
         };

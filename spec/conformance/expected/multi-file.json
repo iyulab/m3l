@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.23.0",
+  "parserVersion": "0.24.0",
   "astVersion": "1.0",
   "project": {
     "name": "sample.multi"
@@ -2129,6 +2129,14 @@
   ],
   "flows": [],
   "attributeRegistry": [],
+  "imports": [
+    {
+      "file": "spec/conformance/inputs/multi/inventory.m3l.md",
+      "line": 3,
+      "path": "./base.m3l.md",
+      "target": "spec/conformance/inputs/multi/base.m3l.md"
+    }
+  ],
   "errors": [],
   "warnings": []
 }

@@ -68,6 +68,8 @@ pub fn resolve_with(
     let mut sources: Vec<String> = Vec::new();
 
     check_prefix_headers(files, &mut errors);
+    let (aliases, imports) = file_imports(files, options.project_root.as_deref(), &mut errors);
+    let aliases = Rc::new(aliases);
     check_extend_kind_args(files, &mut errors);
     check_unread_field_text(files, &mut warnings);
     check_unread_header_text(files, &mut warnings);
@@ -308,7 +310,7 @@ pub fn resolve_with(
         let namespace_of = |source: &str| -> Option<String> {
             source_ns.get(source).copied().flatten().map(String::from)
         };
-        let mut parents = NameIndex::default();
+        let mut parents = NameIndex::new(&aliases);
         for (idx, model) in all_models.iter().enumerate() {
             parents.add(
                 &model.name,
@@ -352,7 +354,7 @@ pub fn resolve_with(
         let namespace_of = |source: &str| -> Option<String> {
             source_ns.get(source).copied().flatten().map(String::from)
         };
-        let mut enum_index = NameIndex::default();
+        let mut enum_index = NameIndex::new(&aliases);
         for (idx, en) in all_enums.iter().enumerate() {
             enum_index.add(
                 &en.name,
@@ -373,8 +375,8 @@ pub fn resolve_with(
         check_duplicate_enum_values(en, &mut errors);
     }
 
-    crate::extend::merge_extend_blocks(&mut all_models, extend_blocks, &mut errors);
-    crate::extend::check_model_bases(&all_models, &mut errors);
+    crate::extend::merge_extend_blocks(&mut all_models, extend_blocks, &aliases, &mut errors);
+    crate::extend::check_model_bases(&all_models, &aliases, &mut errors);
 
     // Check duplicate field names
     for model in all_models
@@ -485,6 +487,7 @@ pub fn resolve_with(
         flows: all_flows,
         extensions: all_extensions,
         attribute_registry: all_attr_registry,
+        imports,
         errors,
         warnings,
     }
@@ -641,9 +644,17 @@ type Lookup<'a> = crate::names::Lookup<'a, Declared>;
 #[derive(Debug, Default)]
 struct NameIndex {
     by_name: HashMap<String, Vec<Declared>>,
+    aliases: Rc<Aliases>,
 }
 
 impl NameIndex {
+    fn new(aliases: &Rc<Aliases>) -> Self {
+        Self {
+            by_name: HashMap::new(),
+            aliases: Rc::clone(aliases),
+        }
+    }
+
     fn add(&mut self, name: &str, declared: Declared) {
         self.by_name
             .entry(name.to_string())
@@ -657,11 +668,15 @@ impl NameIndex {
             .get(short_name(written))
             .map(Vec::as_slice)
             .unwrap_or_default();
+        let from = Referrer {
+            ns: from_ns,
+            source: from_source,
+            aliases: &self.aliases,
+        };
         crate::names::pick(
             candidates,
             written,
-            from_ns,
-            from_source,
+            from,
             |d| d.namespace.as_deref(),
             |d| d.source.as_str(),
         )
@@ -672,7 +687,58 @@ impl NameIndex {
 /// when no enum of that name exists.
 type ParentLookup = Result<usize, Option<Vec<String>>>;
 
-use crate::names::short_name;
+use crate::names::{short_name, Aliases, Referrer};
+use std::rc::Rc;
+
+/// Every file's imports as AST nodes, and the aliases they give (§10.6.2) — each import resolved to the loaded file it names — the same
+/// resolution as the circular-import check and `M3L-E033`. An alias whose import names no loaded file names nothing
+/// (that import is `M3L-E033`'s when the set is complete). One file giving one alias to two imports is `M3L-E034`.
+fn file_imports(
+    files: &[ParsedFile],
+    project_root: Option<&str>,
+    errors: &mut Vec<Diagnostic>,
+) -> (Aliases, Vec<ImportNode>) {
+    let loaded: HashMap<String, &str> = files
+        .iter()
+        .map(|f| (normalize_path(&f.source), f.source.as_str()))
+        .collect();
+    let mut aliases = Aliases::default();
+    let mut nodes = Vec::new();
+    for file in files {
+        let mut seen: HashMap<&str, usize> = HashMap::new();
+        for import in &file.imports {
+            let target = import_target(&file.source, &import.path, project_root, &loaded);
+            nodes.push(ImportNode {
+                file: file.source.clone(),
+                line: import.line,
+                path: import.path.clone(),
+                alias: import.alias.clone(),
+                target: target.map(String::from),
+            });
+            let Some(alias) = import.alias.as_deref() else {
+                continue;
+            };
+            if let Some(first) = seen.insert(alias, import.line) {
+                errors.push(Diagnostic {
+                    code: "M3L-E034".to_string(),
+                    severity: DiagnosticSeverity::Error,
+                    file: file.source.clone(),
+                    line: import.line,
+                    col: 1,
+                    message: format!(
+                        "@import \"{}\" as {}: the alias \"{}\" is already given to the import at line {} — one alias names one file",
+                        import.path, alias, alias, first
+                    ),
+                });
+                continue;
+            }
+            if let Some(target) = target {
+                aliases.add(&file.source, alias, target);
+            }
+        }
+    }
+    (aliases, nodes)
+}
 
 /// `M3L-E005` — a name declared twice in one namespace. The same name in two different namespaces is not a
 /// duplicate (§2.1.3 Rule 1 gives each its own qualified name); that case is `M3L-E008`'s alone, so one

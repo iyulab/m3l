@@ -205,6 +205,12 @@
       "input_dir": "inputs/import-unmatched",
       "expected": "expected/import-unmatched.json",
       "category": "multi"
+    },
+    {
+      "name": "import-alias",
+      "input_dir": "inputs/import-alias",
+      "expected": "expected/import-alias.json",
+      "category": "multi"
     }
   ]
 }

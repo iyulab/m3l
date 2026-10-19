@@ -17,7 +17,7 @@ pub fn validate(ast: &M3lAst, options: &ValidateOptions) -> ValidateResult {
         .chain(ast.views.iter())
         .chain(ast.flows.iter())
         .collect();
-    let model_map = Models::new(&all_models);
+    let model_map = Models::new(&all_models, crate::names::Aliases::of_imports(&ast.imports));
 
     // M3L-E001: @rollup FK missing @reference
     for model in &all_models {
@@ -599,15 +599,17 @@ fn referenced_model(field: &FieldNode) -> Option<&str> {
 /// is read from the model that wrote it.
 struct Models<'a> {
     by_name: HashMap<&'a str, Vec<&'a ModelNode>>,
+    /// The aliases the files give their imports — read from the AST, as the resolver resolved them.
+    aliases: crate::names::Aliases,
 }
 
 impl<'a> Models<'a> {
-    fn new(all: &[&'a ModelNode]) -> Self {
+    fn new(all: &[&'a ModelNode], aliases: crate::names::Aliases) -> Self {
         let mut by_name: HashMap<&'a str, Vec<&'a ModelNode>> = HashMap::new();
         for model in all {
             by_name.entry(model.name.as_str()).or_default().push(model);
         }
-        Self { by_name }
+        Self { by_name, aliases }
     }
 
     /// The declaration `written` names, read from `from` — none when it names none, or more than one
@@ -618,11 +620,15 @@ impl<'a> Models<'a> {
             .get(crate::names::short_name(written))
             .map(Vec::as_slice)
             .unwrap_or_default();
+        let referrer = crate::names::Referrer {
+            ns: from.namespace.as_deref(),
+            source: &from.source,
+            aliases: &self.aliases,
+        };
         match crate::names::pick(
             candidates,
             written,
-            from.namespace.as_deref(),
-            &from.source,
+            referrer,
             |m| m.namespace.as_deref(),
             |m| m.source.as_str(),
         ) {

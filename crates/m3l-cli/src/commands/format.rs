@@ -83,6 +83,18 @@ fn format_ast(ast: &m3l_core::M3lAst) -> String {
         }
     }
 
+    // Imports, as written — the path and its alias. The AST carries them so a format does not delete them: a file
+    // that lost its imports names declarations it no longer reads.
+    if !ast.imports.is_empty() {
+        for import in &ast.imports {
+            match &import.alias {
+                Some(alias) => lines.push(format!("@import \"{}\" as {alias}", import.path)),
+                None => lines.push(format!("@import \"{}\"", import.path)),
+            }
+        }
+        lines.push(String::new());
+    }
+
     // Attribute definitions first: they are what the attributes used below refer to.
     format_attribute_registry(&mut lines, &ast.attribute_registry);
 
@@ -767,6 +779,19 @@ mod tests {
         let result = run_format(&path).expect("run_format");
         std::fs::remove_file(&path).ok();
         result
+    }
+
+    /// Imports are part of the document: a format that dropped them left the file naming
+    /// declarations it no longer reads. Both forms, in order, and the output is a fixed point.
+    #[test]
+    fn format_keeps_imports_and_their_aliases() {
+        let src = "# Namespace: domain.sales\n\n@import \"common/base.m3l\"\n@import \"inventory/models.m3l\" as inv\n\n## Order\n- id: identifier @pk\n- product_id: identifier @reference(inv.Product)\n";
+        let out = format_source(src);
+        assert!(
+            out.contains("@import \"common/base.m3l\"\n@import \"inventory/models.m3l\" as inv\n"),
+            "{out}"
+        );
+        assert_eq!(format_source(&out), out);
     }
 
     /// The formatter must reproduce the file-owner `# Prefix:` header, a

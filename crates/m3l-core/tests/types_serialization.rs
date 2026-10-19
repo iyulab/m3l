@@ -182,6 +182,7 @@ fn m3l_ast_json_keys() {
         flows: vec![],
         extensions: std::collections::BTreeMap::new(),
         attribute_registry: vec![],
+        imports: vec![],
         errors: vec![],
         warnings: vec![],
     };

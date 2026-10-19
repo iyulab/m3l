@@ -41,6 +41,7 @@ fn error(code: &str, file: &str, line: usize, message: String) -> Diagnostic {
 pub(crate) fn merge_extend_blocks(
     models: &mut [ModelNode],
     blocks: Vec<ModelNode>,
+    aliases: &crate::names::Aliases,
     errors: &mut Vec<Diagnostic>,
 ) {
     // Each model by short name, with what the lookup reads — copied, since the models are written below.
@@ -59,11 +60,15 @@ pub(crate) fn merge_extend_blocks(
             .get(crate::names::short_name(&block.name))
             .map(Vec::as_slice)
             .unwrap_or_default();
+        let from = crate::names::Referrer {
+            ns: block.namespace.as_deref(),
+            source: &block.source,
+            aliases,
+        };
         let found = crate::names::pick(
             candidates,
             &block.name,
-            block.namespace.as_deref(),
-            &block.source,
+            from,
             |c| c.1.as_deref(),
             |c| c.2.as_str(),
         );
@@ -178,7 +183,11 @@ pub(crate) fn merge_extend_blocks(
 }
 
 /// E016–E018 for every model that carries a `base`.
-pub(crate) fn check_model_bases(models: &[ModelNode], errors: &mut Vec<Diagnostic>) {
+pub(crate) fn check_model_bases(
+    models: &[ModelNode],
+    aliases: &crate::names::Aliases,
+    errors: &mut Vec<Diagnostic>,
+) {
     let mut by_name: HashMap<&str, Vec<&ModelNode>> = HashMap::new();
     for m in models {
         by_name.entry(m.name.as_str()).or_default().push(m);
@@ -202,11 +211,15 @@ pub(crate) fn check_model_bases(models: &[ModelNode], errors: &mut Vec<Diagnosti
             .get(crate::names::short_name(&base.model))
             .map(Vec::as_slice)
             .unwrap_or_default();
+        let from = crate::names::Referrer {
+            ns: model.namespace.as_deref(),
+            source: &model.source,
+            aliases,
+        };
         let found = match crate::names::pick(
             candidates,
             &base.model,
-            model.namespace.as_deref(),
-            &model.source,
+            from,
             |m| m.namespace.as_deref(),
             |m| m.source.as_str(),
         ) {

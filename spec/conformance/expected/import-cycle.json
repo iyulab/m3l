@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.23.0",
+  "parserVersion": "0.24.0",
   "astVersion": "1.0",
   "project": {},
   "sources": [
@@ -93,6 +93,20 @@
   "views": [],
   "flows": [],
   "attributeRegistry": [],
+  "imports": [
+    {
+      "file": "spec/conformance/inputs/import-cycle/a.m3l.md",
+      "line": 1,
+      "path": "./b.m3l",
+      "target": "spec/conformance/inputs/import-cycle/b.m3l.md"
+    },
+    {
+      "file": "spec/conformance/inputs/import-cycle/b.m3l.md",
+      "line": 1,
+      "path": "./a.m3l",
+      "target": "spec/conformance/inputs/import-cycle/a.m3l.md"
+    }
+  ],
   "errors": [
     {
       "code": "M3L-E003",

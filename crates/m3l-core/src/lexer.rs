@@ -53,8 +53,9 @@ static RE_NAMESPACE: LazyLock<Regex> =
 // silently dropped here.
 static RE_PREFIX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^(?i:prefix):\s*(.*?)\s*$").unwrap());
-static RE_IMPORT: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r#"^@import\s+["'](.+?)["']\s*$"#).unwrap());
+static RE_IMPORT: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r#"^@import\s+["'](.+?)["'](?:\s+as\s+([A-Za-z_][A-Za-z0-9_]*))?\s*$"#).unwrap()
+});
 static RE_ENUM_VALUE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r#"^([\w]+)(?:\(([^)]*)\))?\s+"((?:[^"\\]|\\.)*)"$"#).unwrap());
 static RE_NESTED_KV: LazyLock<Regex> =
@@ -295,6 +296,7 @@ pub fn lex(content: &str, _file: &str) -> Vec<Token> {
             let data = TokenData {
                 is_import: true,
                 import_path: Some(caps[1].to_string()),
+                import_alias: caps.get(2).map(|m| m.as_str().to_string()),
                 name: Some(trimmed.to_string()),
                 ..Default::default()
             };
@@ -1348,6 +1350,21 @@ mod tests {
         assert_eq!(tokens[0].token_type, TokenType::Text);
         assert!(tokens[0].data.is_import);
         assert_eq!(tokens[0].data.import_path.as_deref(), Some("base.m3l.md"));
+        assert_eq!(tokens[0].data.import_alias, None);
+    }
+
+    #[test]
+    fn lex_import_with_alias() {
+        let tokens = lex(
+            "@import \"inventory/models.m3l\" as inventory",
+            "test.m3l.md",
+        );
+        assert!(tokens[0].data.is_import);
+        assert_eq!(
+            tokens[0].data.import_path.as_deref(),
+            Some("inventory/models.m3l")
+        );
+        assert_eq!(tokens[0].data.import_alias.as_deref(), Some("inventory"));
     }
 
     #[test]

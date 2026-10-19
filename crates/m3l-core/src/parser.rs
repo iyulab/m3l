@@ -1463,6 +1463,7 @@ fn handle_text(token: &Token, state: &mut ParserState) {
         if let Some(ref path) = token.data.import_path {
             state.imports.push(ImportDecl {
                 path: path.clone(),
+                alias: token.data.import_alias.clone(),
                 line: token.line,
             });
         }

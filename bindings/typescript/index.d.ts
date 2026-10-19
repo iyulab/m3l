@@ -277,8 +277,23 @@ export interface M3lAst {
   interfaces: ModelNode[];
   views: ModelNode[];
   attributeRegistry: AttributeRegistryEntry[];
+  /** Every `@import` of the files read, in file then source order — absent when there are none. */
+  imports?: ImportNode[];
   errors: Diagnostic[];
   warnings: Diagnostic[];
+}
+
+/** An `@import` as the resolver read it: where it was written, what it wrote, and the file it names. */
+export interface ImportNode {
+  /** The importing file (a `sources` entry). */
+  file: string;
+  line: number;
+  /** The path as written. */
+  path: string;
+  /** `as <alias>` — names written `alias.Name` in the importing file name the declarations of `target`. */
+  alias?: string;
+  /** The file read that the path names — absent when it names no file of the set. */
+  target?: string;
 }
 
 // --- Validate result ---

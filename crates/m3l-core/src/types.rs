@@ -72,6 +72,8 @@ pub struct TokenData {
     pub is_directive: bool,
     pub is_import: bool,
     pub import_path: Option<String>,
+    /// `@import "…" as <alias>` — the name the importing file qualifies the imported declarations with.
+    pub import_alias: Option<String>,
     pub framework_attrs: Vec<String>,
     pub blockquote_desc: Option<String>,
     pub enum_value_description: Option<String>,
@@ -615,10 +617,11 @@ pub struct UnreadFieldText {
     pub file: String,
 }
 
-/// An `@import` line: the path as written, and where it was written.
+/// An `@import` line: the path as written, its alias (`as name`, §10.6.2) if any, and where it was written.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ImportDecl {
     pub path: String,
+    pub alias: Option<String>,
     pub line: usize,
 }
 
@@ -668,8 +671,28 @@ pub struct M3lAst {
     pub extensions: BTreeMap<String, Vec<ModelNode>>,
     #[serde(rename = "attributeRegistry")]
     pub attribute_registry: Vec<AttributeRegistryEntry>,
+    /// Every `@import` of the files read, in file then source order — omitted when there are none.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub imports: Vec<ImportNode>,
     pub errors: Vec<Diagnostic>,
     pub warnings: Vec<Diagnostic>,
+}
+
+/// An `@import` as the resolver read it (§5.1, §10.6): where it was written, what it wrote, and the file it names.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ImportNode {
+    /// The importing file (a `sources` entry).
+    pub file: String,
+    pub line: usize,
+    /// The path as written.
+    pub path: String,
+    /// `as <alias>` (§10.6.2) — names written `alias.Name` in the importing file name the declarations of `target`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub alias: Option<String>,
+    /// The file read that the path names (§10.6.1 — relative to the importing file, or the project root), or none when
+    /// it names no file of the set.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
 }
 
 #[derive(Debug, Clone, Default)]

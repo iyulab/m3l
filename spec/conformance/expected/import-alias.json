@@ -1,0 +1,294 @@
+{
+  "parserVersion": "0.24.0",
+  "astVersion": "1.0",
+  "project": {
+    "name": "domain.inventory"
+  },
+  "sources": [
+    "spec/conformance/inputs/import-alias/inventory.m3l.md",
+    "spec/conformance/inputs/import-alias/orders.m3l.md"
+  ],
+  "models": [
+    {
+      "name": "Product",
+      "type": "model",
+      "source": "spec/conformance/inputs/import-alias/inventory.m3l.md",
+      "namespace": "domain.inventory",
+      "line": 6,
+      "inherits": [
+        "Stamped"
+      ],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "now()",
+          "default_value_type": "expression",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/import-alias/inventory.m3l.md",
+            "line": 4,
+            "col": 1
+          }
+        },
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/import-alias/inventory.m3l.md",
+            "line": 7,
+            "col": 1
+          }
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "params": [
+            100.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/import-alias/inventory.m3l.md",
+            "line": 8,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/import-alias/inventory.m3l.md",
+        "line": 6,
+        "col": 1
+      }
+    },
+    {
+      "name": "Order",
+      "type": "model",
+      "source": "spec/conformance/inputs/import-alias/orders.m3l.md",
+      "namespace": "domain.sales",
+      "line": 5,
+      "inherits": [
+        "inv.Stamped"
+      ],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "now()",
+          "default_value_type": "expression",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/import-alias/inventory.m3l.md",
+            "line": 4,
+            "col": 1
+          }
+        },
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/import-alias/orders.m3l.md",
+            "line": 6,
+            "col": 1
+          }
+        },
+        {
+          "name": "product_id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "reference",
+              "args": [
+                "inv.Product"
+              ],
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/import-alias/orders.m3l.md",
+            "line": 7,
+            "col": 1
+          }
+        },
+        {
+          "name": "product_name",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "lookup",
+          "attributes": [
+            {
+              "name": "lookup",
+              "args": [
+                "product_id.name"
+              ],
+              "isStandard": true
+            }
+          ],
+          "lookup": {
+            "path": "product_id.name"
+          },
+          "loc": {
+            "file": "spec/conformance/inputs/import-alias/orders.m3l.md",
+            "line": 8,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/import-alias/orders.m3l.md",
+        "line": 5,
+        "col": 1
+      }
+    },
+    {
+      "name": "ProductSalesProfile",
+      "type": "model",
+      "source": "spec/conformance/inputs/import-alias/orders.m3l.md",
+      "namespace": "domain.sales",
+      "base": {
+        "kind": "aspect",
+        "model": "inv.Product"
+      },
+      "line": 10,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "margin",
+          "type": "decimal",
+          "params": [
+            5.0,
+            2.0
+          ],
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/import-alias/orders.m3l.md",
+            "line": 11,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/import-alias/orders.m3l.md",
+        "line": 10,
+        "col": 1
+      }
+    }
+  ],
+  "enums": [],
+  "interfaces": [
+    {
+      "name": "Stamped",
+      "type": "interface",
+      "source": "spec/conformance/inputs/import-alias/inventory.m3l.md",
+      "namespace": "domain.inventory",
+      "line": 3,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "now()",
+          "default_value_type": "expression",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/import-alias/inventory.m3l.md",
+            "line": 4,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/import-alias/inventory.m3l.md",
+        "line": 3,
+        "col": 1
+      }
+    }
+  ],
+  "views": [],
+  "flows": [],
+  "attributeRegistry": [],
+  "imports": [
+    {
+      "file": "spec/conformance/inputs/import-alias/orders.m3l.md",
+      "line": 3,
+      "path": "./inventory.m3l",
+      "alias": "inv",
+      "target": "spec/conformance/inputs/import-alias/inventory.m3l.md"
+    }
+  ],
+  "errors": [],
+  "warnings": []
+}

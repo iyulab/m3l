@@ -165,6 +165,8 @@ export interface FieldNode {
 // --- View types ---
 
 export interface JoinDef {
+  /** `inner` for `join:`, `left` for `left_join:` — a left join keeps every row of what came before and leaves this relation's columns null where nothing matches. */
+  kind: "inner" | "left";
   model: string;
   /** The qualifiedName of the declaration `model` names — absent when it names none. */
   qualifiedName?: string;

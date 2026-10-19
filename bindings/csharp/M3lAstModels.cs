@@ -364,6 +364,10 @@ public class FieldNode
 /// </summary>
 public class JoinDef
 {
+    /// <summary><c>inner</c> for <c>join:</c>, <c>left</c> for <c>left_join:</c> — a left join keeps every row of what came before and leaves this relation's columns null where nothing matches.</summary>
+    [JsonPropertyName("kind")]
+    public string Kind { get; set; } = "inner";
+
     [JsonPropertyName("model")]
     public string Model { get; set; } = "";
     /// <summary>The qualifiedName of the declaration this names, as the resolver resolved it; null when it names none.</summary>

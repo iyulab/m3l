@@ -95,6 +95,13 @@ pub fn validate(ast: &M3lAst, options: &ValidateOptions) -> ValidateResult {
             continue;
         };
         let mut relations: Vec<&str> = Vec::new();
+        let left_joined: Vec<&str> = sd
+            .joins
+            .iter()
+            .flatten()
+            .filter(|j| j.kind == JoinKind::Left)
+            .map(|j| j.model.as_str())
+            .collect();
         for name in sd
             .from
             .iter()
@@ -135,6 +142,21 @@ pub fn validate(ast: &M3lAst, options: &ValidateOptions) -> ValidateResult {
             } else {
                 None // undefined relation: already E004
             };
+            // M3L-E036: a column read through a `left_join:` is null wherever the join finds no row, so a field
+            // projecting it says so with `?`.
+            if problem.is_none() && left_joined.contains(&relation) && !field.nullable {
+                errors.push(Diagnostic {
+                    code: "M3L-E036".into(),
+                    severity: DiagnosticSeverity::Error,
+                    file: field.loc.file.clone(),
+                    line: field.loc.line,
+                    col: field.loc.col,
+                    message: format!(
+                        "View \"{}\" field \"{}\": @from({target}) reads a left_join, so the field must be nullable (write `?`)",
+                        view.name, field.name
+                    ),
+                });
+            }
             if let Some(problem) = problem {
                 errors.push(Diagnostic {
                     code: "M3L-E025".into(),

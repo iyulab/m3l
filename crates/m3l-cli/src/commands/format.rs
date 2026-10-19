@@ -280,7 +280,11 @@ fn format_view(lines: &mut Vec<String>, view: &m3l_core::ModelNode) {
             lines.push(format!("- from: {}", directive_value(from)));
         }
         for join in source.joins.iter().flatten() {
-            lines.push(format!("- join: \"{} on {}\"", join.model, join.on));
+            let directive = match join.kind {
+                m3l_core::JoinKind::Inner => "join",
+                m3l_core::JoinKind::Left => "left_join",
+            };
+            lines.push(format!("- {directive}: \"{} on {}\"", join.model, join.on));
         }
         if let Some(ref w) = source.where_clause {
             lines.push(format!("- where: \"{w}\""));

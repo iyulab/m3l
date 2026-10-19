@@ -1,0 +1,9 @@
+{
+  "diagnostics": [
+    {
+      "code": "M3L-E036",
+      "line": 15,
+      "severity": "error"
+    }
+  ]
+}

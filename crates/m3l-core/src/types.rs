@@ -390,8 +390,21 @@ impl<'de> Deserialize<'de> for ModelType {
     }
 }
 
+/// How a view source joins a relation (§4.7.1): `join:` keeps only the rows that match, `left_join:` keeps every
+/// row of what came before and leaves the joined relation's columns null where nothing matches.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum JoinKind {
+    #[default]
+    Inner,
+    Left,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct JoinDef {
+    /// `inner` for `join:`, `left` for `left_join:`. Always written; read as `inner` when absent.
+    #[serde(default)]
+    pub kind: JoinKind,
     pub model: String,
     /// The `qualifiedName` of the declaration it names, as the resolver resolved it (§2.1.3) — absent when it names none.
     #[serde(

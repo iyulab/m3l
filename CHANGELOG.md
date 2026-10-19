@@ -48,6 +48,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   and a lookup hop, so a lookup a model inherits is checked through the model it names where it was written (it was
   read from the inheriting model's namespace, which could land on another model of that name). The C# and TypeScript
   types carry the new keys.
+- **Left joins in a view source (§4.7.1).** `- left_join: Customer on Order.customer_id = Customer.id` keeps every row
+  of what came before and leaves the joined relation's columns null where nothing matches; `- join:` is now stated to
+  be an inner join, which is what it always produced. Each join in the AST carries `kind` (`"inner"` or `"left"`).
+  🔇 Every expected AST with a join gains `"kind": "inner"`; a consumer reading an older AST without the key reads it
+  as `inner`. A field that projects a column of a left-joined relation must be nullable — declared without `?` it is the
+  new error `M3L-E036`. `m3l format` writes the directive back as it was written. The C# and TypeScript types carry
+  `kind`.
 
 ### Changed
 

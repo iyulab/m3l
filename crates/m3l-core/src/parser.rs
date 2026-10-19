@@ -2205,7 +2205,7 @@ fn split_computed_raw_args(raw: &str) -> (String, Option<String>) {
 fn is_source_directive(name: &str) -> bool {
     matches!(
         name,
-        "from" | "where" | "where_raw" | "order_by" | "group_by" | "join"
+        "from" | "where" | "where_raw" | "order_by" | "group_by" | "join" | "left_join"
     )
 }
 
@@ -2227,9 +2227,14 @@ fn set_source_directive(def: &mut ViewSourceDef, data: &TokenData, raw: &str) {
         }
         "order_by" => def.order_by = Some(value),
         "group_by" => def.group_by = Some(parse_array_value(&value)),
-        "join" => {
+        "join" | "left_join" => {
+            let kind = if name == "join" {
+                JoinKind::Inner
+            } else {
+                JoinKind::Left
+            };
             let joins = def.joins.get_or_insert_with(Vec::new);
-            joins.push(parse_join_value(&value));
+            joins.push(parse_join_value(&value, kind));
         }
         _ => {}
     }
@@ -2259,9 +2264,10 @@ fn source_directive_value(data: &TokenData, raw: &str) -> String {
     without_comment.trim().to_string()
 }
 
-fn parse_join_value(value: &str) -> JoinDef {
+fn parse_join_value(value: &str, kind: JoinKind) -> JoinDef {
     let parts: Vec<&str> = value.splitn(2, " on ").collect();
     JoinDef {
+        kind,
         qualified_name: None,
         model: parts
             .first()

@@ -1979,6 +1979,7 @@
         "fromQualifiedName": "sample.multi.inventory.StockItem",
         "joins": [
           {
+            "kind": "inner",
             "model": "Item",
             "qualifiedName": "sample.multi.inventory.Item",
             "on": "StockItem.item_id = Item.id"
@@ -2149,6 +2150,7 @@
         "fromQualifiedName": "sample.multi.inventory.StockItem",
         "joins": [
           {
+            "kind": "inner",
             "model": "Warehouse",
             "qualifiedName": "sample.multi.inventory.Warehouse",
             "on": "StockItem.warehouse_id = Warehouse.id"

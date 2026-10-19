@@ -39,6 +39,12 @@
       "category": "unit"
     },
     {
+      "name": "view-left-join",
+      "input": "inputs/view-left-join.m3l.md",
+      "expected": "expected/view-left-join.json",
+      "category": "unit"
+    },
+    {
       "name": "computed-field",
       "input": "inputs/computed-field.m3l.md",
       "expected": "expected/computed-field.json",

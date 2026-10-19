@@ -2001,7 +2001,8 @@ Derived Views are virtual models composed from multiple models. They correspond 
 
 ### Source
 - from: PrimaryModel
-- join: TargetModel on JoinCondition   # optional
+- join: TargetModel on JoinCondition   # optional — inner join
+- left_join: TargetModel on JoinCondition   # optional — left outer join
 - where: "filter condition"             # optional — portable expression (§10.7)
 - where_raw: "filter" platform: name    # optional, once per platform (§10.7.5)
 - order_by: field direction             # optional
@@ -2016,6 +2017,13 @@ Components:
 - `::view` — Declares this model as a derived view, not a stored table
 - `### Source` — Data source definition section, following the same H3 section pattern as `### Indexes`, `### Relations`, and `### Metadata`
 - `@from(Model.field)` — Maps a field from the source model
+- `join:` / `left_join:` — How a relation is joined. `join:` is an **inner** join: a row of what came before
+  appears only when the condition finds a row of the joined relation. `left_join:` is a **left outer** join: every
+  row of what came before appears once per match, or once with the joined relation's columns null when nothing
+  matches. Joins apply in the order they are written. The AST records each as `{ "kind": "inner" | "left", "model",
+  "on" }`.
+- A field that projects a column of a `left_join:` relation is **nullable** — `customer_name: string? @from(Customer.name)`.
+  Declaring it without `?` is error `M3L-E036`: the type would promise a value the view cannot always give.
 
 A view header takes attributes the way a model header does — `## ViewName ::view @internal` — and they reach the AST as
 the view's `attributes`. `@materialized` (§4.7.5) is the one the language reads itself; it is reported as the view's
@@ -2064,6 +2072,23 @@ the view's `attributes`. `@materialized` (§4.7.5) is the one the language reads
 - unit_price: decimal(10,2) @from(OrderItem.unit_price)
 - subtotal: decimal(12,2) @from(OrderItem.subtotal)
 ```
+
+A relation that may have no matching row — an optional reference, or a one-to-one extension a row may lack — is
+joined with `left_join:`, and the fields it gives are nullable:
+
+```markdown
+## OrderWithCustomer ::view
+> Every order, with its customer where it has one
+
+### Source
+- from: Order
+- left_join: Customer on Order.customer_id = Customer.id
+
+- order_number: string @from(Order.order_number)
+- customer_name: string? @from(Customer.name)
+```
+
+With `join:` here, an order without a customer would not appear in the view at all.
 
 #### 4.7.4 Aggregate View
 
@@ -2981,7 +3006,7 @@ SectionName    ← 'Source' / 'Indexes' / 'Relations' / 'Metadata' / 'Behaviors'
                / 'Validations' / 'PrimaryKey' / 'Refresh' / 'Version' / 'Migration' _ FreeText
 
 SourceSection  ← '### Source' NL SourceDirective+ FieldDef*
-SourceDirective← '- ' ('from' / 'join' / 'where' / 'order_by' / 'group_by') ':' _ FreeText NL
+SourceDirective← '- ' ('from' / 'left_join' / 'join' / 'where' / 'order_by' / 'group_by') ':' _ FreeText NL
 
 EnumValue      ← '- ' Identifier ':' _ QuotedString NL
                / '- ' Identifier ':' _ TypeExpr _ '=' _ Expression _ QuotedString? NL
@@ -3180,6 +3205,7 @@ Conforming parsers should use these error codes for consistent diagnostics.
 | `M3L-E033` | `@import "{path}"` names no file of this set | An import, resolved like the circular-import check resolves it (§10.6.1 — relative to the importing file, or to the project root; `.md` may be left off), names none of the files read together. Judged only when the files handed in are the whole set — a project or directory, or a tool's multi-file call; a file read on its own does not follow its imports |
 | `M3L-E034` | `@import "{path}" as {alias}`: the alias is already given to the import at line {line} | One file gives one alias to two imports (§10.6.2) — an alias names one file |
 | `M3L-E035` | Field `{field}` in `{model}`: the key's target `{target}` names no model | A `@reference(Model)` or `@fk(Model.field)` names no model, view or flow of the files read (§2.1.3) — the key's counterpart of `M3L-E004` (a view source), `M3L-E007` (a parent) and `M3L-E011` (an extend target). A target that fits more than one is `M3L-E008`; one with a scheme (`external://…`, §5.2) is not judged. At the field's line, once where a copied field was written |
+| `M3L-E036` | View `{view}` field `{field}`: `@from({target})` reads a left_join, so the field must be nullable | A view field projects a column of a relation its source joins with `left_join:` (§4.7.1) and is declared without `?` — where the join finds no row the column is null. At the field's line |
 
 #### 10.5.2 Warnings
 

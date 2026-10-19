@@ -78,6 +78,12 @@
       "input": "validate/inputs/key-targets.m3l.md",
       "expected": "validate/expected/key-targets.json",
       "strict": false
+    },
+    {
+      "name": "view-left-join",
+      "input": "validate/inputs/view-left-join.m3l.md",
+      "expected": "validate/expected/view-left-join.json",
+      "strict": false
     }
   ]
 }

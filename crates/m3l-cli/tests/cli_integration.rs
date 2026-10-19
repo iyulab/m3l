@@ -1052,6 +1052,53 @@ fn format_idempotent() {
 }
 
 #[test]
+fn format_keeps_the_join_kind() {
+    // `join:` and `left_join:` mean different rows; a formatter that wrote both as `join:` would change
+    // what the view returns without a word.
+    let input = "spec/conformance/inputs/view-left-join.m3l.md";
+    let joins_of = |path: &str| -> Vec<serde_json::Value> {
+        let out = m3l_bin()
+            .args(["parse", path])
+            .output()
+            .expect("failed to run");
+        assert!(out.status.success(), "parse failed: {path}");
+        let ast: serde_json::Value =
+            serde_json::from_str(&String::from_utf8_lossy(&out.stdout)).expect("invalid JSON");
+        ast["views"]
+            .as_array()
+            .expect("views")
+            .iter()
+            .flat_map(|v| {
+                v["source_def"]["joins"]
+                    .as_array()
+                    .cloned()
+                    .unwrap_or_default()
+                    .into_iter()
+                    .map(|j| serde_json::json!([j["kind"], j["model"], j["on"]]))
+            })
+            .collect()
+    };
+    let before = joins_of(input);
+    assert_eq!(
+        before
+            .iter()
+            .map(|j| j[0].as_str().unwrap())
+            .collect::<Vec<_>>(),
+        ["left", "left", "inner"]
+    );
+
+    let formatted = m3l_bin()
+        .args(["format", input])
+        .output()
+        .expect("failed to run");
+    assert!(formatted.status.success(), "format failed");
+    let tmp = std::env::temp_dir().join("m3l-format-join-kind.m3l.md");
+    std::fs::write(&tmp, &formatted.stdout).expect("write tmp");
+
+    assert_eq!(joins_of(tmp.to_str().unwrap()), before);
+}
+
+#[test]
 fn format_preserves_ast() {
     // parse(input) should produce same models/enums as parse(format(input))
     // We compare structural content (field names, types, counts) rather than

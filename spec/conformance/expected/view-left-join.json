@@ -1,0 +1,454 @@
+{
+  "parserVersion": "0.24.0",
+  "astVersion": "1.0",
+  "project": {
+    "name": "sample.views"
+  },
+  "sources": [
+    "spec/conformance/inputs/view-left-join.m3l.md"
+  ],
+  "models": [
+    {
+      "name": "Customer",
+      "qualifiedName": "sample.views.Customer",
+      "type": "model",
+      "source": "spec/conformance/inputs/view-left-join.m3l.md",
+      "namespace": "sample.views",
+      "line": 3,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/view-left-join.m3l.md",
+            "line": 4,
+            "col": 1
+          }
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "params": [
+            100.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/view-left-join.m3l.md",
+            "line": 5,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/view-left-join.m3l.md",
+        "line": 3,
+        "col": 1
+      }
+    },
+    {
+      "name": "Order",
+      "qualifiedName": "sample.views.Order",
+      "type": "model",
+      "source": "spec/conformance/inputs/view-left-join.m3l.md",
+      "namespace": "sample.views",
+      "line": 7,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/view-left-join.m3l.md",
+            "line": 8,
+            "col": 1
+          }
+        },
+        {
+          "name": "customer_id",
+          "type": "identifier",
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "reference",
+              "args": [
+                "Customer"
+              ],
+              "isStandard": true
+            }
+          ],
+          "referenceQualifiedName": "sample.views.Customer",
+          "loc": {
+            "file": "spec/conformance/inputs/view-left-join.m3l.md",
+            "line": 9,
+            "col": 1
+          }
+        },
+        {
+          "name": "total",
+          "type": "decimal",
+          "params": [
+            12.0,
+            2.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/view-left-join.m3l.md",
+            "line": 10,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/view-left-join.m3l.md",
+        "line": 7,
+        "col": 1
+      }
+    },
+    {
+      "name": "CustomerProfile",
+      "qualifiedName": "sample.views.CustomerProfile",
+      "type": "model",
+      "source": "spec/conformance/inputs/view-left-join.m3l.md",
+      "namespace": "sample.views",
+      "line": 12,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "customer_id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk",
+              "isStandard": true
+            },
+            {
+              "name": "reference",
+              "args": [
+                "Customer"
+              ],
+              "isStandard": true
+            }
+          ],
+          "referenceQualifiedName": "sample.views.Customer",
+          "loc": {
+            "file": "spec/conformance/inputs/view-left-join.m3l.md",
+            "line": 13,
+            "col": 1
+          }
+        },
+        {
+          "name": "tier",
+          "type": "string",
+          "params": [
+            20.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/view-left-join.m3l.md",
+            "line": 14,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/view-left-join.m3l.md",
+        "line": 12,
+        "col": 1
+      }
+    }
+  ],
+  "enums": [],
+  "interfaces": [],
+  "views": [
+    {
+      "name": "OrderSummary",
+      "qualifiedName": "sample.views.OrderSummary",
+      "type": "view",
+      "source": "spec/conformance/inputs/view-left-join.m3l.md",
+      "namespace": "sample.views",
+      "line": 16,
+      "inherits": [],
+      "description": "Every order, with its customer where it has one",
+      "attributes": [],
+      "fields": [
+        {
+          "name": "order_id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "from",
+              "args": [
+                "Order.id"
+              ],
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/view-left-join.m3l.md",
+            "line": 24,
+            "col": 1
+          }
+        },
+        {
+          "name": "total",
+          "type": "decimal",
+          "params": [
+            12.0,
+            2.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "from",
+              "args": [
+                "Order.total"
+              ],
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/view-left-join.m3l.md",
+            "line": 25,
+            "col": 1
+          }
+        },
+        {
+          "name": "customer_name",
+          "type": "string",
+          "params": [
+            100.0
+          ],
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "from",
+              "args": [
+                "Customer.name"
+              ],
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/view-left-join.m3l.md",
+            "line": 26,
+            "col": 1
+          }
+        },
+        {
+          "name": "tier",
+          "type": "string",
+          "params": [
+            20.0
+          ],
+          "nullable": true,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "from",
+              "args": [
+                "CustomerProfile.tier"
+              ],
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/view-left-join.m3l.md",
+            "line": 27,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "materialized": false,
+      "source_def": {
+        "from": "Order",
+        "fromQualifiedName": "sample.views.Order",
+        "joins": [
+          {
+            "kind": "left",
+            "model": "Customer",
+            "qualifiedName": "sample.views.Customer",
+            "on": "Order.customer_id = Customer.id"
+          },
+          {
+            "kind": "left",
+            "model": "CustomerProfile",
+            "qualifiedName": "sample.views.CustomerProfile",
+            "on": "Customer.id = CustomerProfile.customer_id"
+          }
+        ]
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/view-left-join.m3l.md",
+        "line": 16,
+        "col": 1
+      }
+    },
+    {
+      "name": "PaidOrder",
+      "qualifiedName": "sample.views.PaidOrder",
+      "type": "view",
+      "source": "spec/conformance/inputs/view-left-join.m3l.md",
+      "namespace": "sample.views",
+      "line": 29,
+      "inherits": [],
+      "description": "Only orders that have a customer",
+      "attributes": [],
+      "fields": [
+        {
+          "name": "order_id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "from",
+              "args": [
+                "Order.id"
+              ],
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/view-left-join.m3l.md",
+            "line": 36,
+            "col": 1
+          }
+        },
+        {
+          "name": "customer_name",
+          "type": "string",
+          "params": [
+            100.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "from",
+              "args": [
+                "Customer.name"
+              ],
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/view-left-join.m3l.md",
+            "line": 37,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "materialized": false,
+      "source_def": {
+        "from": "Order",
+        "fromQualifiedName": "sample.views.Order",
+        "joins": [
+          {
+            "kind": "inner",
+            "model": "Customer",
+            "qualifiedName": "sample.views.Customer",
+            "on": "Order.customer_id = Customer.id"
+          }
+        ]
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/view-left-join.m3l.md",
+        "line": 29,
+        "col": 1
+      }
+    }
+  ],
+  "flows": [],
+  "attributeRegistry": [],
+  "errors": [],
+  "warnings": []
+}

@@ -9,6 +9,7 @@
   "models": [
     {
       "name": "First",
+      "qualifiedName": "First",
       "type": "model",
       "source": "spec/conformance/inputs/import-cycle/a.m3l.md",
       "line": 3,
@@ -49,6 +50,7 @@
     },
     {
       "name": "Second",
+      "qualifiedName": "Second",
       "type": "model",
       "source": "spec/conformance/inputs/import-cycle/b.m3l.md",
       "line": 3,

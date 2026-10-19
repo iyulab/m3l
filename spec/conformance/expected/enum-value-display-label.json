@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.23.0",
+  "parserVersion": "0.24.0",
   "astVersion": "1.0",
   "project": {},
   "sources": [
@@ -8,6 +8,7 @@
   "models": [
     {
       "name": "Ticket",
+      "qualifiedName": "Ticket",
       "type": "model",
       "source": "spec/conformance/inputs/enum-value-display-label.m3l.md",
       "line": 7,
@@ -79,6 +80,7 @@
   "enums": [
     {
       "name": "TicketState",
+      "qualifiedName": "TicketState",
       "type": "enum",
       "source": "spec/conformance/inputs/enum-value-display-label.m3l.md",
       "line": 1,

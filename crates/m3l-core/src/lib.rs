@@ -1,3 +1,4 @@
+mod annotate;
 pub mod catalogs;
 pub mod expressions;
 mod extend;

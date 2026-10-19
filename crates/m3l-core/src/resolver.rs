@@ -162,6 +162,19 @@ pub fn resolve_with(
         declared.insert(name.to_string());
     }
 
+    // What each written name resolves to, into the AST — before inheritance and extend blocks copy fields into other
+    // models, so a copied field carries the resolution made where it was written (Rule 2).
+    let mut extend_blocks = extend_blocks;
+    crate::annotate::annotate(
+        &mut all_models,
+        &mut all_interfaces,
+        &mut all_views,
+        &mut all_flows,
+        &mut all_enums,
+        &mut extend_blocks,
+        &aliases,
+    );
+
     // Resolve inheritance — a parent is a model or an interface, found by the name the header writes.
     if options.inline_inherited {
         let namespace_of = |source: &str| -> Option<String> {

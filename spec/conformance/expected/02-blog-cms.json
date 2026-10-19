@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.23.0",
+  "parserVersion": "0.24.0",
   "astVersion": "1.0",
   "project": {
     "name": "sample.blog"
@@ -10,12 +10,16 @@
   "models": [
     {
       "name": "User",
+      "qualifiedName": "sample.blog.User",
       "type": "model",
       "source": "spec/conformance/inputs/02-blog-cms.m3l.md",
       "namespace": "sample.blog",
       "line": 37,
       "inherits": [
         "BaseModel"
+      ],
+      "inheritsQualifiedNames": [
+        "sample.blog.BaseModel"
       ],
       "description": "System user with authentication info.",
       "attributes": [],
@@ -313,6 +317,7 @@
           ],
           "rollup": {
             "target": "Post",
+            "targetQualifiedName": "sample.blog.Post",
             "fk": "author_id",
             "aggregate": "count"
           },
@@ -342,6 +347,7 @@
           ],
           "rollup": {
             "target": "Post",
+            "targetQualifiedName": "sample.blog.Post",
             "fk": "author_id",
             "aggregate": "count",
             "where": "status = 'published'"
@@ -367,12 +373,16 @@
     },
     {
       "name": "Tag",
+      "qualifiedName": "sample.blog.Tag",
       "type": "model",
       "source": "spec/conformance/inputs/02-blog-cms.m3l.md",
       "namespace": "sample.blog",
       "line": 63,
       "inherits": [
         "BaseModel"
+      ],
+      "inheritsQualifiedNames": [
+        "sample.blog.BaseModel"
       ],
       "attributes": [],
       "fields": [
@@ -529,6 +539,7 @@
           ],
           "rollup": {
             "target": "PostTag",
+            "targetQualifiedName": "sample.blog.PostTag",
             "fk": "tag_id",
             "aggregate": "count"
           },
@@ -553,12 +564,16 @@
     },
     {
       "name": "Category",
+      "qualifiedName": "sample.blog.Category",
       "type": "model",
       "source": "spec/conformance/inputs/02-blog-cms.m3l.md",
       "namespace": "sample.blog",
       "line": 74,
       "inherits": [
         "BaseModel"
+      ],
+      "inheritsQualifiedNames": [
+        "sample.blog.BaseModel"
       ],
       "attributes": [],
       "fields": [
@@ -705,6 +720,7 @@
               "isStandard": true
             }
           ],
+          "referenceQualifiedName": "sample.blog.Category",
           "loc": {
             "file": "spec/conformance/inputs/02-blog-cms.m3l.md",
             "line": 79,
@@ -767,6 +783,7 @@
     },
     {
       "name": "Post",
+      "qualifiedName": "sample.blog.Post",
       "type": "model",
       "source": "spec/conformance/inputs/02-blog-cms.m3l.md",
       "namespace": "sample.blog",
@@ -774,6 +791,10 @@
       "inherits": [
         "BaseModel",
         "Trackable"
+      ],
+      "inheritsQualifiedNames": [
+        "sample.blog.BaseModel",
+        "sample.blog.Trackable"
       ],
       "description": "Blog post with rich content and metadata.\nSupports multiple content formats and scheduled publishing.",
       "attributes": [],
@@ -984,6 +1005,7 @@
           "default_value_type": "literal",
           "defaultValueQuoted": true,
           "attributes": [],
+          "typeQualifiedName": "sample.blog.ContentFormat",
           "loc": {
             "file": "spec/conformance/inputs/02-blog-cms.m3l.md",
             "line": 96,
@@ -1001,6 +1023,7 @@
           "default_value_type": "literal",
           "defaultValueQuoted": true,
           "attributes": [],
+          "typeQualifiedName": "sample.blog.PostStatus",
           "loc": {
             "file": "spec/conformance/inputs/02-blog-cms.m3l.md",
             "line": 97,
@@ -1024,6 +1047,7 @@
               "isStandard": true
             }
           ],
+          "referenceQualifiedName": "sample.blog.User",
           "loc": {
             "file": "spec/conformance/inputs/02-blog-cms.m3l.md",
             "line": 98,
@@ -1047,6 +1071,7 @@
               "isStandard": true
             }
           ],
+          "referenceQualifiedName": "sample.blog.Category",
           "loc": {
             "file": "spec/conformance/inputs/02-blog-cms.m3l.md",
             "line": 99,
@@ -1375,6 +1400,7 @@
           ],
           "rollup": {
             "target": "Comment",
+            "targetQualifiedName": "sample.blog.Comment",
             "fk": "post_id",
             "aggregate": "count"
           },
@@ -1407,6 +1433,7 @@
           ],
           "rollup": {
             "target": "Comment",
+            "targetQualifiedName": "sample.blog.Comment",
             "fk": "post_id",
             "aggregate": "avg",
             "field": "rating"
@@ -1488,6 +1515,7 @@
     },
     {
       "name": "PostTag",
+      "qualifiedName": "sample.blog.PostTag",
       "type": "model",
       "source": "spec/conformance/inputs/02-blog-cms.m3l.md",
       "namespace": "sample.blog",
@@ -1519,6 +1547,7 @@
               "isStandard": true
             }
           ],
+          "referenceQualifiedName": "sample.blog.Post",
           "loc": {
             "file": "spec/conformance/inputs/02-blog-cms.m3l.md",
             "line": 145,
@@ -1548,6 +1577,7 @@
               "isStandard": true
             }
           ],
+          "referenceQualifiedName": "sample.blog.Tag",
           "loc": {
             "file": "spec/conformance/inputs/02-blog-cms.m3l.md",
             "line": 147,
@@ -1580,12 +1610,16 @@
     },
     {
       "name": "Comment",
+      "qualifiedName": "sample.blog.Comment",
       "type": "model",
       "source": "spec/conformance/inputs/02-blog-cms.m3l.md",
       "namespace": "sample.blog",
       "line": 155,
       "inherits": [
         "BaseModel"
+      ],
+      "inheritsQualifiedNames": [
+        "sample.blog.BaseModel"
       ],
       "attributes": [],
       "fields": [
@@ -1665,6 +1699,7 @@
               "isStandard": true
             }
           ],
+          "referenceQualifiedName": "sample.blog.Post",
           "loc": {
             "file": "spec/conformance/inputs/02-blog-cms.m3l.md",
             "line": 157,
@@ -1688,6 +1723,7 @@
               "isStandard": true
             }
           ],
+          "referenceQualifiedName": "sample.blog.User",
           "loc": {
             "file": "spec/conformance/inputs/02-blog-cms.m3l.md",
             "line": 158,
@@ -1712,6 +1748,7 @@
               "isStandard": true
             }
           ],
+          "referenceQualifiedName": "sample.blog.Comment",
           "loc": {
             "file": "spec/conformance/inputs/02-blog-cms.m3l.md",
             "line": 159,
@@ -1900,6 +1937,7 @@
           ],
           "rollup": {
             "target": "Comment",
+            "targetQualifiedName": "sample.blog.Comment",
             "fk": "parent_id",
             "aggregate": "count"
           },
@@ -1967,12 +2005,16 @@
     },
     {
       "name": "MediaAsset",
+      "qualifiedName": "sample.blog.MediaAsset",
       "type": "model",
       "source": "spec/conformance/inputs/02-blog-cms.m3l.md",
       "namespace": "sample.blog",
       "line": 181,
       "inherits": [
         "BaseModel"
+      ],
+      "inheritsQualifiedNames": [
+        "sample.blog.BaseModel"
       ],
       "attributes": [],
       "fields": [
@@ -2186,6 +2228,7 @@
               "isStandard": true
             }
           ],
+          "referenceQualifiedName": "sample.blog.User",
           "loc": {
             "file": "spec/conformance/inputs/02-blog-cms.m3l.md",
             "line": 190,
@@ -2287,6 +2330,7 @@
   "enums": [
     {
       "name": "PostStatus",
+      "qualifiedName": "sample.blog.PostStatus",
       "type": "enum",
       "source": "spec/conformance/inputs/02-blog-cms.m3l.md",
       "namespace": "sample.blog",
@@ -2318,6 +2362,7 @@
     },
     {
       "name": "ContentFormat",
+      "qualifiedName": "sample.blog.ContentFormat",
       "type": "enum",
       "source": "spec/conformance/inputs/02-blog-cms.m3l.md",
       "namespace": "sample.blog",
@@ -2347,6 +2392,7 @@
   "interfaces": [
     {
       "name": "BaseModel",
+      "qualifiedName": "sample.blog.BaseModel",
       "type": "interface",
       "source": "spec/conformance/inputs/02-blog-cms.m3l.md",
       "namespace": "sample.blog",
@@ -2429,6 +2475,7 @@
     },
     {
       "name": "Trackable",
+      "qualifiedName": "sample.blog.Trackable",
       "type": "interface",
       "source": "spec/conformance/inputs/02-blog-cms.m3l.md",
       "namespace": "sample.blog",
@@ -2499,6 +2546,7 @@
   "views": [
     {
       "name": "PublishedPosts",
+      "qualifiedName": "sample.blog.PublishedPosts",
       "type": "view",
       "source": "spec/conformance/inputs/02-blog-cms.m3l.md",
       "namespace": "sample.blog",
@@ -2516,6 +2564,7 @@
       "materialized": false,
       "source_def": {
         "from": "Post",
+        "fromQualifiedName": "sample.blog.Post",
         "where": "status = 'published' AND is_deleted = false",
         "order_by": "published_at desc"
       },
@@ -2527,6 +2576,7 @@
     },
     {
       "name": "PopularPosts",
+      "qualifiedName": "sample.blog.PopularPosts",
       "type": "view",
       "source": "spec/conformance/inputs/02-blog-cms.m3l.md",
       "namespace": "sample.blog",
@@ -2544,6 +2594,7 @@
       "materialized": true,
       "source_def": {
         "from": "Post",
+        "fromQualifiedName": "sample.blog.Post",
         "where": "status = 'published' AND published_at >= DATE_ADD(now(), -30, 'day')",
         "order_by": "view_count desc"
       },

@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.23.0",
+  "parserVersion": "0.24.0",
   "astVersion": "1.0",
   "project": {},
   "sources": [
@@ -8,6 +8,7 @@
   "models": [
     {
       "name": "User",
+      "qualifiedName": "User",
       "type": "model",
       "source": "spec/conformance/inputs/view.m3l.md",
       "line": 1,
@@ -86,6 +87,7 @@
   "views": [
     {
       "name": "ActiveUsers",
+      "qualifiedName": "ActiveUsers",
       "type": "view",
       "source": "spec/conformance/inputs/view.m3l.md",
       "line": 6,
@@ -101,6 +103,7 @@
       "materialized": false,
       "source_def": {
         "from": "User",
+        "fromQualifiedName": "User",
         "where": "is_active = true",
         "order_by": "name asc"
       },

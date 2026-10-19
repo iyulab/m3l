@@ -9,6 +9,7 @@
   "models": [
     {
       "name": "Customer",
+      "qualifiedName": "Customer",
       "type": "model",
       "source": "spec/conformance/inputs/import-unmatched/common.m3l.md",
       "line": 1,
@@ -49,6 +50,7 @@
     },
     {
       "name": "Order",
+      "qualifiedName": "Order",
       "type": "model",
       "source": "spec/conformance/inputs/import-unmatched/orders.m3l.md",
       "line": 4,

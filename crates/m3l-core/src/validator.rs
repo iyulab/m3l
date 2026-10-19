@@ -478,7 +478,11 @@ fn validate_rollup_reference(
     model_map: &Models<'_>,
     errors: &mut Vec<Diagnostic>,
 ) {
-    let target_model = match model_map.get(&rollup.target, model) {
+    let target_model = match model_map.resolved(
+        rollup.target_qualified_name.as_deref(),
+        &rollup.target,
+        model,
+    ) {
         Some(m) => m,
         None => return,
     };
@@ -574,7 +578,11 @@ fn validate_lookup_reference<'a>(
 
         let target = referenced_model(fk_field)?;
         // The reference is written on `current`'s key, so it resolves from there (§2.1.3 Rule 2).
-        current = model_map.get(target, current)?;
+        current = model_map.resolved(
+            fk_field.reference_qualified_name.as_deref(),
+            target,
+            current,
+        )?;
     }
 
     let last = segments[segments.len() - 1];
@@ -591,18 +599,7 @@ fn validate_lookup_reference<'a>(
 /// short — if the field is such a key. `@reference` names only the model, so a dot in it is a
 /// namespace's; `@fk` names the field last.
 fn referenced_model(field: &FieldNode) -> Option<&str> {
-    let reference = field
-        .attributes
-        .iter()
-        .find(|a| a.name == "reference" || a.name == "fk")?;
-    match reference.args.as_deref() {
-        Some([AttrArgValue::String(arg), ..]) if reference.name == "fk" => Some(
-            arg.rsplit_once('.')
-                .map_or(arg.as_str(), |(model, _)| model),
-        ),
-        Some([AttrArgValue::String(arg), ..]) => Some(arg.as_str()),
-        _ => None,
-    }
+    crate::annotate::referenced_model(field)
 }
 
 /// Models, views and flows found by the name a reference writes — the rules the resolver uses for
@@ -610,6 +607,8 @@ fn referenced_model(field: &FieldNode) -> Option<&str> {
 /// is read from the model that wrote it.
 struct Models<'a> {
     by_name: HashMap<&'a str, Vec<&'a ModelNode>>,
+    /// Each declaration by its `qualifiedName` — what a reference's `…QualifiedName` in the AST holds.
+    by_qualified: HashMap<&'a str, &'a ModelNode>,
     /// The aliases the files give their imports — read from the AST, as the resolver resolved them.
     aliases: crate::names::Aliases,
     /// `M3L-E008` for each name a declaration writes that more than one declaration fits (Rule 4) — once per
@@ -624,11 +623,30 @@ impl<'a> Models<'a> {
         for model in all {
             by_name.entry(model.name.as_str()).or_default().push(model);
         }
+        let by_qualified = all
+            .iter()
+            .filter_map(|m| m.qualified_name.as_deref().map(|q| (q, *m)))
+            .collect();
         Self {
             by_name,
+            by_qualified,
             aliases,
             ambiguous: Default::default(),
             reported: Default::default(),
+        }
+    }
+
+    /// The declaration a written name resolved to — the resolver's resolution when the AST carries it (made where the
+    /// name was written, so right for a field copied from a parent or an extend block), else read from `from`.
+    fn resolved(
+        &self,
+        qualified: Option<&str>,
+        written: &str,
+        from: &ModelNode,
+    ) -> Option<&'a ModelNode> {
+        match qualified {
+            Some(q) => self.by_qualified.get(q).copied(),
+            None => self.get(written, from),
         }
     }
 
@@ -1265,7 +1283,11 @@ fn validate_portable_expressions(
             .and_then(|r| r.where_clause.as_ref().map(|w| (r, w)))
         {
             let (rollup, expression) = where_clause;
-            let target = model_map.get(&rollup.target, model);
+            let target = model_map.resolved(
+                rollup.target_qualified_name.as_deref(),
+                &rollup.target,
+                model,
+            );
             let constructs =
                 crate::expressions::non_portable_constructs(expression, &|name| match name
                     .strip_prefix("$parent.")

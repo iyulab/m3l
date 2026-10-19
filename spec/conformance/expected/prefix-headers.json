@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.23.0",
+  "parserVersion": "0.24.0",
   "astVersion": "1.0",
   "project": {},
   "sources": [
@@ -10,6 +10,7 @@
   "models": [
     {
       "name": "Alpha",
+      "qualifiedName": "Alpha",
       "type": "model",
       "source": "spec/conformance/inputs/prefix-headers/invalid.m3l.md",
       "line": 3,
@@ -50,6 +51,7 @@
     },
     {
       "name": "Gamma",
+      "qualifiedName": "Gamma",
       "type": "model",
       "source": "spec/conformance/inputs/prefix-headers/late.m3l.md",
       "line": 1,
@@ -90,6 +92,7 @@
     },
     {
       "name": "Beta",
+      "qualifiedName": "Beta",
       "type": "model",
       "source": "spec/conformance/inputs/prefix-headers/repeated.m3l.md",
       "prefix": "rp",

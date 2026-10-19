@@ -233,6 +233,13 @@ pub struct LookupDef {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RollupDef {
     pub target: String,
+    /// The `qualifiedName` of the declaration it names, as the resolver resolved it (§2.1.3) — absent when it names none.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        rename = "targetQualifiedName"
+    )]
+    pub target_qualified_name: Option<String>,
     pub fk: String,
     pub aggregate: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -310,6 +317,20 @@ pub struct FieldNode {
     pub attributes: Vec<FieldAttribute>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub framework_attrs: Option<Vec<CustomAttribute>>,
+    /// The model a `@reference(Model)` / `@fk(Model.field)` key points at: The `qualifiedName` of the declaration it names, as the resolver resolved it (§2.1.3) — absent when it names none.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        rename = "referenceQualifiedName"
+    )]
+    pub reference_qualified_name: Option<String>,
+    /// When the type names a declaration — an enum, a model, an interface: The `qualifiedName` of the declaration it names, as the resolver resolved it (§2.1.3) — absent when it names none.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        rename = "typeQualifiedName"
+    )]
+    pub type_qualified_name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub lookup: Option<LookupDef>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -372,6 +393,13 @@ impl<'de> Deserialize<'de> for ModelType {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct JoinDef {
     pub model: String,
+    /// The `qualifiedName` of the declaration it names, as the resolver resolved it (§2.1.3) — absent when it names none.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        rename = "qualifiedName"
+    )]
+    pub qualified_name: Option<String>,
     pub on: String,
 }
 
@@ -379,6 +407,13 @@ pub struct JoinDef {
 pub struct ViewSourceDef {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub from: Option<String>,
+    /// `from`: The `qualifiedName` of the declaration it names, as the resolver resolved it (§2.1.3) — absent when it names none.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        rename = "fromQualifiedName"
+    )]
+    pub from_qualified_name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub joins: Option<Vec<JoinDef>>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -420,6 +455,13 @@ pub struct Sections {
 pub struct ModelBase {
     pub kind: String,
     pub model: String,
+    /// The `qualifiedName` of the declaration it names, as the resolver resolved it (§2.1.3) — absent when it names none.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        rename = "qualifiedName"
+    )]
+    pub qualified_name: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -444,6 +486,14 @@ pub struct ExtendedBy {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ModelNode {
     pub name: String,
+    /// The declaration's qualified name (§2.1.3): `namespace.Name`, or the name alone in the default namespace — the
+    /// key that tells two declarations of one short name apart, and what the `…QualifiedName` of a reference to it holds.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        rename = "qualifiedName"
+    )]
+    pub qualified_name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
     #[serde(rename = "type")]
@@ -470,6 +520,13 @@ pub struct ModelNode {
     pub renamed_from: Option<Vec<String>>,
     pub line: usize,
     pub inherits: Vec<String>,
+    /// One entry per `inherits` entry, in order: the parent's `qualifiedName`, or null when the name resolves to none.
+    #[serde(
+        default,
+        skip_serializing_if = "Vec::is_empty",
+        rename = "inheritsQualifiedNames"
+    )]
+    pub inherits_qualified_names: Vec<Option<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     pub attributes: Vec<FieldAttribute>,
@@ -487,6 +544,14 @@ pub struct ModelNode {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct EnumNode {
     pub name: String,
+    /// The declaration's qualified name (§2.1.3): `namespace.Name`, or the name alone in the default namespace — the
+    /// key that tells two declarations of one short name apart, and what the `…QualifiedName` of a reference to it holds.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        rename = "qualifiedName"
+    )]
+    pub qualified_name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
     #[serde(rename = "type")]
@@ -500,6 +565,13 @@ pub struct EnumNode {
     pub prefix: Option<String>,
     pub line: usize,
     pub inherits: Vec<String>,
+    /// One entry per `inherits` entry, in order: the parent's `qualifiedName`, or null when the name resolves to none.
+    #[serde(
+        default,
+        skip_serializing_if = "Vec::is_empty",
+        rename = "inheritsQualifiedNames"
+    )]
+    pub inherits_qualified_names: Vec<Option<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     pub values: Vec<EnumValue>,

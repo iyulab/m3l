@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.23.0",
+  "parserVersion": "0.24.0",
   "astVersion": "1.0",
   "project": {},
   "sources": [
@@ -8,6 +8,7 @@
   "models": [
     {
       "name": "Asset",
+      "qualifiedName": "Asset",
       "type": "model",
       "source": "spec/conformance/inputs/extend-rules.m3l.md",
       "extended_by": [

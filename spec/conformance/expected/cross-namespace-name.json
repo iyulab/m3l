@@ -11,6 +11,7 @@
   "models": [
     {
       "name": "Product",
+      "qualifiedName": "inventory.Product",
       "type": "model",
       "source": "spec/conformance/inputs/cross-namespace-name/inventory.m3l.md",
       "namespace": "inventory",
@@ -52,6 +53,7 @@
     },
     {
       "name": "Product",
+      "qualifiedName": "sales.Product",
       "type": "model",
       "source": "spec/conformance/inputs/cross-namespace-name/sales.m3l.md",
       "namespace": "sales",

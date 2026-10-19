@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.23.0",
+  "parserVersion": "0.24.0",
   "astVersion": "1.0",
   "project": {},
   "sources": [
@@ -8,6 +8,7 @@
   "models": [
     {
       "name": "User",
+      "qualifiedName": "User",
       "type": "model",
       "source": "spec/conformance/inputs/duplicate-fields.m3l.md",
       "line": 1,

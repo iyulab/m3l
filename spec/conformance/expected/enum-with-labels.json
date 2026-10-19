@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.14.0",
+  "parserVersion": "0.24.0",
   "astVersion": "1.0",
   "project": {},
   "sources": [
@@ -9,6 +9,7 @@
   "enums": [
     {
       "name": "Priority",
+      "qualifiedName": "Priority",
       "type": "enum",
       "source": "spec/conformance/inputs/enum-with-labels.m3l.md",
       "line": 1,

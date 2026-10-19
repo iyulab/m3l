@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.23.0",
+  "parserVersion": "0.24.0",
   "astVersion": "1.0",
   "project": {},
   "sources": [
@@ -8,10 +8,14 @@
   "models": [
     {
       "name": "Article",
+      "qualifiedName": "Article",
       "type": "model",
       "source": "spec/conformance/inputs/interface.m3l.md",
       "line": 5,
       "inherits": [
+        "Timestampable"
+      ],
+      "inheritsQualifiedNames": [
         "Timestampable"
       ],
       "attributes": [],
@@ -116,6 +120,7 @@
   "interfaces": [
     {
       "name": "Timestampable",
+      "qualifiedName": "Timestampable",
       "type": "interface",
       "source": "spec/conformance/inputs/interface.m3l.md",
       "line": 1,

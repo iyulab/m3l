@@ -11,12 +11,16 @@
   "models": [
     {
       "name": "BaseEntity",
+      "qualifiedName": "sample.multi.BaseEntity",
       "type": "model",
       "source": "spec/conformance/inputs/multi/base.m3l.md",
       "namespace": "sample.multi",
       "line": 20,
       "inherits": [
         "Timestampable"
+      ],
+      "inheritsQualifiedNames": [
+        "sample.multi.Timestampable"
       ],
       "attributes": [],
       "fields": [
@@ -90,12 +94,16 @@
     },
     {
       "name": "Warehouse",
+      "qualifiedName": "sample.multi.inventory.Warehouse",
       "type": "model",
       "source": "spec/conformance/inputs/multi/inventory.m3l.md",
       "namespace": "sample.multi.inventory",
       "line": 10,
       "inherits": [
         "BaseEntity"
+      ],
+      "inheritsQualifiedNames": [
+        "sample.multi.BaseEntity"
       ],
       "attributes": [],
       "fields": [
@@ -254,6 +262,7 @@
           ],
           "rollup": {
             "target": "StockItem",
+            "targetQualifiedName": "sample.multi.inventory.StockItem",
             "fk": "warehouse_id",
             "aggregate": "count"
           },
@@ -286,6 +295,7 @@
           ],
           "rollup": {
             "target": "StockItem",
+            "targetQualifiedName": "sample.multi.inventory.StockItem",
             "fk": "warehouse_id",
             "aggregate": "sum",
             "field": "total_value"
@@ -311,6 +321,7 @@
     },
     {
       "name": "Supplier",
+      "qualifiedName": "sample.multi.inventory.Supplier",
       "type": "model",
       "source": "spec/conformance/inputs/multi/inventory.m3l.md",
       "namespace": "sample.multi.inventory",
@@ -318,6 +329,10 @@
       "inherits": [
         "BaseEntity",
         "SoftDeletable"
+      ],
+      "inheritsQualifiedNames": [
+        "sample.multi.BaseEntity",
+        "sample.multi.SoftDeletable"
       ],
       "attributes": [],
       "fields": [
@@ -514,6 +529,7 @@
           "default_value_type": "literal",
           "defaultValueQuoted": true,
           "attributes": [],
+          "typeQualifiedName": "sample.multi.Currency",
           "loc": {
             "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 29,
@@ -575,12 +591,16 @@
     },
     {
       "name": "Item",
+      "qualifiedName": "sample.multi.inventory.Item",
       "type": "model",
       "source": "spec/conformance/inputs/multi/inventory.m3l.md",
       "namespace": "sample.multi.inventory",
       "line": 35,
       "inherits": [
         "BaseEntity"
+      ],
+      "inheritsQualifiedNames": [
+        "sample.multi.BaseEntity"
       ],
       "description": "Inventory item master data.",
       "attributes": [],
@@ -721,6 +741,7 @@
           "default_value_type": "literal",
           "defaultValueQuoted": true,
           "attributes": [],
+          "typeQualifiedName": "sample.multi.UnitOfMeasure",
           "loc": {
             "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 42,
@@ -804,6 +825,7 @@
           ],
           "rollup": {
             "target": "StockItem",
+            "targetQualifiedName": "sample.multi.inventory.StockItem",
             "fk": "item_id",
             "aggregate": "sum",
             "field": "quantity"
@@ -829,12 +851,16 @@
     },
     {
       "name": "StockItem",
+      "qualifiedName": "sample.multi.inventory.StockItem",
       "type": "model",
       "source": "spec/conformance/inputs/multi/inventory.m3l.md",
       "namespace": "sample.multi.inventory",
       "line": 52,
       "inherits": [
         "BaseEntity"
+      ],
+      "inheritsQualifiedNames": [
+        "sample.multi.BaseEntity"
       ],
       "description": "Physical stock in a specific warehouse.",
       "attributes": [],
@@ -910,6 +936,7 @@
               "isStandard": true
             }
           ],
+          "referenceQualifiedName": "sample.multi.inventory.Warehouse",
           "loc": {
             "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 56,
@@ -933,6 +960,7 @@
               "isStandard": true
             }
           ],
+          "referenceQualifiedName": "sample.multi.inventory.Item",
           "loc": {
             "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 57,
@@ -956,6 +984,7 @@
               "isStandard": true
             }
           ],
+          "referenceQualifiedName": "sample.multi.inventory.Supplier",
           "loc": {
             "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 58,
@@ -1330,12 +1359,16 @@
     },
     {
       "name": "StockMovement",
+      "qualifiedName": "sample.multi.inventory.StockMovement",
       "type": "model",
       "source": "spec/conformance/inputs/multi/inventory.m3l.md",
       "namespace": "sample.multi.inventory",
       "line": 86,
       "inherits": [
         "BaseEntity"
+      ],
+      "inheritsQualifiedNames": [
+        "sample.multi.BaseEntity"
       ],
       "description": "Record of stock in/out movements.",
       "attributes": [],
@@ -1411,6 +1444,7 @@
               "isStandard": true
             }
           ],
+          "referenceQualifiedName": "sample.multi.inventory.StockItem",
           "loc": {
             "file": "spec/conformance/inputs/multi/inventory.m3l.md",
             "line": 90,
@@ -1584,6 +1618,7 @@
   "enums": [
     {
       "name": "Currency",
+      "qualifiedName": "sample.multi.Currency",
       "type": "enum",
       "source": "spec/conformance/inputs/multi/base.m3l.md",
       "namespace": "sample.multi",
@@ -1619,6 +1654,7 @@
     },
     {
       "name": "UnitOfMeasure",
+      "qualifiedName": "sample.multi.UnitOfMeasure",
       "type": "enum",
       "source": "spec/conformance/inputs/multi/base.m3l.md",
       "namespace": "sample.multi",
@@ -1656,6 +1692,7 @@
   "interfaces": [
     {
       "name": "Timestampable",
+      "qualifiedName": "sample.multi.Timestampable",
       "type": "interface",
       "source": "spec/conformance/inputs/multi/base.m3l.md",
       "namespace": "sample.multi",
@@ -1710,6 +1747,7 @@
     },
     {
       "name": "SoftDeletable",
+      "qualifiedName": "sample.multi.SoftDeletable",
       "type": "interface",
       "source": "spec/conformance/inputs/multi/base.m3l.md",
       "namespace": "sample.multi",
@@ -1781,6 +1819,7 @@
   "views": [
     {
       "name": "LowStockAlert",
+      "qualifiedName": "sample.multi.inventory.LowStockAlert",
       "type": "view",
       "source": "spec/conformance/inputs/multi/inventory.m3l.md",
       "namespace": "sample.multi.inventory",
@@ -1937,9 +1976,11 @@
       "materialized": false,
       "source_def": {
         "from": "StockItem",
+        "fromQualifiedName": "sample.multi.inventory.StockItem",
         "joins": [
           {
             "model": "Item",
+            "qualifiedName": "sample.multi.inventory.Item",
             "on": "StockItem.item_id = Item.id"
           }
         ],
@@ -1954,6 +1995,7 @@
     },
     {
       "name": "WarehouseSummary",
+      "qualifiedName": "sample.multi.inventory.WarehouseSummary",
       "type": "view",
       "source": "spec/conformance/inputs/multi/inventory.m3l.md",
       "namespace": "sample.multi.inventory",
@@ -2104,9 +2146,11 @@
       "materialized": true,
       "source_def": {
         "from": "StockItem",
+        "fromQualifiedName": "sample.multi.inventory.StockItem",
         "joins": [
           {
             "model": "Warehouse",
+            "qualifiedName": "sample.multi.inventory.Warehouse",
             "on": "StockItem.warehouse_id = Warehouse.id"
           }
         ],

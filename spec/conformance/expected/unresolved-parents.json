@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.23.0",
+  "parserVersion": "0.24.0",
   "astVersion": "1.0",
   "project": {},
   "sources": [
@@ -8,11 +8,15 @@
   "models": [
     {
       "name": "Child",
+      "qualifiedName": "Child",
       "type": "model",
       "source": "spec/conformance/inputs/unresolved-parents.m3l.md",
       "line": 1,
       "inherits": [
         "Ghost"
+      ],
+      "inheritsQualifiedNames": [
+        null
       ],
       "attributes": [],
       "fields": [
@@ -52,11 +56,15 @@
   "enums": [
     {
       "name": "Kind",
+      "qualifiedName": "Kind",
       "type": "enum",
       "source": "spec/conformance/inputs/unresolved-parents.m3l.md",
       "line": 4,
       "inherits": [
         "Missing"
+      ],
+      "inheritsQualifiedNames": [
+        null
       ],
       "values": [
         {
@@ -72,6 +80,7 @@
     },
     {
       "name": "Base",
+      "qualifiedName": "Base",
       "type": "enum",
       "source": "spec/conformance/inputs/unresolved-parents.m3l.md",
       "line": 7,
@@ -90,10 +99,14 @@
     },
     {
       "name": "Status",
+      "qualifiedName": "Status",
       "type": "enum",
       "source": "spec/conformance/inputs/unresolved-parents.m3l.md",
       "line": 10,
       "inherits": [
+        "Base"
+      ],
+      "inheritsQualifiedNames": [
         "Base"
       ],
       "values": [

@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.23.0",
+  "parserVersion": "0.24.0",
   "astVersion": "1.0",
   "project": {
     "name": "sales"
@@ -11,6 +11,7 @@
   "models": [
     {
       "name": "Product",
+      "qualifiedName": "sales.Product",
       "type": "model",
       "source": "spec/conformance/inputs/name-collisions/sales.m3l.md",
       "namespace": "sales",
@@ -52,6 +53,7 @@
     },
     {
       "name": "Order",
+      "qualifiedName": "sales.Order",
       "type": "model",
       "source": "spec/conformance/inputs/name-collisions/sales.m3l.md",
       "namespace": "sales",
@@ -97,6 +99,7 @@
   "views": [
     {
       "name": "Order",
+      "qualifiedName": "sales.Order",
       "type": "view",
       "source": "spec/conformance/inputs/name-collisions/reports.m3l.md",
       "namespace": "sales",

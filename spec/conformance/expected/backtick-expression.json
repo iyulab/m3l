@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.23.0",
+  "parserVersion": "0.24.0",
   "astVersion": "1.0",
   "project": {},
   "sources": [
@@ -8,6 +8,7 @@
   "models": [
     {
       "name": "BacktickExpr",
+      "qualifiedName": "BacktickExpr",
       "type": "model",
       "source": "spec/conformance/inputs/backtick-expression.m3l.md",
       "line": 1,
@@ -177,6 +178,7 @@
     },
     {
       "name": "CodeBlockExpr",
+      "qualifiedName": "CodeBlockExpr",
       "type": "model",
       "source": "spec/conformance/inputs/backtick-expression.m3l.md",
       "line": 10,
@@ -314,6 +316,7 @@
     },
     {
       "name": "FieldBlockquoteDesc",
+      "qualifiedName": "FieldBlockquoteDesc",
       "type": "model",
       "source": "spec/conformance/inputs/backtick-expression.m3l.md",
       "line": 27,

@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.23.0",
+  "parserVersion": "0.24.0",
   "astVersion": "1.0",
   "project": {
     "name": "sample.ecommerce"
@@ -10,12 +10,16 @@
   "models": [
     {
       "name": "Customer",
+      "qualifiedName": "sample.ecommerce.Customer",
       "type": "model",
       "source": "spec/conformance/inputs/01-ecommerce.m3l.md",
       "namespace": "sample.ecommerce",
       "line": 52,
       "inherits": [
         "Timestampable"
+      ],
+      "inheritsQualifiedNames": [
+        "sample.ecommerce.Timestampable"
       ],
       "description": "Primary customer entity for the e-commerce platform.",
       "attributes": [
@@ -229,12 +233,16 @@
     },
     {
       "name": "Address",
+      "qualifiedName": "sample.ecommerce.Address",
       "type": "model",
       "source": "spec/conformance/inputs/01-ecommerce.m3l.md",
       "namespace": "sample.ecommerce",
       "line": 75,
       "inherits": [
         "Timestampable"
+      ],
+      "inheritsQualifiedNames": [
+        "sample.ecommerce.Timestampable"
       ],
       "description": "Shipping and billing address.",
       "attributes": [],
@@ -310,6 +318,7 @@
               "isStandard": true
             }
           ],
+          "referenceQualifiedName": "sample.ecommerce.Customer",
           "loc": {
             "file": "spec/conformance/inputs/01-ecommerce.m3l.md",
             "line": 80,
@@ -502,12 +511,16 @@
     },
     {
       "name": "Category",
+      "qualifiedName": "sample.ecommerce.Category",
       "type": "model",
       "source": "spec/conformance/inputs/01-ecommerce.m3l.md",
       "namespace": "sample.ecommerce",
       "line": 94,
       "inherits": [
         "Timestampable"
+      ],
+      "inheritsQualifiedNames": [
+        "sample.ecommerce.Timestampable"
       ],
       "attributes": [],
       "fields": [
@@ -631,6 +644,7 @@
               "isStandard": true
             }
           ],
+          "referenceQualifiedName": "sample.ecommerce.Category",
           "loc": {
             "file": "spec/conformance/inputs/01-ecommerce.m3l.md",
             "line": 99,
@@ -713,6 +727,7 @@
           ],
           "rollup": {
             "target": "Product",
+            "targetQualifiedName": "sample.ecommerce.Product",
             "fk": "category_id",
             "aggregate": "count"
           },
@@ -737,6 +752,7 @@
     },
     {
       "name": "Product",
+      "qualifiedName": "sample.ecommerce.Product",
       "type": "model",
       "source": "spec/conformance/inputs/01-ecommerce.m3l.md",
       "namespace": "sample.ecommerce",
@@ -744,6 +760,10 @@
       "inherits": [
         "Timestampable",
         "Auditable"
+      ],
+      "inheritsQualifiedNames": [
+        "sample.ecommerce.Timestampable",
+        "sample.ecommerce.Auditable"
       ],
       "description": "Product catalog item.",
       "attributes": [
@@ -929,6 +949,7 @@
               "isStandard": true
             }
           ],
+          "referenceQualifiedName": "sample.ecommerce.Category",
           "loc": {
             "file": "spec/conformance/inputs/01-ecommerce.m3l.md",
             "line": 119,
@@ -1178,12 +1199,16 @@
     },
     {
       "name": "Inventory",
+      "qualifiedName": "sample.ecommerce.Inventory",
       "type": "model",
       "source": "spec/conformance/inputs/01-ecommerce.m3l.md",
       "namespace": "sample.ecommerce",
       "line": 144,
       "inherits": [
         "Timestampable"
+      ],
+      "inheritsQualifiedNames": [
+        "sample.ecommerce.Timestampable"
       ],
       "attributes": [],
       "fields": [
@@ -1263,6 +1288,7 @@
               "isStandard": true
             }
           ],
+          "referenceQualifiedName": "sample.ecommerce.Product",
           "loc": {
             "file": "spec/conformance/inputs/01-ecommerce.m3l.md",
             "line": 147,
@@ -1420,6 +1446,7 @@
     },
     {
       "name": "Order",
+      "qualifiedName": "sample.ecommerce.Order",
       "type": "model",
       "source": "spec/conformance/inputs/01-ecommerce.m3l.md",
       "namespace": "sample.ecommerce",
@@ -1427,6 +1454,10 @@
       "inherits": [
         "Timestampable",
         "Auditable"
+      ],
+      "inheritsQualifiedNames": [
+        "sample.ecommerce.Timestampable",
+        "sample.ecommerce.Auditable"
       ],
       "description": "Customer order with items, totals, and status tracking.",
       "attributes": [],
@@ -1563,6 +1594,7 @@
               "isStandard": true
             }
           ],
+          "referenceQualifiedName": "sample.ecommerce.Customer",
           "loc": {
             "file": "spec/conformance/inputs/01-ecommerce.m3l.md",
             "line": 165,
@@ -1580,6 +1612,7 @@
           "default_value_type": "literal",
           "defaultValueQuoted": true,
           "attributes": [],
+          "typeQualifiedName": "sample.ecommerce.OrderStatus",
           "loc": {
             "file": "spec/conformance/inputs/01-ecommerce.m3l.md",
             "line": 166,
@@ -1603,6 +1636,7 @@
               "isStandard": true
             }
           ],
+          "referenceQualifiedName": "sample.ecommerce.Address",
           "loc": {
             "file": "spec/conformance/inputs/01-ecommerce.m3l.md",
             "line": 167,
@@ -1626,6 +1660,7 @@
               "isStandard": true
             }
           ],
+          "referenceQualifiedName": "sample.ecommerce.Address",
           "loc": {
             "file": "spec/conformance/inputs/01-ecommerce.m3l.md",
             "line": 168,
@@ -1640,6 +1675,7 @@
           "arrayItemNullable": false,
           "kind": "stored",
           "attributes": [],
+          "typeQualifiedName": "sample.ecommerce.PaymentMethod",
           "loc": {
             "file": "spec/conformance/inputs/01-ecommerce.m3l.md",
             "line": 169,
@@ -1796,6 +1832,7 @@
           ],
           "rollup": {
             "target": "OrderItem",
+            "targetQualifiedName": "sample.ecommerce.OrderItem",
             "fk": "order_id",
             "aggregate": "count"
           },
@@ -1828,6 +1865,7 @@
           ],
           "rollup": {
             "target": "OrderItem",
+            "targetQualifiedName": "sample.ecommerce.OrderItem",
             "fk": "order_id",
             "aggregate": "sum",
             "field": "line_total"
@@ -1857,6 +1895,7 @@
           ],
           "rollup": {
             "target": "OrderItem",
+            "targetQualifiedName": "sample.ecommerce.OrderItem",
             "fk": "order_id",
             "aggregate": "sum",
             "field": "quantity"
@@ -1980,6 +2019,7 @@
     },
     {
       "name": "OrderItem",
+      "qualifiedName": "sample.ecommerce.OrderItem",
       "type": "model",
       "source": "spec/conformance/inputs/01-ecommerce.m3l.md",
       "namespace": "sample.ecommerce",
@@ -2026,6 +2066,7 @@
               "isStandard": true
             }
           ],
+          "referenceQualifiedName": "sample.ecommerce.Order",
           "loc": {
             "file": "spec/conformance/inputs/01-ecommerce.m3l.md",
             "line": 207,
@@ -2049,6 +2090,7 @@
               "isStandard": true
             }
           ],
+          "referenceQualifiedName": "sample.ecommerce.Product",
           "loc": {
             "file": "spec/conformance/inputs/01-ecommerce.m3l.md",
             "line": 208,
@@ -2287,12 +2329,16 @@
     },
     {
       "name": "Review",
+      "qualifiedName": "sample.ecommerce.Review",
       "type": "model",
       "source": "spec/conformance/inputs/01-ecommerce.m3l.md",
       "namespace": "sample.ecommerce",
       "line": 225,
       "inherits": [
         "Timestampable"
+      ],
+      "inheritsQualifiedNames": [
+        "sample.ecommerce.Timestampable"
       ],
       "attributes": [],
       "fields": [
@@ -2367,6 +2413,7 @@
               "isStandard": true
             }
           ],
+          "referenceQualifiedName": "sample.ecommerce.Product",
           "loc": {
             "file": "spec/conformance/inputs/01-ecommerce.m3l.md",
             "line": 228,
@@ -2389,6 +2436,7 @@
               "isStandard": true
             }
           ],
+          "referenceQualifiedName": "sample.ecommerce.Customer",
           "loc": {
             "file": "spec/conformance/inputs/01-ecommerce.m3l.md",
             "line": 229,
@@ -2507,6 +2555,7 @@
   "enums": [
     {
       "name": "CustomerStatus",
+      "qualifiedName": "sample.ecommerce.CustomerStatus",
       "type": "enum",
       "source": "spec/conformance/inputs/01-ecommerce.m3l.md",
       "namespace": "sample.ecommerce",
@@ -2538,6 +2587,7 @@
     },
     {
       "name": "PaymentMethod",
+      "qualifiedName": "sample.ecommerce.PaymentMethod",
       "type": "enum",
       "source": "spec/conformance/inputs/01-ecommerce.m3l.md",
       "namespace": "sample.ecommerce",
@@ -2569,6 +2619,7 @@
     },
     {
       "name": "OrderStatus",
+      "qualifiedName": "sample.ecommerce.OrderStatus",
       "type": "enum",
       "source": "spec/conformance/inputs/01-ecommerce.m3l.md",
       "namespace": "sample.ecommerce",
@@ -2612,6 +2663,7 @@
     },
     {
       "name": "ShippingPriority",
+      "qualifiedName": "sample.ecommerce.ShippingPriority",
       "type": "enum",
       "source": "spec/conformance/inputs/01-ecommerce.m3l.md",
       "namespace": "sample.ecommerce",
@@ -2647,6 +2699,7 @@
   "interfaces": [
     {
       "name": "Timestampable",
+      "qualifiedName": "sample.ecommerce.Timestampable",
       "type": "interface",
       "source": "spec/conformance/inputs/01-ecommerce.m3l.md",
       "namespace": "sample.ecommerce",
@@ -2701,6 +2754,7 @@
     },
     {
       "name": "Auditable",
+      "qualifiedName": "sample.ecommerce.Auditable",
       "type": "interface",
       "source": "spec/conformance/inputs/01-ecommerce.m3l.md",
       "namespace": "sample.ecommerce",
@@ -2759,6 +2813,7 @@
   "views": [
     {
       "name": "ActiveProducts",
+      "qualifiedName": "sample.ecommerce.ActiveProducts",
       "type": "view",
       "source": "spec/conformance/inputs/01-ecommerce.m3l.md",
       "namespace": "sample.ecommerce",
@@ -2776,6 +2831,7 @@
       "materialized": false,
       "source_def": {
         "from": "Product",
+        "fromQualifiedName": "sample.ecommerce.Product",
         "where": "is_active = true AND price > 0",
         "order_by": "name asc"
       },
@@ -2787,6 +2843,7 @@
     },
     {
       "name": "CustomerOrderSummary",
+      "qualifiedName": "sample.ecommerce.CustomerOrderSummary",
       "type": "view",
       "source": "spec/conformance/inputs/01-ecommerce.m3l.md",
       "namespace": "sample.ecommerce",

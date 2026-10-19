@@ -263,6 +263,8 @@ fn handle_model_start(token: &Token, state: &mut ParserState) {
     };
 
     let model = ModelNode {
+        qualified_name: None,
+        inherits_qualified_names: Vec::new(),
         name: token.data.name.clone().unwrap_or_default(),
         label: token.data.label.clone(),
         model_type,
@@ -300,6 +302,7 @@ fn handle_based_model_start(token: &Token, kind: &str, state: &mut ParserState) 
     handle_model_start(token, state);
     if let CurrentElement::Model(ref mut model) = state.current_element {
         model.base = Some(ModelBase {
+            qualified_name: None,
             kind: kind.to_string(),
             model: token.data.kind_arg.clone().unwrap_or_default(),
         });
@@ -310,6 +313,8 @@ fn handle_enum_start(token: &Token, state: &mut ParserState) {
     finalize_element(state);
 
     let enum_node = EnumNode {
+        qualified_name: None,
+        inherits_qualified_names: Vec::new(),
         name: token.data.name.clone().unwrap_or_default(),
         label: token.data.label.clone(),
         enum_type: ModelType::Enum,
@@ -338,6 +343,8 @@ fn handle_view_start(token: &Token, state: &mut ParserState) {
 
     let materialized = token.data.materialized.unwrap_or(false);
     let view = ModelNode {
+        qualified_name: None,
+        inherits_qualified_names: Vec::new(),
         name: token.data.name.clone().unwrap_or_default(),
         label: token.data.label.clone(),
         model_type: ModelType::View,
@@ -374,6 +381,8 @@ fn handle_flow_start(token: &Token, state: &mut ParserState) {
     finalize_element(state);
 
     let flow = ModelNode {
+        qualified_name: None,
+        inherits_qualified_names: Vec::new(),
         name: token.data.name.clone().unwrap_or_default(),
         label: token.data.label.clone(),
         model_type: ModelType::Flow,
@@ -424,6 +433,8 @@ fn handle_extension_start(token: &Token, ext_type: &str, state: &mut ParserState
     }
 
     let node = ModelNode {
+        qualified_name: None,
+        inherits_qualified_names: Vec::new(),
         name: token.data.name.clone().unwrap_or_default(),
         label: token.data.label.clone(),
         model_type: ModelType::Extension(ext_type.to_string()),
@@ -487,6 +498,7 @@ fn handle_section(token: &Token, state: &mut ParserState) {
                 state.source_directives_done = false;
                 if let Some(ref cb) = token.data.code_block {
                     let sd = model.source_def.get_or_insert(ViewSourceDef {
+                        from_qualified_name: None,
                         from: None,
                         joins: None,
                         where_clause: None,
@@ -1018,6 +1030,7 @@ fn handle_section_item(
 
         if is_source_directive(&name) && !*source_directives_done {
             let sd = model.source_def.get_or_insert(ViewSourceDef {
+                from_qualified_name: None,
                 from: None,
                 joins: None,
                 where_clause: None,
@@ -1695,6 +1708,8 @@ fn build_field_node(
     let framework_attrs = parse_custom_attributes(&data.framework_attrs);
 
     let mut field = FieldNode {
+        reference_qualified_name: None,
+        type_qualified_name: None,
         name: data.name.clone().unwrap_or_default(),
         label: data.label.clone(),
         field_type: data.type_name.clone(),
@@ -2102,6 +2117,7 @@ fn parse_rollup_args(args_str: &str) -> (RollupDef, Vec<(String, &'static str)>)
     }
 
     let def = RollupDef {
+        target_qualified_name: None,
         target,
         fk,
         aggregate,
@@ -2246,6 +2262,7 @@ fn source_directive_value(data: &TokenData, raw: &str) -> String {
 fn parse_join_value(value: &str) -> JoinDef {
     let parts: Vec<&str> = value.splitn(2, " on ").collect();
     JoinDef {
+        qualified_name: None,
         model: parts
             .first()
             .map(|s| s.trim().to_string())

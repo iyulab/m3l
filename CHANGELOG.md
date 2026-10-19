@@ -32,6 +32,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `alias`, and the `target` file read that the path names (none when it names no file of the set). The key is left out
   when nothing is imported. The C# (`M3lAst.Imports`) and TypeScript (`imports?`) types have it.
 
+- **The AST carries what each name resolves to (§2.1.3).** Every model, interface, view, flow and enum has a
+  `qualifiedName` (`namespace.Name`, or the name alone in the default namespace), and beside every name a declaration
+  writes is the `qualifiedName` of the declaration it names: `inheritsQualifiedNames`, `base.qualifiedName`, a key's
+  `referenceQualifiedName`, a field's `typeQualifiedName`, `rollup.targetQualifiedName`, a view's
+  `source_def.fromQualifiedName` and each join's `qualifiedName`. A name is resolved where it is written — a field a
+  model inherits or an extend block adds keeps the resolution of the file that wrote it — and one that resolves to none
+  or to more than one has none. 🔇 Every expected AST gains these keys. The validator now reads them for a rollup target
+  and a lookup hop, so a lookup a model inherits is checked through the model it names where it was written (it was
+  read from the inheriting model's namespace, which could land on another model of that name). The C# and TypeScript
+  types carry the new keys.
+
 ### Changed
 
 - **The same short name in two namespaces is two declarations (§2.1.3 Rule 1).** `## Product` in namespace `inventory`

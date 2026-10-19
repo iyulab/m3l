@@ -193,6 +193,9 @@ public class RollupDef
 {
     [JsonPropertyName("target")]
     public string Target { get; set; } = "";
+    /// <summary>The qualifiedName of the declaration this names, as the resolver resolved it; null when it names none.</summary>
+    [JsonPropertyName("targetQualifiedName")]
+    public string? TargetQualifiedName { get; set; }
 
     [JsonPropertyName("fk")]
     public string Fk { get; set; } = "";
@@ -318,6 +321,14 @@ public class FieldNode
     [JsonPropertyName("lookup")]
     public LookupDef? Lookup { get; set; }
 
+    /// <summary>For a <c>@reference</c>/<c>@fk</c> key: The qualifiedName of the declaration this names, as the resolver resolved it; null when it names none.</summary>
+    [JsonPropertyName("referenceQualifiedName")]
+    public string? ReferenceQualifiedName { get; set; }
+
+    /// <summary>When the type names a declaration (enum, model, interface): The qualifiedName of the declaration this names, as the resolver resolved it; null when it names none.</summary>
+    [JsonPropertyName("typeQualifiedName")]
+    public string? TypeQualifiedName { get; set; }
+
     [JsonPropertyName("rollup")]
     public RollupDef? Rollup { get; set; }
 
@@ -355,6 +366,9 @@ public class JoinDef
 {
     [JsonPropertyName("model")]
     public string Model { get; set; } = "";
+    /// <summary>The qualifiedName of the declaration this names, as the resolver resolved it; null when it names none.</summary>
+    [JsonPropertyName("qualifiedName")]
+    public string? QualifiedName { get; set; }
 
     [JsonPropertyName("on")]
     public string On { get; set; } = "";
@@ -367,6 +381,9 @@ public class ViewSourceDef
 {
     [JsonPropertyName("from")]
     public string? From { get; set; }
+    /// <summary><c>From</c>: The qualifiedName of the declaration this names, as the resolver resolved it; null when it names none.</summary>
+    [JsonPropertyName("fromQualifiedName")]
+    public string? FromQualifiedName { get; set; }
 
     [JsonPropertyName("joins")]
     public List<JoinDef>? Joins { get; set; }
@@ -454,6 +471,9 @@ public class ModelBase
 
     [JsonPropertyName("model")]
     public string Model { get; set; } = "";
+    /// <summary>The qualifiedName of the declaration this names, as the resolver resolved it; null when it names none.</summary>
+    [JsonPropertyName("qualifiedName")]
+    public string? QualifiedName { get; set; }
 }
 
 /// <summary>One <c>::extend</c> block merged into a model.</summary>
@@ -479,6 +499,9 @@ public class ModelNode
 {
     [JsonPropertyName("name")]
     public string Name { get; set; } = "";
+    /// <summary><c>namespace.Name</c>, or the name alone in the default namespace — tells two declarations of one short name apart.</summary>
+    [JsonPropertyName("qualifiedName")]
+    public string? QualifiedName { get; set; }
 
     [JsonPropertyName("label")]
     public string? Label { get; set; }
@@ -512,6 +535,9 @@ public class ModelNode
 
     [JsonPropertyName("inherits")]
     public List<string> Inherits { get; set; } = [];
+    /// <summary>One per <c>Inherits</c> entry: the parent's qualifiedName, or null when it resolves to none.</summary>
+    [JsonPropertyName("inheritsQualifiedNames")]
+    public List<string?> InheritsQualifiedNames { get; set; } = [];
 
     [JsonPropertyName("description")]
     public string? Description { get; set; }
@@ -545,6 +571,9 @@ public class EnumNode
 {
     [JsonPropertyName("name")]
     public string Name { get; set; } = "";
+    /// <summary><c>namespace.Name</c>, or the name alone in the default namespace.</summary>
+    [JsonPropertyName("qualifiedName")]
+    public string? QualifiedName { get; set; }
 
     [JsonPropertyName("label")]
     public string? Label { get; set; }
@@ -568,6 +597,9 @@ public class EnumNode
 
     [JsonPropertyName("inherits")]
     public List<string> Inherits { get; set; } = [];
+    /// <summary>One per <c>Inherits</c> entry: the parent's qualifiedName, or null when it resolves to none.</summary>
+    [JsonPropertyName("inheritsQualifiedNames")]
+    public List<string?> InheritsQualifiedNames { get; set; } = [];
 
     [JsonPropertyName("description")]
     public string? Description { get; set; }

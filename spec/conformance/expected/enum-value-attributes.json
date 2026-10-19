@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.23.0",
+  "parserVersion": "0.24.0",
   "astVersion": "1.0",
   "project": {
     "name": "conformance.enumattrs"
@@ -10,6 +10,7 @@
   "models": [
     {
       "name": "Payment",
+      "qualifiedName": "conformance.enumattrs.Payment",
       "type": "model",
       "source": "spec/conformance/inputs/enum-value-attributes.m3l.md",
       "namespace": "conformance.enumattrs",
@@ -53,6 +54,7 @@
               "isStandard": true
             }
           ],
+          "typeQualifiedName": "conformance.enumattrs.PaymentMethod",
           "loc": {
             "file": "spec/conformance/inputs/enum-value-attributes.m3l.md",
             "line": 14,
@@ -108,6 +110,7 @@
   "enums": [
     {
       "name": "PaymentMethod",
+      "qualifiedName": "conformance.enumattrs.PaymentMethod",
       "type": "enum",
       "source": "spec/conformance/inputs/enum-value-attributes.m3l.md",
       "namespace": "conformance.enumattrs",
@@ -140,6 +143,7 @@
     },
     {
       "name": "ShippingPriority",
+      "qualifiedName": "conformance.enumattrs.ShippingPriority",
       "type": "enum",
       "source": "spec/conformance/inputs/enum-value-attributes.m3l.md",
       "namespace": "conformance.enumattrs",

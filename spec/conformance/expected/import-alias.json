@@ -11,12 +11,16 @@
   "models": [
     {
       "name": "Product",
+      "qualifiedName": "domain.inventory.Product",
       "type": "model",
       "source": "spec/conformance/inputs/import-alias/inventory.m3l.md",
       "namespace": "domain.inventory",
       "line": 6,
       "inherits": [
         "Stamped"
+      ],
+      "inheritsQualifiedNames": [
+        "domain.inventory.Stamped"
       ],
       "attributes": [],
       "fields": [
@@ -87,12 +91,16 @@
     },
     {
       "name": "Order",
+      "qualifiedName": "domain.sales.Order",
       "type": "model",
       "source": "spec/conformance/inputs/import-alias/orders.m3l.md",
       "namespace": "domain.sales",
       "line": 5,
       "inherits": [
         "inv.Stamped"
+      ],
+      "inheritsQualifiedNames": [
+        "domain.inventory.Stamped"
       ],
       "attributes": [],
       "fields": [
@@ -147,6 +155,7 @@
               "isStandard": true
             }
           ],
+          "referenceQualifiedName": "domain.inventory.Product",
           "loc": {
             "file": "spec/conformance/inputs/import-alias/orders.m3l.md",
             "line": 7,
@@ -193,12 +202,14 @@
     },
     {
       "name": "ProductSalesProfile",
+      "qualifiedName": "domain.sales.ProductSalesProfile",
       "type": "model",
       "source": "spec/conformance/inputs/import-alias/orders.m3l.md",
       "namespace": "domain.sales",
       "base": {
         "kind": "aspect",
-        "model": "inv.Product"
+        "model": "inv.Product",
+        "qualifiedName": "domain.inventory.Product"
       },
       "line": 10,
       "inherits": [],
@@ -240,6 +251,7 @@
   "interfaces": [
     {
       "name": "Stamped",
+      "qualifiedName": "domain.inventory.Stamped",
       "type": "interface",
       "source": "spec/conformance/inputs/import-alias/inventory.m3l.md",
       "namespace": "domain.inventory",

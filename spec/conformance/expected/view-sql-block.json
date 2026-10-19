@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.23.0",
+  "parserVersion": "0.24.0",
   "astVersion": "1.0",
   "project": {},
   "sources": [
@@ -8,6 +8,7 @@
   "models": [
     {
       "name": "User",
+      "qualifiedName": "User",
       "type": "model",
       "source": "spec/conformance/inputs/view-sql-block.m3l.md",
       "line": 1,
@@ -102,6 +103,7 @@
   "views": [
     {
       "name": "UserReport",
+      "qualifiedName": "UserReport",
       "type": "view",
       "source": "spec/conformance/inputs/view-sql-block.m3l.md",
       "line": 7,

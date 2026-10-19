@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.23.0",
+  "parserVersion": "0.24.0",
   "astVersion": "1.0",
   "project": {},
   "sources": [
@@ -8,6 +8,7 @@
   "models": [
     {
       "name": "Customer",
+      "qualifiedName": "Customer",
       "type": "model",
       "source": "spec/conformance/inputs/lookup-rollup.m3l.md",
       "line": 1,
@@ -65,6 +66,7 @@
     },
     {
       "name": "Order",
+      "qualifiedName": "Order",
       "type": "model",
       "source": "spec/conformance/inputs/lookup-rollup.m3l.md",
       "line": 5,
@@ -170,6 +172,7 @@
     },
     {
       "name": "Customer",
+      "qualifiedName": "Customer",
       "type": "model",
       "source": "spec/conformance/inputs/lookup-rollup.m3l.md",
       "line": 15,
@@ -191,6 +194,7 @@
     },
     {
       "name": "OrderSummary",
+      "qualifiedName": "OrderSummary",
       "type": "model",
       "source": "spec/conformance/inputs/lookup-rollup.m3l.md",
       "line": 18,
@@ -257,6 +261,7 @@
           ],
           "rollup": {
             "target": "Order",
+            "targetQualifiedName": "Order",
             "fk": "customer_id",
             "aggregate": "count"
           },
@@ -289,6 +294,7 @@
           ],
           "rollup": {
             "target": "Order",
+            "targetQualifiedName": "Order",
             "fk": "customer_id",
             "aggregate": "sum",
             "field": "total"

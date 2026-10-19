@@ -1,5 +1,5 @@
 {
-  "parserVersion": "0.23.0",
+  "parserVersion": "0.24.0",
   "astVersion": "1.0",
   "project": {
     "name": "sample.types"
@@ -10,6 +10,7 @@
   "models": [
     {
       "name": "AllPrimitiveTypes",
+      "qualifiedName": "sample.types.AllPrimitiveTypes",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
       "namespace": "sample.types",
@@ -234,6 +235,7 @@
     },
     {
       "name": "SemanticTypes",
+      "qualifiedName": "sample.types.SemanticTypes",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
       "namespace": "sample.types",
@@ -351,6 +353,7 @@
     },
     {
       "name": "TypeModifiers",
+      "qualifiedName": "sample.types.TypeModifiers",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
       "namespace": "sample.types",
@@ -518,6 +521,7 @@
     },
     {
       "name": "MapTypes",
+      "qualifiedName": "sample.types.MapTypes",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
       "namespace": "sample.types",
@@ -596,6 +600,7 @@
     },
     {
       "name": "ComplexNestedObject",
+      "qualifiedName": "sample.types.ComplexNestedObject",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
       "namespace": "sample.types",
@@ -818,6 +823,7 @@
     },
     {
       "name": "ArrayOfObjects",
+      "qualifiedName": "sample.types.ArrayOfObjects",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
       "namespace": "sample.types",
@@ -971,6 +977,7 @@
     },
     {
       "name": "ValidationShowcase",
+      "qualifiedName": "sample.types.ValidationShowcase",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
       "namespace": "sample.types",
@@ -1230,6 +1237,7 @@
     },
     {
       "name": "DefaultValues",
+      "qualifiedName": "sample.types.DefaultValues",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
       "namespace": "sample.types",
@@ -1433,6 +1441,7 @@
     },
     {
       "name": "CompositeKeyExample",
+      "qualifiedName": "sample.types.CompositeKeyExample",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
       "namespace": "sample.types",
@@ -1514,6 +1523,7 @@
     },
     {
       "name": "CompositeKeySection",
+      "qualifiedName": "sample.types.CompositeKeySection",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
       "namespace": "sample.types",
@@ -1599,6 +1609,7 @@
     },
     {
       "name": "ExtendedFormatField",
+      "qualifiedName": "sample.types.ExtendedFormatField",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
       "namespace": "sample.types",
@@ -1689,12 +1700,16 @@
     },
     {
       "name": "InheritanceOverride",
+      "qualifiedName": "sample.types.InheritanceOverride",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
       "namespace": "sample.types",
       "line": 178,
       "inherits": [
         "AllPrimitiveTypes"
+      ],
+      "inheritsQualifiedNames": [
+        "sample.types.AllPrimitiveTypes"
       ],
       "description": "Override inherited field definition.",
       "attributes": [],
@@ -1937,6 +1952,7 @@
     },
     {
       "name": "ConditionalFields",
+      "qualifiedName": "sample.types.ConditionalFields",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
       "namespace": "sample.types",
@@ -2078,6 +2094,7 @@
     },
     {
       "name": "DocumentationShowcase",
+      "qualifiedName": "sample.types.DocumentationShowcase",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
       "namespace": "sample.types",
@@ -2194,6 +2211,7 @@
     },
     {
       "name": "ComputedVariants",
+      "qualifiedName": "sample.types.ComputedVariants",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
       "namespace": "sample.types",
@@ -2483,6 +2501,7 @@
     },
     {
       "name": "BehaviorShowcase",
+      "qualifiedName": "sample.types.BehaviorShowcase",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
       "namespace": "sample.types",
@@ -2603,6 +2622,7 @@
     },
     {
       "name": "VersionedEntity",
+      "qualifiedName": "sample.types.VersionedEntity",
       "type": "model",
       "source": "spec/conformance/inputs/03-types-showcase.m3l.md",
       "namespace": "sample.types",

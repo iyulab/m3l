@@ -75,6 +75,8 @@ export interface FieldOrigin {
 export interface ModelBase {
   kind: "aspect" | "subtype";
   model: string;
+  /** The qualifiedName of the declaration `model` names — absent when it names none. */
+  qualifiedName?: string;
 }
 
 /** One `::extend` block merged into a model, in merge order. */
@@ -106,6 +108,8 @@ export interface LookupDef {
 
 export interface RollupDef {
   target: string;
+  /** The qualifiedName of the declaration `target` names — absent when it names none. */
+  targetQualifiedName?: string;
   fk: string;
   aggregate: string;
   field?: string;
@@ -143,6 +147,10 @@ export interface FieldNode {
   attributes: FieldAttribute[];
   framework_attrs?: CustomAttribute[];
   lookup?: LookupDef;
+  /** For a `@reference`/`@fk` key: the qualifiedName of the model it points at — absent when it names none. */
+  referenceQualifiedName?: string;
+  /** When the type names a declaration (enum, model, interface): its qualifiedName. */
+  typeQualifiedName?: string;
   rollup?: RollupDef;
   computed?: ComputedDef;
   enum_values?: EnumValue[];
@@ -158,11 +166,15 @@ export interface FieldNode {
 
 export interface JoinDef {
   model: string;
+  /** The qualifiedName of the declaration `model` names — absent when it names none. */
+  qualifiedName?: string;
   on: string;
 }
 
 export interface ViewSourceDef {
   from?: string;
+  /** The qualifiedName of the declaration `from` names — absent when it names none. */
+  fromQualifiedName?: string;
   joins?: JoinDef[];
   where?: string;
   where_raw?: PlatformExpression[];
@@ -192,6 +204,8 @@ export interface Sections {
 
 export interface ModelNode {
   name: string;
+  /** `namespace.Name`, or the name alone in the default namespace. */
+  qualifiedName?: string;
   label?: string;
   type: ModelType;
   source: string;
@@ -207,6 +221,8 @@ export interface ModelNode {
   renamed_from?: string[];
   line: number;
   inherits: string[];
+  /** One per `inherits` entry: the parent's qualifiedName, or null when it resolves to none. Absent when there are no parents. */
+  inheritsQualifiedNames?: (string | null)[];
   description?: string;
   attributes: FieldAttribute[];
   fields: FieldNode[];
@@ -221,6 +237,8 @@ export interface ModelNode {
 
 export interface EnumNode {
   name: string;
+  /** `namespace.Name`, or the name alone in the default namespace. */
+  qualifiedName?: string;
   label?: string;
   type: ModelType;
   source: string;
@@ -230,6 +248,8 @@ export interface EnumNode {
   prefix?: string;
   line: number;
   inherits: string[];
+  /** One per `inherits` entry: the parent's qualifiedName, or null when it resolves to none. Absent when there are no parents. */
+  inheritsQualifiedNames?: (string | null)[];
   description?: string;
   values: EnumValue[];
   loc: SourceLocation;

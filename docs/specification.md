@@ -295,6 +295,16 @@ For multiple namespaces in a single document:
 > short name is looked up in the referring namespace, then the referring file, then every file read. The same short
 > name declared in two namespaces is two declarations, not an error; a reference that still fits more than one is
 > `M3L-E008` at the referring declaration (Rule 4).
+>
+> **The AST carries the resolution.** Every declaration has a `qualifiedName` — `namespace.Name`, or the name alone
+> in the default namespace — and beside every name a declaration writes is the `qualifiedName` of the declaration it
+> resolved to: `inheritsQualifiedNames` (one per `inherits` entry, null for one that resolves to none),
+> `base.qualifiedName`, a key's `referenceQualifiedName`, a field's `typeQualifiedName` (when the type names an enum,
+> model or interface), `rollup.targetQualifiedName`, and a view source's `fromQualifiedName` and each join's
+> `qualifiedName`. A name is resolved where it is written, so a field a model inherits or an `::extend` block adds keeps
+> the resolution made in the file that wrote it. A name that resolves to none, or to more than one, has no
+> `…QualifiedName` — the diagnostic for it says why. Lookup hops and `@from` relations are not repeated: they follow
+> the keys and sources that carry one.
 
 ### 2.2 Model Definition
 > **Status: Implemented** — Fully supported in `m3l-core` parser.

@@ -5,6 +5,8 @@ use pretty_assertions::assert_eq;
 #[test]
 fn field_node_json_keys() {
     let field = FieldNode {
+        reference_qualified_name: None,
+        type_qualified_name: None,
         name: "email".into(),
         label: None,
         field_type: Some("string".into()),
@@ -111,6 +113,8 @@ fn field_attribute_with_standard() {
 #[test]
 fn model_node_json_keys() {
     let model = ModelNode {
+        qualified_name: None,
+        inherits_qualified_names: Vec::new(),
         name: "User".into(),
         label: None,
         model_type: ModelType::Model,
@@ -204,6 +208,8 @@ fn m3l_ast_json_keys() {
 #[test]
 fn enum_node_json() {
     let en = EnumNode {
+        qualified_name: None,
+        inherits_qualified_names: Vec::new(),
         name: "Status".into(),
         label: None,
         enum_type: ModelType::Enum,

@@ -1,0 +1,14 @@
+{
+  "diagnostics": [
+    {
+      "code": "M3L-E035",
+      "line": 7,
+      "severity": "error"
+    },
+    {
+      "code": "M3L-E035",
+      "line": 8,
+      "severity": "error"
+    }
+  ]
+}

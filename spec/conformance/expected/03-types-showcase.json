@@ -1639,11 +1639,8 @@
         },
         {
           "name": "status",
-          "type": "string",
-          "params": [
-            20.0
-          ],
-          "nullable": false,
+          "type": "identifier",
+          "nullable": true,
           "array": false,
           "arrayItemNullable": false,
           "kind": "stored",
@@ -1652,7 +1649,7 @@
             {
               "name": "reference",
               "args": [
-                "StatusEnum"
+                "VersionedEntity"
               ],
               "isStandard": true
             },
@@ -1664,6 +1661,7 @@
               "isStandard": true
             }
           ],
+          "referenceQualifiedName": "sample.types.VersionedEntity",
           "loc": {
             "file": "spec/conformance/inputs/03-types-showcase.m3l.md",
             "line": 169,

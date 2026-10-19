@@ -3179,6 +3179,7 @@ Conforming parsers should use these error codes for consistent diagnostics.
 | `M3L-E032` | `{element}`: the former name `{name}` is not a name | An argument of `@renamed_from` is empty, qualified (a rename stays within its namespace), or not an identifier — or the declaration names none (§2.2.6) |
 | `M3L-E033` | `@import "{path}"` names no file of this set | An import, resolved like the circular-import check resolves it (§10.6.1 — relative to the importing file, or to the project root; `.md` may be left off), names none of the files read together. Judged only when the files handed in are the whole set — a project or directory, or a tool's multi-file call; a file read on its own does not follow its imports |
 | `M3L-E034` | `@import "{path}" as {alias}`: the alias is already given to the import at line {line} | One file gives one alias to two imports (§10.6.2) — an alias names one file |
+| `M3L-E035` | Field `{field}` in `{model}`: the key's target `{target}` names no model | A `@reference(Model)` or `@fk(Model.field)` names no model, view or flow of the files read (§2.1.3) — the key's counterpart of `M3L-E004` (a view source), `M3L-E007` (a parent) and `M3L-E011` (an extend target). A target that fits more than one is `M3L-E008`; one with a scheme (`external://…`, §5.2) is not judged. At the field's line, once where a copied field was written |
 
 #### 10.5.2 Warnings
 

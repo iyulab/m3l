@@ -32,6 +32,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `alias`, and the `target` file read that the path names (none when it names no file of the set). The key is left out
   when nothing is imported. The C# (`M3lAst.Imports`) and TypeScript (`imports?`) types have it.
 
+- **`M3L-E035` — a key's target names no model.** `@reference(Nowhere)` and `@fk(Nowhere.id)` passed without a word —
+  a view source naming no model was `M3L-E004`, a parent `M3L-E007`, an extend target `M3L-E011`, but a key's target
+  was read only when a lookup or rollup went through it. Now it is an error at the field's line (once, where a field
+  copied from a parent or an extend block was written). A target that fits more than one declaration is `M3L-E008`;
+  one with a scheme (`external://…`, §5.2) is not judged. The bundled `03-types-showcase` sample referenced an enum
+  name as a model; it now references a model.
 - **The AST carries what each name resolves to (§2.1.3).** Every model, interface, view, flow and enum has a
   `qualifiedName` (`namespace.Name`, or the name alone in the default namespace), and beside every name a declaration
   writes is the `qualifiedName` of the declaration it names: `inheritsQualifiedNames`, `base.qualifiedName`, a key's

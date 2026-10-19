@@ -166,9 +166,9 @@
 > Fields using extended (multi-line) format.
 
 - id: identifier @pk
-- status: string(20)
+- status: identifier?
   - description: "Current processing status"
-  - reference: StatusEnum
+  - reference: VersionedEntity
   - on_delete: set_null
 - config: json
   - description: "Application configuration data"

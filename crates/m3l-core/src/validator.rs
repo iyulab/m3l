@@ -19,12 +19,37 @@ pub fn validate(ast: &M3lAst, options: &ValidateOptions) -> ValidateResult {
         .collect();
     let model_map = Models::new(&all_models, crate::names::Aliases::of_imports(&ast.imports));
 
-    // M3L-E008: a key's `@reference`/`@fk` that more than one declaration fits (§2.1.3 Rule 4). The other checks read
-    // the target only when they need it — a key nothing looks through would otherwise never be read.
+    // A key's `@reference`/`@fk` target is read here once, whatever else reads it: more than one declaration fitting is
+    // M3L-E008 (§2.1.3 Rule 4), none is M3L-E035. The other checks read the target only when they look through the
+    // key, so a key nothing looks through would otherwise never be read. A target with a scheme (`external://…`,
+    // §5.2) is not a name in this set. A field copied from a parent or an extend block is reported once, where written.
+    let mut unresolved: HashSet<(String, usize, String)> = HashSet::new();
     for model in &all_models {
         for field in &model.fields {
-            if let Some(target) = referenced_model(field) {
-                model_map.get(target, model);
+            let Some(target) = referenced_model(field) else {
+                continue;
+            };
+            if target.contains("://") {
+                continue;
+            }
+            let found = model_map
+                .resolved(field.reference_qualified_name.as_deref(), target, model)
+                .is_some();
+            if found || model_map.is_ambiguous(target, model) {
+                continue;
+            }
+            if unresolved.insert((field.loc.file.clone(), field.loc.line, target.to_string())) {
+                errors.push(Diagnostic {
+                    code: "M3L-E035".into(),
+                    severity: DiagnosticSeverity::Error,
+                    file: field.loc.file.clone(),
+                    line: field.loc.line,
+                    col: 1,
+                    message: format!(
+                        "Field \"{}\" in \"{}\": the key's target \"{}\" names no model",
+                        field.name, model.name, target
+                    ),
+                });
             }
         }
     }

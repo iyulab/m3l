@@ -72,6 +72,12 @@
       "input": "validate/inputs/qualified-names",
       "expected": "validate/expected/qualified-names.json",
       "strict": false
+    },
+    {
+      "name": "key-targets",
+      "input": "validate/inputs/key-targets.m3l.md",
+      "expected": "validate/expected/key-targets.json",
+      "strict": false
     }
   ]
 }

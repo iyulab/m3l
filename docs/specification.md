@@ -2377,7 +2377,7 @@ M3L projects can include a `m3l.config.yaml` file in the project root to configu
 
 #### 5.3.1 File Location
 
-The configuration file must be named `m3l.config.yaml` and placed in the project root directory. The project root is determined by the directory passed to the CLI (or the current working directory).
+The configuration file must be named `m3l.config.yaml` and placed in the project root directory. The CLI reads the configuration that selects the files from the directory it is passed (or the current working directory). The project root package imports resolve from is found as §10.6.1 describes — a configuration file in a directory above the one passed marks that directory as the root, but its `sources` select nothing there.
 
 #### 5.3.2 Schema
 
@@ -3238,7 +3238,13 @@ Conforming parsers should use these error codes for consistent diagnostics.
 ```
 
 - Relative paths start with `./` or `../`
-- Package paths are resolved from the project root (determined by `.m3lroot` file, `m3l.config.yaml`, or CLI option)
+- Package paths are resolved from the project root. The root is the nearest directory — the one the files are read
+  from (the named file's, for one file), then each directory above it — that holds a `.m3lroot` file or an
+  `m3l.config.yaml`; when none does, it is the directory the files are read from. A `.m3lroot` file marks its
+  directory; what it contains is not read. An implementation may also let its caller name the root directly; the
+  `m3l` command does not.
+- Files read from a directory *below* the root are a part of the project, not all of it: an `@import` of a file
+  outside what was read is not `M3L-E033`, and a cycle is found among the files read.
 - A path ending in `.m3l` also names the `.m3l.md` file of that name — the examples above import `common/base.m3l.md`
 
 #### 10.6.2 Aliases

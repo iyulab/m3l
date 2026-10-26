@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **The project root can lie above the directory you read (§10.6.1).** `m3l` takes the root of a project from the nearest
+  directory — the one read, then each directory above it — that holds a `.m3lroot` file or an `m3l.config.yaml`;
+  without either, it is still the directory read. Reading `models/` of a project whose root is its parent now resolves
+  `@import "models/billing/b.m3l"` against that parent, finds the cycle it closes, and no longer reports an import of a
+  file outside `models/` as `M3L-E033`: the files read are then a part of the project, not the whole set its imports may
+  name. The specification described `.m3lroot` as read; nothing read it.
+- **Rust API: `ResolveOptions::base_dir`** — the absolute directory the relative `source` paths and a relative
+  `project_root` are written from. With it the root, the importing file and the files read are compared as absolute
+  paths, so a root *above* the files names the same files they do (compared as written, an absolute root and
+  relative file paths never matched, and the imports through it passed without a word). A caller building
+  `ResolveOptions` with a struct literal adds `base_dir: None`; `..ResolveOptions::default()` is unaffected.
+
 ## [0.25.0] - 2026-10-26
 
 ### Added

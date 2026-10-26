@@ -28,6 +28,12 @@ pub struct ResolveOptions {
     /// named `a.m3l.md`, `common/b.m3l.md` means. Relative paths (`./`, `../`) never use it: they
     /// are resolved from the importing file's own directory.
     pub project_root: Option<String>,
+    /// The absolute directory the relative `source` paths and a relative `project_root` are written from. With it,
+    /// the paths of the files, the importing file and the root are compared as absolute paths — so a root that lies
+    /// *above* the files read (`..`, or a directory the file paths do not mention) names the same files the
+    /// `source` paths do. Without it, the paths are compared as written, which is only sound while the root is the
+    /// directory the `source` paths are relative to or a prefix of them. An absolute path ignores it.
+    pub base_dir: Option<String>,
     /// Whether the files handed in are the whole set the imports may name — a project, a directory, the files a
     /// tool loads together. Then an `@import` that names none of them is `M3L-E033`. Off for a single file read on its
     /// own: nothing follows its imports, so a file it imports being absent says nothing about the import.
@@ -40,6 +46,7 @@ impl Default for ResolveOptions {
             inline_inherited: true,
             merge_extends: true,
             project_root: None,
+            base_dir: None,
             complete_file_set: false,
         }
     }
@@ -68,7 +75,7 @@ pub fn resolve_with(
     let mut sources: Vec<String> = Vec::new();
 
     check_prefix_headers(files, &mut errors);
-    let (aliases, imports) = file_imports(files, options.project_root.as_deref(), &mut errors);
+    let (aliases, imports) = file_imports(files, PathFrame::of(&options), &mut errors);
     let aliases = Rc::new(aliases);
     check_extend_kind_args(files, &mut errors);
     check_unread_field_text(files, &mut warnings);
@@ -326,13 +333,12 @@ pub fn resolve_with(
             (f.source.as_str(), imports)
         })
         .collect();
-    let circular_errors =
-        detect_circular_imports_internal(&file_imports, options.project_root.as_deref());
+    let circular_errors = detect_circular_imports_internal(&file_imports, PathFrame::of(&options));
     errors.extend(circular_errors);
     if options.complete_file_set {
         errors.extend(detect_unmatched_imports(
             &file_imports,
-            options.project_root.as_deref(),
+            PathFrame::of(&options),
         ));
     }
 
@@ -565,19 +571,19 @@ use std::rc::Rc;
 /// (that import is `M3L-E033`'s when the set is complete). One file giving one alias to two imports is `M3L-E034`.
 fn file_imports(
     files: &[ParsedFile],
-    project_root: Option<&str>,
+    frame: PathFrame,
     errors: &mut Vec<Diagnostic>,
 ) -> (Aliases, Vec<ImportNode>) {
     let loaded: HashMap<String, &str> = files
         .iter()
-        .map(|f| (normalize_path(&f.source), f.source.as_str()))
+        .map(|f| (frame.place(&f.source), f.source.as_str()))
         .collect();
     let mut aliases = Aliases::default();
     let mut nodes = Vec::new();
     for file in files {
         let mut seen: HashMap<&str, usize> = HashMap::new();
         for import in &file.imports {
-            let target = import_target(&file.source, &import.path, project_root, &loaded);
+            let target = import_target(&file.source, &import.path, frame, &loaded);
             nodes.push(ImportNode {
                 file: file.source.clone(),
                 line: import.line,
@@ -987,13 +993,13 @@ pub fn detect_circular_imports(file_imports: &[(String, Vec<String>)]) -> Vec<Di
             )
         })
         .collect();
-    detect_circular_imports_internal(&refs, None)
+    detect_circular_imports_internal(&refs, PathFrame::default())
 }
 
 /// `file_imports`: each loaded file's source path with its imports as (path as written, line).
 fn detect_circular_imports_internal(
     file_imports: &[(&str, Vec<(&str, usize)>)],
-    project_root: Option<&str>,
+    frame: PathFrame,
 ) -> Vec<Diagnostic> {
     let mut errors = Vec::new();
 
@@ -1003,7 +1009,7 @@ fn detect_circular_imports_internal(
     // read from any other directory, or imported as the spec writes it (`./b.m3l`), went unseen.
     let loaded: HashMap<String, &str> = file_imports
         .iter()
-        .map(|&(src, _)| (normalize_path(src), src))
+        .map(|&(src, _)| (frame.place(src), src))
         .collect();
     let adj: HashMap<&str, Vec<(&str, usize)>> = file_imports
         .iter()
@@ -1011,7 +1017,7 @@ fn detect_circular_imports_internal(
             let targets = imports
                 .iter()
                 .filter_map(|&(import, line)| {
-                    import_target(src, import, project_root, &loaded).map(|t| (t, line))
+                    import_target(src, import, frame, &loaded).map(|t| (t, line))
                 })
                 .collect();
             (*src, targets)
@@ -1035,16 +1041,16 @@ fn detect_circular_imports_internal(
 /// so an import is unmatched exactly when the cycle check could not follow it.
 fn detect_unmatched_imports(
     file_imports: &[(&str, Vec<(&str, usize)>)],
-    project_root: Option<&str>,
+    frame: PathFrame,
 ) -> Vec<Diagnostic> {
     let loaded: HashMap<String, &str> = file_imports
         .iter()
-        .map(|&(src, _)| (normalize_path(src), src))
+        .map(|&(src, _)| (frame.place(src), src))
         .collect();
     let mut errors = Vec::new();
     for &(src, ref imports) in file_imports {
         for &(import, line) in imports {
-            if import_target(src, import, project_root, &loaded).is_none() {
+            if import_target(src, import, frame, &loaded).is_none() {
                 errors.push(Diagnostic {
                     code: "M3L-E033".to_string(),
                     severity: DiagnosticSeverity::Error,
@@ -1108,14 +1114,14 @@ fn dfs_detect_cycle<'a>(
 fn import_target<'a>(
     importer: &str,
     import: &str,
-    project_root: Option<&str>,
+    frame: PathFrame,
     loaded: &HashMap<String, &'a str>,
 ) -> Option<&'a str> {
     let import = import.replace('\\', "/");
     let base = if import.starts_with("./") || import.starts_with("../") {
-        parent_dir(importer)
+        parent_dir(&frame.place(importer)).to_string()
     } else {
-        project_root.unwrap_or("")
+        frame.place(frame.project_root.unwrap_or(""))
     };
     let path = if base.is_empty() {
         normalize_path(&import)
@@ -1126,6 +1132,40 @@ fn import_target<'a>(
         .get(&path)
         .or_else(|| loaded.get(&format!("{path}.md")))
         .copied()
+}
+
+/// The frame the paths of one resolution are compared in: the project root package imports start from, and the
+/// absolute directory the relative `source` paths and the root are written from ([`ResolveOptions::base_dir`]).
+/// Every path — a loaded file, an importing file, the root — goes through [`PathFrame::place`] before it is compared,
+/// so they are always compared as the same kind of path.
+#[derive(Clone, Copy, Default)]
+struct PathFrame<'a> {
+    project_root: Option<&'a str>,
+    base_dir: Option<&'a str>,
+}
+
+impl<'a> PathFrame<'a> {
+    fn of(options: &'a ResolveOptions) -> Self {
+        Self {
+            project_root: options.project_root.as_deref(),
+            base_dir: options.base_dir.as_deref(),
+        }
+    }
+
+    /// `path` folded to a normalized path — joined onto the base directory first when it is relative and there is
+    /// one. Lexical: the files need not exist, and a symbolic link is not followed.
+    fn place(&self, path: &str) -> String {
+        let path = path.replace('\\', "/");
+        match self.base_dir {
+            Some(base) if !is_absolute(&path) => normalize_path(&format!("{base}/{path}")),
+            _ => normalize_path(&path),
+        }
+    }
+}
+
+/// `/…` or a drive (`C:/…`) — a path the base directory has nothing to say about.
+fn is_absolute(path: &str) -> bool {
+    path.starts_with('/') || path.as_bytes().get(1) == Some(&b':')
 }
 
 fn parent_dir(path: &str) -> &str {
@@ -1593,6 +1633,50 @@ mod tests {
         assert!(cycle_codes(&files, None).is_empty());
     }
 
+    /// A root *above* the directory the files were read from. The files are named relative to where they
+    /// were read (`a.m3l.md`, `billing/b.m3l.md`) and the root is a directory above that — absolute, or `..` —
+    /// so comparing the two as written finds no file for `models/a.m3l` and a cycle through package paths goes
+    /// unseen, with no error. With the directory the paths are written from, both are the same kind of path.
+    #[test]
+    fn a_root_above_the_files_read_names_the_same_files() {
+        let parsed: Vec<_> = [
+            (
+                "a.m3l.md",
+                "@import \"models/billing/b.m3l\"\n## A\n- id: identifier",
+            ),
+            (
+                "billing/b.m3l.md",
+                "@import \"models/a.m3l\"\n## B\n- id: identifier",
+            ),
+        ]
+        .iter()
+        .map(|(n, s)| parse_string(s, n))
+        .collect();
+        let cycles = |root: Option<&str>, base_dir: Option<&str>| -> usize {
+            let ast = resolve_with(
+                &parsed,
+                None,
+                ResolveOptions {
+                    project_root: root.map(str::to_string),
+                    base_dir: base_dir.map(str::to_string),
+                    complete_file_set: true,
+                    ..ResolveOptions::default()
+                },
+            );
+            ast.errors.iter().filter(|e| e.code == "M3L-E003").count()
+        };
+        // The base directory is `/work/proj/models`, the root `/work/proj`: absolute, then as `..`.
+        assert_eq!(cycles(Some("/work/proj"), Some("/work/proj/models")), 1);
+        assert_eq!(cycles(Some(".."), Some("/work/proj/models")), 1);
+        // A Windows drive path is absolute too, and a backslash is a separator.
+        assert_eq!(
+            cycles(Some("C:\\work\\proj"), Some("C:/work/proj/models")),
+            1
+        );
+        // The comparison as written has nothing to join the root onto: the import names no loaded file.
+        assert_eq!(cycles(Some("/work/proj"), None), 0);
+    }
+
     /// The cycle is reported where it closes: the `@import` line of the file whose import leads
     /// back into the chain — not line 1, which is a comment or a namespace header as often as not.
     #[test]
@@ -1895,6 +1979,7 @@ mod enum_inheritance_tests {
                 inline_inherited: false,
                 merge_extends: true,
                 project_root: None,
+                base_dir: None,
                 complete_file_set: false,
             },
         );

@@ -301,6 +301,7 @@ fn merge_extends_off_keeps_blocks_in_the_bucket() {
             inline_inherited: false,
             merge_extends: false,
             project_root: None,
+            base_dir: None,
             complete_file_set: false,
         },
     );

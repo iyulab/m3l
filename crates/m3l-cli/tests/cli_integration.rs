@@ -1448,3 +1448,105 @@ fn cli_parse_output_into_a_missing_directory_says_so() {
     assert!(stderr.contains("nowhere"), "stderr: {stderr}");
     assert!(!stderr.contains("os error"), "stderr: {stderr}");
 }
+
+/// A project laid out as `root/models/a.m3l.md` + `root/models/billing/b.m3l.md`, importing each other by
+/// package path (`models/…`, from the project root) — and `root/common/base.m3l.md`, outside `models/`.
+fn root_project(name: &str, marker: bool) -> ScratchDir {
+    let dir = ScratchDir::new(name);
+    let models = dir.0.join("models");
+    std::fs::create_dir_all(models.join("billing")).unwrap();
+    std::fs::create_dir_all(dir.0.join("common")).unwrap();
+    std::fs::write(
+        models.join("a.m3l.md"),
+        "# Namespace: t\n@import \"models/billing/b.m3l\"\n@import \"common/base.m3l\"\n## A\n- id: identifier\n",
+    )
+    .unwrap();
+    std::fs::write(
+        models.join("billing").join("b.m3l.md"),
+        "# Namespace: t\n@import \"models/a.m3l\"\n## B\n- id: identifier\n",
+    )
+    .unwrap();
+    std::fs::write(
+        dir.0.join("common").join("base.m3l.md"),
+        "# Namespace: t\n## Base\n- id: identifier\n",
+    )
+    .unwrap();
+    if marker {
+        std::fs::write(dir.0.join(".m3lroot"), "").unwrap();
+    }
+    dir
+}
+
+fn validate_stdout(mut cmd: Command) -> String {
+    let output = cmd.output().expect("failed to run");
+    String::from_utf8_lossy(&output.stdout).into_owned()
+}
+
+#[test]
+fn cli_m3lroot_above_the_directory_read_is_the_project_root() {
+    let dir = root_project("m3lroot-above", true);
+    let models = dir.0.join("models");
+
+    // The marker makes `root/` the root: `models/billing/b.m3l` names the file under `models/`, the two imports
+    // close a cycle, and `common/base.m3l` — outside the directory read — is a part of the project, not a missing
+    // file.
+    let stdout = validate_stdout({
+        let mut cmd = m3l_bin();
+        cmd.arg("validate").arg(&models);
+        cmd
+    });
+    assert!(stdout.contains("M3L-E003"), "stdout: {stdout}");
+    assert!(!stdout.contains("M3L-E033"), "stdout: {stdout}");
+
+    // The same from inside the directory, with a relative path: the files are named from where they were read.
+    let stdout = validate_stdout({
+        let mut cmd = m3l_bin();
+        cmd.current_dir(&models).args(["validate", "."]);
+        cmd
+    });
+    assert!(stdout.contains("M3L-E003"), "stdout: {stdout}");
+    assert!(!stdout.contains("M3L-E033"), "stdout: {stdout}");
+
+    // A file named on its own is read in its project, too.
+    let stdout = validate_stdout({
+        let mut cmd = m3l_bin();
+        cmd.current_dir(&models)
+            .args(["validate", "billing/b.m3l.md"]);
+        cmd
+    });
+    assert!(!stdout.contains("M3L-E033"), "stdout: {stdout}");
+}
+
+#[test]
+fn cli_without_a_marker_the_directory_read_is_the_root() {
+    let dir = root_project("m3lroot-absent", false);
+    let models = dir.0.join("models");
+
+    // No marker, no configuration above: the directory read is the root and the whole set. `models/billing/b.m3l`
+    // names no file under it, and neither does `common/base.m3l` — each is `M3L-E033`, and no cycle is seen.
+    let stdout = validate_stdout({
+        let mut cmd = m3l_bin();
+        cmd.arg("validate").arg(&models);
+        cmd
+    });
+    assert!(stdout.contains("M3L-E033"), "stdout: {stdout}");
+    assert!(!stdout.contains("M3L-E003"), "stdout: {stdout}");
+}
+
+#[test]
+fn cli_a_project_configuration_above_is_a_root_marker_too() {
+    let dir = root_project("config-above", false);
+    std::fs::write(
+        dir.0.join("m3l.config.yaml"),
+        "name: demo\nsources:\n  - \"models/**/*.m3l.md\"\n  - \"common/*.m3l.md\"\n",
+    )
+    .unwrap();
+    let models = dir.0.join("models");
+
+    let stdout = validate_stdout({
+        let mut cmd = m3l_bin();
+        cmd.arg("validate").arg(&models);
+        cmd
+    });
+    assert!(stdout.contains("M3L-E003"), "stdout: {stdout}");
+}

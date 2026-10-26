@@ -191,8 +191,14 @@ pub fn build_ast_with(
     });
 
     options.project_root = Some(input.root);
-    // A directory (or its m3l.config.yaml) is the whole set its imports may name; a single file is read on its own.
-    options.complete_file_set = input_path.is_dir();
+    // The files keep the paths they were given (the AST is portable); the root is absolute, so the resolver is told
+    // which directory those paths are written from and compares them all in one frame.
+    options.base_dir = std::env::current_dir()
+        .ok()
+        .map(|dir| dir.to_string_lossy().replace('\\', "/"));
+    // A directory (or its m3l.config.yaml) is the whole set its imports may name — unless the project root lies above
+    // it, then it is a part of the project; a single file is read on its own.
+    options.complete_file_set = input_path.is_dir() && input.root_is_read_dir;
     let ast = m3l_core::resolve_with(&parsed_files, project_info, options);
 
     Ok(ast)

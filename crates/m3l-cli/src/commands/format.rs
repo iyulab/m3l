@@ -14,6 +14,7 @@ pub fn run_format(input_path: &Path) -> Result<String, String> {
             inline_inherited: false,
             merge_extends: false,
             project_root: None,
+            base_dir: None,
             complete_file_set: false,
         },
     )?;
@@ -889,6 +890,7 @@ mod tests {
             inline_inherited: false,
             merge_extends: false,
             project_root: None,
+            base_dir: None,
             complete_file_set: false,
         };
         let ast = m3l_core::resolve_with(&[m3l_core::parse_string(src, "t.m3l.md")], None, opts);
@@ -1162,6 +1164,7 @@ mod lossless {
             inline_inherited: false,
             merge_extends: false,
             project_root: None,
+            base_dir: None,
             complete_file_set: false,
         }
     }
@@ -1370,6 +1373,7 @@ mod lossless {
             inline_inherited: false,
             merge_extends: false,
             project_root: None,
+            base_dir: None,
             complete_file_set: false,
         };
         let formatted = format_ast(&m3l_core::resolve_with(

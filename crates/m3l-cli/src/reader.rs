@@ -23,6 +23,8 @@ pub struct M3lConfig {
 }
 
 const CONFIG_FILE: &str = "m3l.config.yaml";
+/// A file whose presence makes its directory the project root (§10.6.1). Its content is not read.
+const ROOT_MARKER: &str = ".m3lroot";
 const CONFIG_KEYS: [&str; 3] = ["name", "version", "sources"];
 
 /// What a path reads as: its M3L files, the project configuration that selected them (when the
@@ -31,9 +33,35 @@ pub struct ProjectInput {
     pub files: Vec<M3lFile>,
     pub config: Option<M3lConfig>,
     pub warnings: Vec<String>,
-    /// The project root package imports resolve from (§10.6.1): the directory read,
-    /// or the named file's directory, written the way the files' paths are.
+    /// The project root package imports resolve from (§10.6.1) — see [`project_root`]. Absolute,
+    /// with `/` separators; the files' own paths stay as they were given.
     pub root: String,
+    /// Whether the root is the directory read (or the named file's). When it lies above, the files
+    /// read are a part of the project, not the whole set its imports may name.
+    pub root_is_read_dir: bool,
+}
+
+/// The project root of what a path reads (§10.6.1): the nearest directory — the one read (the named
+/// file's, for a file), then each one above it — that holds a `.m3lroot` file or an
+/// `m3l.config.yaml`; the directory read when none does. Absolute, `/` separators, so that the
+/// resolver compares it with the files' paths in one frame (`ResolveOptions::base_dir`).
+fn project_root(input_path: &Path) -> (String, bool) {
+    let read_dir = if input_path.is_dir() {
+        input_path
+    } else {
+        input_path.parent().unwrap_or(Path::new(""))
+    };
+    let read_dir = if read_dir.as_os_str().is_empty() {
+        Path::new(".")
+    } else {
+        read_dir
+    };
+    let read_dir = std::path::absolute(read_dir).unwrap_or_else(|_| read_dir.to_path_buf());
+    let root = read_dir
+        .ancestors()
+        .find(|dir| dir.join(ROOT_MARKER).exists() || dir.join(CONFIG_FILE).is_file())
+        .unwrap_or(&read_dir);
+    (source_path(root), root == read_dir)
 }
 
 /// The path recorded as a file's `source` in the AST, with `/` separators on every platform.
@@ -62,6 +90,8 @@ pub fn read_project(input_path: &Path) -> Result<ProjectInput, String> {
         return Err(format!("Path does not exist: {}", input_path.display()));
     }
 
+    let (root, root_is_read_dir) = project_root(input_path);
+
     if input_path.is_file() {
         let content = read_m3l_text(input_path, Selected::Named)?;
         return Ok(ProjectInput {
@@ -71,7 +101,8 @@ pub fn read_project(input_path: &Path) -> Result<ProjectInput, String> {
             }],
             config: None,
             warnings: Vec::new(),
-            root: source_path(input_path.parent().unwrap_or(Path::new(""))),
+            root,
+            root_is_read_dir,
         });
     }
 
@@ -85,7 +116,8 @@ pub fn read_project(input_path: &Path) -> Result<ProjectInput, String> {
                 files,
                 config: Some(config),
                 warnings,
-                root: source_path(input_path),
+                root,
+                root_is_read_dir,
             });
         }
 
@@ -94,7 +126,8 @@ pub fn read_project(input_path: &Path) -> Result<ProjectInput, String> {
             files: scan_directory(input_path)?,
             config: None,
             warnings: Vec::new(),
-            root: source_path(input_path),
+            root,
+            root_is_read_dir,
         });
     }
 

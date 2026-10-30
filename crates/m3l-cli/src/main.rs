@@ -44,7 +44,8 @@ enum Commands {
         format: String,
     },
 
-    /// Compare two M3L files and show differences
+    /// Compare two M3L files or directories and show what differs: exits 0 when they are the same, 1 when they
+    /// differ, 2 when they cannot be compared
     Diff {
         /// First input file/directory
         left: PathBuf,
@@ -113,13 +114,17 @@ fn main() {
                 }
             }
         }
-        Commands::Diff { left, right } => match run_diff(&left, &right) {
-            Ok(output) => {
-                println!("{output}");
+        // Like diff(1): 0 = the two sides are the same, 1 = they differ, 2 = the comparison could not be made.
+        Commands::Diff { left, right } => match commands::diff::run_diff(&left, &right) {
+            Ok(report) => {
+                println!("{}", report.text);
+                if report.differs {
+                    process::exit(1);
+                }
             }
             Err(e) => {
                 eprintln!("Error: {e}");
-                process::exit(1);
+                process::exit(2);
             }
         },
         Commands::Format { path } => match commands::format::run_format(&path) {
@@ -235,146 +240,6 @@ fn describe_write_error(out_path: &Path, e: &std::io::Error) -> String {
         }
         _ => format!("Failed to write {}: {e}", out_path.display()),
     }
-}
-
-fn run_diff(left_path: &Path, right_path: &Path) -> Result<String, String> {
-    let left_ast = build_ast(left_path)?;
-    let right_ast = build_ast(right_path)?;
-
-    let mut lines: Vec<String> = Vec::new();
-
-    // Each declaration by the name it is shown under: its short name, or `namespace.Name` when the short name is
-    // declared in more than one namespace on either side — one namespace is one scope, so two declarations of one
-    // short name are two entries, not one replacing the other.
-    let shared: std::collections::HashSet<&str> = [&left_ast, &right_ast]
-        .iter()
-        .flat_map(|ast| {
-            let mut seen = std::collections::HashSet::new();
-            ast.models
-                .iter()
-                .chain(ast.views.iter())
-                .map(|m| m.name.as_str())
-                .chain(ast.enums.iter().map(|e| e.name.as_str()))
-                .filter(move |name| !seen.insert(*name))
-                .collect::<Vec<_>>()
-        })
-        .collect();
-    let shown = |name: &str, namespace: Option<&str>| match namespace {
-        Some(ns) if shared.contains(name) => format!("{ns}.{name}"),
-        _ => name.to_string(),
-    };
-    let left_models: std::collections::HashMap<String, &m3l_core::ModelNode> = left_ast
-        .models
-        .iter()
-        .chain(left_ast.views.iter())
-        .map(|m| (shown(&m.name, m.namespace.as_deref()), m))
-        .collect();
-    let right_models: std::collections::HashMap<String, &m3l_core::ModelNode> = right_ast
-        .models
-        .iter()
-        .chain(right_ast.views.iter())
-        .map(|m| (shown(&m.name, m.namespace.as_deref()), m))
-        .collect();
-
-    // Added models
-    for name in right_models.keys() {
-        if !left_models.contains_key(name) {
-            lines.push(format!("+ model {name}"));
-        }
-    }
-
-    // Removed models
-    for name in left_models.keys() {
-        if !right_models.contains_key(name) {
-            lines.push(format!("- model {name}"));
-        }
-    }
-
-    // Changed models (field-level diff)
-    for (name, left_model) in &left_models {
-        if let Some(right_model) = right_models.get(name) {
-            let left_fields: std::collections::HashMap<&str, &m3l_core::FieldNode> = left_model
-                .fields
-                .iter()
-                .map(|f| (f.name.as_str(), f))
-                .collect();
-            let right_fields: std::collections::HashMap<&str, &m3l_core::FieldNode> = right_model
-                .fields
-                .iter()
-                .map(|f| (f.name.as_str(), f))
-                .collect();
-
-            for fname in right_fields.keys() {
-                if !left_fields.contains_key(fname) {
-                    lines.push(format!("+ {name}.{fname}"));
-                }
-            }
-            for fname in left_fields.keys() {
-                if !right_fields.contains_key(fname) {
-                    lines.push(format!("- {name}.{fname}"));
-                }
-            }
-            for (fname, lf) in &left_fields {
-                if let Some(rf) = right_fields.get(fname) {
-                    let mut changes = Vec::new();
-                    if lf.field_type != rf.field_type {
-                        changes.push(format!(
-                            "type: {} → {}",
-                            lf.field_type.as_deref().unwrap_or("none"),
-                            rf.field_type.as_deref().unwrap_or("none")
-                        ));
-                    }
-                    if lf.nullable != rf.nullable {
-                        changes.push(format!("nullable: {} → {}", lf.nullable, rf.nullable));
-                    }
-                    if lf.array != rf.array {
-                        changes.push(format!("array: {} → {}", lf.array, rf.array));
-                    }
-                    if !changes.is_empty() {
-                        lines.push(format!("~ {name}.{fname}: {}", changes.join(", ")));
-                    }
-                }
-            }
-        }
-    }
-
-    // Enum diff
-    let left_enums: std::collections::HashMap<String, &m3l_core::EnumNode> = left_ast
-        .enums
-        .iter()
-        .map(|e| (shown(&e.name, e.namespace.as_deref()), e))
-        .collect();
-    let right_enums: std::collections::HashMap<String, &m3l_core::EnumNode> = right_ast
-        .enums
-        .iter()
-        .map(|e| (shown(&e.name, e.namespace.as_deref()), e))
-        .collect();
-
-    for name in right_enums.keys() {
-        if !left_enums.contains_key(name) {
-            lines.push(format!("+ enum {name}"));
-        }
-    }
-    for name in left_enums.keys() {
-        if !right_enums.contains_key(name) {
-            lines.push(format!("- enum {name}"));
-        }
-    }
-
-    if lines.is_empty() {
-        lines.push("No differences found.".into());
-    } else {
-        lines.sort();
-        let add_count = lines.iter().filter(|l| l.starts_with('+')).count();
-        let rem_count = lines.iter().filter(|l| l.starts_with('-')).count();
-        let mod_count = lines.iter().filter(|l| l.starts_with('~')).count();
-        lines.push(format!(
-            "\n{} added, {} removed, {} modified",
-            add_count, rem_count, mod_count
-        ));
-    }
-
-    Ok(lines.join("\n"))
 }
 
 fn run_validate(input_path: &Path, strict: bool, format: &str) -> Result<(String, usize), String> {

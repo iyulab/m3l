@@ -283,8 +283,9 @@ fn cli_diff_different_files() {
         ])
         .output()
         .expect("failed to run");
-    assert!(
-        output.status.success(),
+    assert_eq!(
+        output.status.code(),
+        Some(1),
         "stderr: {}",
         String::from_utf8_lossy(&output.stderr)
     );
@@ -793,7 +794,7 @@ fn diff_keeps_one_short_name_in_two_namespaces_apart() {
         ])
         .output()
         .expect("failed to run");
-    assert!(output.status.success());
+    assert_eq!(output.status.code(), Some(1), "differing schemas exit 1");
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(
         stdout.contains("- inventory.Product.name"),
@@ -814,7 +815,7 @@ fn diff_known_changes() {
         ])
         .output()
         .expect("failed to run");
-    assert!(output.status.success());
+    assert_eq!(output.status.code(), Some(1), "differing schemas exit 1");
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("+ model NewModel"), "stdout: {stdout}");
     assert!(stdout.contains("- model OldModel"), "stdout: {stdout}");
@@ -832,7 +833,7 @@ fn diff_reverse() {
         ])
         .output()
         .expect("failed to run");
-    assert!(output.status.success());
+    assert_eq!(output.status.code(), Some(1), "differing schemas exit 1");
     let stdout = String::from_utf8_lossy(&output.stdout);
     // Reversing swaps additions and removals
     assert!(stdout.contains("+ model OldModel"), "stdout: {stdout}");
@@ -850,11 +851,114 @@ fn diff_summary_counts() {
         ])
         .output()
         .expect("failed to run");
-    assert!(output.status.success());
+    assert_eq!(output.status.code(), Some(1), "differing schemas exit 1");
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("2 added"), "stdout: {stdout}");
     assert!(stdout.contains("1 removed"), "stdout: {stdout}");
-    assert!(stdout.contains("1 modified"), "stdout: {stdout}");
+    assert!(stdout.contains("3 modified"), "stdout: {stdout}");
+}
+
+/// Like diff(1): 0 = the same, 1 = they differ, 2 = the comparison could not be made.
+#[test]
+fn diff_exit_codes_tell_the_same_from_different_from_broken() {
+    let same = m3l_bin()
+        .args([
+            "diff",
+            "samples/test/diff/v1.m3l.md",
+            "samples/test/diff/v1.m3l.md",
+        ])
+        .output()
+        .expect("failed to run");
+    assert_eq!(same.status.code(), Some(0));
+    assert!(String::from_utf8_lossy(&same.stdout).contains("No differences found."));
+
+    let missing = m3l_bin()
+        .args([
+            "diff",
+            "samples/test/diff/v1.m3l.md",
+            "samples/test/diff/does-not-exist.m3l.md",
+        ])
+        .output()
+        .expect("failed to run");
+    assert_eq!(missing.status.code(), Some(2));
+    assert!(!String::from_utf8_lossy(&missing.stderr).is_empty());
+}
+
+/// A change to a length, a default or an enum value is a difference — not only a column added, removed or retyped.
+#[test]
+fn diff_reports_length_and_enum_value_changes() {
+    let output = m3l_bin()
+        .args([
+            "diff",
+            "samples/test/diff/v1.m3l.md",
+            "samples/test/diff/v2.m3l.md",
+        ])
+        .output()
+        .expect("failed to run");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("~ Customer.name: params: [100] → [200]"),
+        "stdout: {stdout}"
+    );
+    assert!(
+        stdout.contains("~ CustomerStatus: values: + suspended"),
+        "stdout: {stdout}"
+    );
+}
+
+/// A declaration and its fields that moved to new names are shown as renamed, not as removed and added.
+#[test]
+fn diff_pairs_renamed_declarations_and_fields() {
+    let output = m3l_bin()
+        .args([
+            "diff",
+            "samples/test/diff/rename-v1.m3l.md",
+            "samples/test/diff/rename-v2.m3l.md",
+        ])
+        .output()
+        .expect("failed to run");
+    assert_eq!(output.status.code(), Some(1));
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("~ model SalesOrder → CustomerOrder (renamed)"),
+        "stdout: {stdout}"
+    );
+    assert!(
+        stdout.contains("~ CustomerOrder.code → order_code (renamed)"),
+        "stdout: {stdout}"
+    );
+    assert!(
+        stdout.contains("~ CustomerOrder.amount → total (renamed)"),
+        "stdout: {stdout}"
+    );
+    assert!(
+        stdout.contains("0 added, 0 removed, 3 modified"),
+        "stdout: {stdout}"
+    );
+}
+
+/// What the formatter changes — spacing, order of attributes — is not a change of the schema.
+#[test]
+fn diff_ignores_what_the_formatter_normalises() {
+    let formatted = m3l_bin()
+        .args(["format", "samples/01-ecommerce.m3l.md"])
+        .output()
+        .expect("failed to run");
+    assert!(formatted.status.success());
+    let path = std::env::temp_dir().join("m3l-diff-formatted-ecommerce.m3l.md");
+    std::fs::write(&path, &formatted.stdout).expect("write formatted copy");
+    let output = m3l_bin()
+        .args(["diff", "samples/01-ecommerce.m3l.md"])
+        .arg(&path)
+        .output()
+        .expect("failed to run");
+    std::fs::remove_file(&path).ok();
+    assert_eq!(
+        output.status.code(),
+        Some(0),
+        "stdout: {}",
+        String::from_utf8_lossy(&output.stdout)
+    );
 }
 
 // ══════════════════════════════════════════════════════════════

@@ -20,6 +20,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   relative file paths never matched, and the imports through it passed without a word). A caller building
   `ResolveOptions` with a struct literal adds `base_dir: None`; `..ResolveOptions::default()` is unaffected.
 
+### Changed
+
+- **`m3l diff` compares what the AST records, and says so with its exit code.** It compared only whether a model or
+  field exists and its `type`, `nullable` and `array`; a changed length, default, attribute, description, enum value,
+  index, view definition or model attribute answered `No differences found.` — the output a change summary should never
+  give for a change that touches data (dropping `@unique`, shortening a `string(200)`). Every declaration is now compared
+  as the JSON the parser writes for it, minus where it was written (`loc`, `line`, the file `source`, the `raw` text of a
+  section entry), so a column the AST gains later is compared without the tool being touched. Fields, enum values and
+  named indexes are matched by name and attributes as a set: reordering them, or running `m3l format`, is not a change.
+  A declaration or field that lists a name of one on the other side in `@renamed_from` is shown as one entry,
+  `~ model SalesOrder → CustomerOrder (renamed)`, not as a removal plus an addition. Views, interfaces, flows and
+  extension blocks are compared too, and a `~ project: …` or `~ attribute registry…` line reports a changed project or
+  attribute definition.
+- **Breaking — `m3l diff` exit codes follow diff(1):** `0` the two sides are the same, `1` they differ (was `0`),
+  `2` the comparison could not be made, e.g. a path that does not exist (was `1`). A script that treated `diff` as a
+  report and ran under `set -e` now stops on a difference; `m3l diff … || true` keeps the old behaviour.
+
 ## [0.25.0] - 2026-10-26
 
 ### Added

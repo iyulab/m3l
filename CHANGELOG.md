@@ -45,6 +45,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `2` the comparison could not be made, e.g. a path that does not exist (was `1`). A script that treated `diff` as a
   report and ran under `set -e` now stops on a difference; `m3l diff … || true` keeps the old behaviour.
 
+### Fixed
+
+- **A field written with more than one space (or a tab) after the `-` is read as that field.** The list marker was
+  matched as `-` and exactly one space, so `-   id: identifier @pk` — valid Markdown — became a field named `  id:
+  identifier @pk` with no type, and `-<tab>id: identifier` vanished from the model; `validate` reported neither. The
+  marker is now `-` and one or more spaces or tabs, and the field starts at the first non-blank character.
+
 ## [0.25.0] - 2026-10-26
 
 ### Added

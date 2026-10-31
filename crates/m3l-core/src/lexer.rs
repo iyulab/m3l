@@ -11,7 +11,10 @@ static RE_H2: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^## (.+)$").unwrap
 static RE_H3: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^### (.+)$").unwrap());
 static RE_HR: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^-{3,}$").unwrap());
 static RE_BLOCKQUOTE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(\s*)> (.+)$").unwrap());
-static RE_LIST_ITEM: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(\s*)- (.+)$").unwrap());
+// A list marker is `-` and then one or more spaces or tabs (Markdown allows `-   field`); what follows starts at the
+// first non-blank character, so the field name never carries the marker's padding.
+static RE_LIST_ITEM: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^(\s*)-[ \t]+(\S.*)$").unwrap());
 static RE_BLANK: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\s*$").unwrap());
 
 // H2 sub-patterns

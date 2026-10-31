@@ -1206,6 +1206,46 @@ fn format_roundtrip() {
     std::fs::remove_file(&tmp).ok();
 }
 
+/// A list marker followed by several spaces or a tab is a field like any other, so the formatter writes it in the
+/// normal form (and the attribute spacing with it).
+#[test]
+fn format_normalises_marker_and_attribute_spacing() {
+    let tmp = std::env::temp_dir().join("m3l-marker-spacing-test.m3l.md");
+    std::fs::write(
+        &tmp,
+        "# Namespace: demo
+
+## Customer
+-   id: identifier @pk
+-	name: string(100)   @not_null
+",
+    )
+    .expect("write tmp");
+    let output = m3l_bin()
+        .arg("format")
+        .arg(&tmp)
+        .output()
+        .expect("failed to run");
+    std::fs::remove_file(&tmp).ok();
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains(
+            "
+- id: identifier @pk
+"
+        ),
+        "{stdout}"
+    );
+    assert!(
+        stdout.contains(
+            "
+- name: string(100) @not_null"
+        ),
+        "{stdout}"
+    );
+}
+
 #[test]
 fn format_idempotent() {
     // format(input) should equal format(format(input))

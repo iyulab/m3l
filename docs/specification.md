@@ -1498,7 +1498,7 @@ Metadata provides additional information about the model itself or implementatio
 ## 4. Advanced Features
 
 ### 4.1 Composite Key Definition
-> **Status: Partial** — `@primary` attribute is recognized; `@primary(order)` parameter parsing and `### PrimaryKey` section are not yet implemented.
+> **Status: Partial** — `@primary` and its `(order)` argument are recorded on the field's attribute (the argument parses as a number), and a `### PrimaryKey` section is carried as unstructured section entries. The parser does not turn either into a key; a consumer reads them.
 
 Composite keys are primary keys composed of two or more fields.
 

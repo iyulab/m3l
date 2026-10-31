@@ -8,6 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **`m3l diff --format json`** prints what the comparison found as a versioned JSON document instead of text:
+  `{"version": 1, "differs", "summary": {"added", "removed", "modified", "renamed"}, "changes": [...]}`. Each change is
+  `{"op": "added" | "removed" | "modified" | "renamed", "scope": "declaration" | "field" | "project" | "attributeRegistry", ...}`
+  with `kind` and `name` for a declaration, `declaration` and `name` for a field, `from` and `to` for a rename, and for a
+  `modified` entry `details`: `{"path", "change": "added" | "removed" | "changed", "before"?, "after"?}` holding the
+  AST's own JSON for the value. The entries are the lines the text lists, in the same order; the exit code (0 same, 1
+  differ, 2 could not compare) is unchanged, and `--format human` is the default. Within `version` 1 fields are only
+  added; a change of meaning is a new version.
 - **The project root can lie above the directory you read (§10.6.1).** `m3l` takes the root of a project from the nearest
   directory — the one read, then each directory above it — that holds a `.m3lroot` file or an `m3l.config.yaml`;
   without either, it is still the directory read. Reading `models/` of a project whose root is its parent now resolves

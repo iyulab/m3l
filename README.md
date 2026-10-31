@@ -95,6 +95,7 @@ m3l lint ./models                   # Style & quality checks
 m3l lint ./models --format sarif    # SARIF 2.1.0 output (GitHub Code Scanning)
 m3l format ./models                 # Standardize M3L formatting
 m3l diff old.m3l.md new.m3l.md      # Compare two schemas (exit 0 same, 1 differ, 2 could not compare)
+m3l diff old.m3l.md new.m3l.md --format json  # The same findings as a versioned JSON document of structured changes
 m3l analyze ./models                # Dependency graph (Mermaid)
 m3l analyze ./models --format dot   # Dependency graph (DOT/Graphviz)
 ```

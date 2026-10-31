@@ -18,10 +18,100 @@ use serde_json::Value;
 
 use crate::build_ast;
 
-/// What `m3l diff` found: the text to print, and whether the two sides differ.
+/// What `m3l diff` found: the text to print, the same findings as structured entries, and whether the two sides
+/// differ.
 pub struct DiffReport {
     pub text: String,
     pub differs: bool,
+    entries: Vec<Entry>,
+}
+
+/// The version of the JSON document `--format json` prints. Fields are only ever added within a version; a change
+/// to the meaning of a field or the removal of one is a new version.
+pub const JSON_VERSION: u32 = 1;
+
+impl DiffReport {
+    /// The findings as the JSON document of `--format json`: `version`, `differs`, `summary`
+    /// (`added` / `removed` / `modified` / `renamed` counts of entries), and `changes` in the order the text lists them.
+    ///
+    /// An entry is `{"op", "scope", …}`. `op` is `added`, `removed`, `modified` or `renamed`; `scope` is
+    /// `declaration`, `field`, `project` or `attributeRegistry`. A declaration carries `kind` and `name`; a field
+    /// carries `declaration` and `name`; a rename carries `from` and `to`. A `modified` entry (and a rename that also
+    /// changed something) carries `details`, each `{"path", "change", "before"?, "after"?}` where `change` is
+    /// `added`, `removed` or `changed` and `before` / `after` hold the AST's own JSON for the value.
+    pub fn json(&self) -> Value {
+        let count = |op: &str| {
+            self.entries
+                .iter()
+                .filter(|e| e.json.get("op").and_then(Value::as_str) == Some(op))
+                .count()
+        };
+        serde_json::json!({
+            "version": JSON_VERSION,
+            "differs": self.differs,
+            "summary": {
+                "added": count("added"),
+                "removed": count("removed"),
+                "modified": count("modified"),
+                "renamed": count("renamed"),
+            },
+            "changes": self.entries.iter().map(|e| e.json.clone()).collect::<Vec<_>>(),
+        })
+    }
+}
+
+/// One finding: the line the text lists, and the same finding as JSON.
+struct Entry {
+    text: String,
+    json: Value,
+}
+
+/// One change inside a declaration, a field, the project or the attribute registry.
+struct Detail {
+    text: String,
+    json: Value,
+}
+
+impl Detail {
+    /// `text` is how the change is worded in the listing; the JSON is derived from what changed: a value only on the
+    /// right was `added`, one only on the left `removed`, one on both sides `changed`.
+    fn new(text: String, path: &str, before: Option<&Value>, after: Option<&Value>) -> Detail {
+        let change = match (before, after) {
+            (Some(_), Some(_)) => "changed",
+            (None, Some(_)) => "added",
+            _ => "removed",
+        };
+        let mut json =
+            serde_json::json!({ "path": path.trim_start_matches('.'), "change": change });
+        if let Some(b) = before {
+            json["before"] = b.clone();
+        }
+        if let Some(a) = after {
+            json["after"] = a.clone();
+        }
+        Detail { text, json }
+    }
+}
+
+/// An `added` or `removed` entry for a whole declaration or field.
+fn presence(op: &str, text: String, mut json: Value) -> Entry {
+    json["op"] = Value::from(op);
+    Entry { text, json }
+}
+
+/// A `modified` entry: `prefix` then the details joined as the listing words them.
+fn modified(prefix: String, mut json: Value, details: Vec<Detail>) -> Entry {
+    let text = format!(
+        "{prefix}{}",
+        details
+            .iter()
+            .map(|d| d.text.as_str())
+            .collect::<Vec<_>>()
+            .join(", ")
+    );
+    json["op"] = Value::from("modified");
+    json["details"] = Value::Array(details.into_iter().map(|d| d.json).collect());
+    Entry { text, json }
 }
 
 pub fn run_diff(left_path: &Path, right_path: &Path) -> Result<DiffReport, String> {
@@ -106,7 +196,7 @@ pub fn diff_asts(left: &m3l_core::M3lAst, right: &m3l_core::M3lAst) -> Result<Di
         }
     }
 
-    let mut lines: Vec<String> = Vec::new();
+    let mut lines: Vec<Entry> = Vec::new();
     for (ri, r) in right_decls.iter().enumerate() {
         if let Some(&li) = renamed.get(&ri) {
             let l = &left_decls[li];
@@ -119,22 +209,52 @@ pub fn diff_asts(left: &m3l_core::M3lAst, right: &m3l_core::M3lAst) -> Result<Di
                     }
                 }
             }
-            diff_declaration(&r.shown, &lv, &rv, &mut lines);
-            lines.push(format!("~ {} {} → {} (renamed)", r.kind, l.shown, r.shown));
+            diff_declaration(&r.shown, &r.kind, &lv, &rv, &mut lines);
+            lines.push(Entry {
+                text: format!("~ {} {} → {} (renamed)", r.kind, l.shown, r.shown),
+                json: serde_json::json!({
+                    "op": "renamed", "scope": "declaration",
+                    "kind": r.kind, "from": l.shown, "to": r.shown,
+                }),
+            });
         } else if let Some(&li) = left_by_key.get(&key(r)) {
-            diff_declaration(&r.shown, &left_decls[li].value, &r.value, &mut lines);
+            diff_declaration(
+                &r.shown,
+                &r.kind,
+                &left_decls[li].value,
+                &r.value,
+                &mut lines,
+            );
             // A declaration can change which kind it is only inside the model family.
             let l = &left_decls[li];
             if l.kind != r.kind {
-                lines.push(format!("~ {}: kind: {} → {}", r.shown, l.kind, r.kind));
+                let (before, after) = (Value::from(l.kind.clone()), Value::from(r.kind.clone()));
+                lines.push(modified(
+                    format!("~ {}: ", r.shown),
+                    serde_json::json!({ "scope": "declaration", "kind": r.kind, "name": r.shown }),
+                    vec![Detail::new(
+                        format!("kind: {} → {}", l.kind, r.kind),
+                        "kind",
+                        Some(&before),
+                        Some(&after),
+                    )],
+                ));
             }
         } else {
-            lines.push(format!("+ {} {}", r.kind, r.shown));
+            lines.push(presence(
+                "added",
+                format!("+ {} {}", r.kind, r.shown),
+                serde_json::json!({ "scope": "declaration", "kind": r.kind, "name": r.shown }),
+            ));
         }
     }
     for (li, l) in left_decls.iter().enumerate() {
         if !taken.contains(&li) && !right_by_key.contains_key(&key(l)) {
-            lines.push(format!("- {} {}", l.kind, l.shown));
+            lines.push(presence(
+                "removed",
+                format!("- {} {}", l.kind, l.shown),
+                serde_json::json!({ "scope": "declaration", "kind": l.kind, "name": l.shown }),
+            ));
         }
     }
 
@@ -145,7 +265,11 @@ pub fn diff_asts(left: &m3l_core::M3lAst, right: &m3l_core::M3lAst) -> Result<Di
     let mut project_changes = Vec::new();
     diff_value("", &project(left)?, &project(right)?, &mut project_changes);
     for c in project_changes {
-        lines.push(format!("~ project: {c}"));
+        lines.push(modified(
+            "~ project: ".to_string(),
+            serde_json::json!({ "scope": "project" }),
+            vec![c],
+        ));
     }
     let registry = |ast: &m3l_core::M3lAst| -> Result<Value, String> {
         serde_json::to_value(&ast.attribute_registry)
@@ -159,26 +283,32 @@ pub fn diff_asts(left: &m3l_core::M3lAst, right: &m3l_core::M3lAst) -> Result<Di
         &mut registry_changes,
     );
     for c in registry_changes {
-        lines.push(format!("~ attribute registry{c}"));
+        lines.push(modified(
+            "~ attribute registry".to_string(),
+            serde_json::json!({ "scope": "attributeRegistry" }),
+            vec![c],
+        ));
     }
 
     if lines.is_empty() {
         return Ok(DiffReport {
             text: "No differences found.".into(),
             differs: false,
+            entries: Vec::new(),
         });
     }
-    lines.sort();
-    lines.dedup();
-    let add_count = lines.iter().filter(|l| l.starts_with('+')).count();
-    let rem_count = lines.iter().filter(|l| l.starts_with('-')).count();
-    let mod_count = lines.iter().filter(|l| l.starts_with('~')).count();
-    lines.push(format!(
-        "\n{add_count} added, {rem_count} removed, {mod_count} modified"
-    ));
+    lines.sort_by(|a, b| a.text.cmp(&b.text));
+    lines.dedup_by(|a, b| a.text == b.text);
+    let add_count = lines.iter().filter(|l| l.text.starts_with('+')).count();
+    let rem_count = lines.iter().filter(|l| l.text.starts_with('-')).count();
+    let mod_count = lines.iter().filter(|l| l.text.starts_with('~')).count();
+    let mut text: Vec<&str> = lines.iter().map(|l| l.text.as_str()).collect();
+    let summary = format!("\n{add_count} added, {rem_count} removed, {mod_count} modified");
+    text.push(&summary);
     Ok(DiffReport {
-        text: lines.join("\n"),
+        text: text.join("\n"),
         differs: true,
+        entries: lines,
     })
 }
 
@@ -291,10 +421,14 @@ fn strip_positions(value: &mut Value, declaration: bool) {
 }
 
 /// The changes inside one matched declaration, as `~ Name: …` lines — fields as `Name.field`.
-fn diff_declaration(shown: &str, left: &Value, right: &Value, lines: &mut Vec<String>) {
+fn diff_declaration(shown: &str, kind: &str, left: &Value, right: &Value, lines: &mut Vec<Entry>) {
     let changes = changes_between(left, right, &["fields"]);
     if !changes.is_empty() {
-        lines.push(format!("~ {shown}: {}", changes.join(", ")));
+        lines.push(modified(
+            format!("~ {shown}: "),
+            serde_json::json!({ "scope": "declaration", "kind": kind, "name": shown }),
+            changes,
+        ));
     }
     diff_fields(
         shown,
@@ -305,7 +439,7 @@ fn diff_declaration(shown: &str, left: &Value, right: &Value, lines: &mut Vec<St
 }
 
 /// A model's fields: added, removed, renamed (by `@renamed_from`), and the changes of those that stay.
-fn diff_fields(shown: &str, left: &Value, right: &Value, lines: &mut Vec<String>) {
+fn diff_fields(shown: &str, left: &Value, right: &Value, lines: &mut Vec<Entry>) {
     let empty = Vec::new();
     let lf = left.as_array().unwrap_or(&empty);
     let rf = right.as_array().unwrap_or(&empty);
@@ -325,7 +459,11 @@ fn diff_fields(shown: &str, left: &Value, right: &Value, lines: &mut Vec<String>
         if let Some(l) = left_by_name.get(&rname) {
             let changes = changes_between(l, r, &[]);
             if !changes.is_empty() {
-                lines.push(format!("~ {shown}.{rname}: {}", changes.join(", ")));
+                lines.push(modified(
+                    format!("~ {shown}.{rname}: "),
+                    serde_json::json!({ "scope": "field", "declaration": shown, "name": rname }),
+                    changes,
+                ));
             }
             continue;
         }
@@ -345,25 +483,47 @@ fn diff_fields(shown: &str, left: &Value, right: &Value, lines: &mut Vec<String>
                 renamed_left.insert(f.to_string());
                 let l = left_by_name[f];
                 let changes = changes_between(l, r, &["name", "renamed_from"]);
-                let mut line = format!("~ {shown}.{f} → {rname} (renamed)");
+                let mut text = format!("~ {shown}.{f} → {rname} (renamed)");
                 if !changes.is_empty() {
-                    line.push_str(&format!(": {}", changes.join(", ")));
+                    text.push_str(&format!(
+                        ": {}",
+                        changes
+                            .iter()
+                            .map(|d| d.text.as_str())
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    ));
                 }
-                lines.push(line);
+                let mut json = serde_json::json!({
+                    "op": "renamed", "scope": "field",
+                    "declaration": shown, "from": f, "to": rname,
+                });
+                if !changes.is_empty() {
+                    json["details"] = Value::Array(changes.into_iter().map(|d| d.json).collect());
+                }
+                lines.push(Entry { text, json });
             }
-            None => lines.push(format!("+ {shown}.{rname}")),
+            None => lines.push(presence(
+                "added",
+                format!("+ {shown}.{rname}"),
+                serde_json::json!({ "scope": "field", "declaration": shown, "name": rname }),
+            )),
         }
     }
     for l in lf {
         let lname = name_of(l);
         if !right_names.contains(&lname) && !renamed_left.contains(&lname) {
-            lines.push(format!("- {shown}.{lname}"));
+            lines.push(presence(
+                "removed",
+                format!("- {shown}.{lname}"),
+                serde_json::json!({ "scope": "field", "declaration": shown, "name": lname }),
+            ));
         }
     }
 }
 
 /// The differences between two nodes of one object shape, minus the columns named in `ignore`.
-fn changes_between(left: &Value, right: &Value, ignore: &[&str]) -> Vec<String> {
+fn changes_between(left: &Value, right: &Value, ignore: &[&str]) -> Vec<Detail> {
     let mut changes = Vec::new();
     let (Value::Object(lo), Value::Object(ro)) = (left, right) else {
         return changes;
@@ -375,8 +535,18 @@ fn changes_between(left: &Value, right: &Value, ignore: &[&str]) -> Vec<String> 
         }
         match (lo.get(key), ro.get(key)) {
             (Some(l), Some(r)) => diff_value(key, l, r, &mut changes),
-            (Some(l), None) => changes.push(format!("{key}: {} → (none)", show(l))),
-            (None, Some(r)) => changes.push(format!("{key}: (none) → {}", show(r))),
+            (Some(l), None) => changes.push(Detail::new(
+                format!("{key}: {} → (none)", show(l)),
+                key,
+                Some(l),
+                None,
+            )),
+            (None, Some(r)) => changes.push(Detail::new(
+                format!("{key}: (none) → {}", show(r)),
+                key,
+                None,
+                Some(r),
+            )),
             (None, None) => {}
         }
     }
@@ -385,7 +555,7 @@ fn changes_between(left: &Value, right: &Value, ignore: &[&str]) -> Vec<String> 
 
 /// Appends the differences between two values found at `path`. Objects are compared column by column, lists of
 /// named items by name, other lists of objects as sets, and lists of plain values as a whole.
-fn diff_value(path: &str, left: &Value, right: &Value, out: &mut Vec<String>) {
+fn diff_value(path: &str, left: &Value, right: &Value, out: &mut Vec<Detail>) {
     if left == right {
         return;
     }
@@ -402,8 +572,18 @@ fn diff_value(path: &str, left: &Value, right: &Value, out: &mut Vec<String>) {
             for key in keys {
                 match (lo.get(key), ro.get(key)) {
                     (Some(l), Some(r)) => diff_value(&at(key), l, r, out),
-                    (Some(l), None) => out.push(format!("{}: {} → (none)", at(key), show(l))),
-                    (None, Some(r)) => out.push(format!("{}: (none) → {}", at(key), show(r))),
+                    (Some(l), None) => out.push(Detail::new(
+                        format!("{}: {} → (none)", at(key), show(l)),
+                        &at(key),
+                        Some(l),
+                        None,
+                    )),
+                    (None, Some(r)) => out.push(Detail::new(
+                        format!("{}: (none) → {}", at(key), show(r)),
+                        &at(key),
+                        None,
+                        Some(r),
+                    )),
                     (None, None) => {}
                 }
             }
@@ -411,13 +591,18 @@ fn diff_value(path: &str, left: &Value, right: &Value, out: &mut Vec<String>) {
         (Value::Array(la), Value::Array(ra)) if la.iter().chain(ra).all(Value::is_object) => {
             diff_object_lists(path, la, ra, out);
         }
-        _ => out.push(format!("{path}: {} → {}", show(left), show(right))),
+        _ => out.push(Detail::new(
+            format!("{path}: {} → {}", show(left), show(right)),
+            path,
+            Some(left),
+            Some(right),
+        )),
     }
 }
 
 /// Two lists of objects. Matched by `name` when every item has a distinct one on both sides; otherwise as sets
 /// (an item that changed in place — same `name`, other content — is reported as one change).
-fn diff_object_lists(path: &str, left: &[Value], right: &[Value], out: &mut Vec<String>) {
+fn diff_object_lists(path: &str, left: &[Value], right: &[Value], out: &mut Vec<Detail>) {
     let name = |v: &Value| v.get("name").and_then(Value::as_str).map(str::to_string);
     let distinct_names = |items: &[Value]| {
         let names: Vec<Option<String>> = items.iter().map(name).collect();
@@ -439,11 +624,11 @@ fn diff_object_lists(path: &str, left: &[Value], right: &[Value], out: &mut Vec<
         for (n, l) in &lm {
             match rm.get(n) {
                 Some(r) => diff_value(&format!("{path}.{n}"), l, r, out),
-                None => out.push(format!("{path}: - {n}")),
+                None => out.push(Detail::new(format!("{path}: - {n}"), path, Some(l), None)),
             }
         }
-        for n in rm.keys().filter(|n| !lm.contains_key(*n)) {
-            out.push(format!("{path}: + {n}"));
+        for (n, r) in rm.iter().filter(|(n, _)| !lm.contains_key(*n)) {
+            out.push(Detail::new(format!("{path}: + {n}"), path, None, Some(r)));
         }
         return;
     }
@@ -466,14 +651,29 @@ fn diff_object_lists(path: &str, left: &[Value], right: &[Value], out: &mut Vec<
         {
             let l = removed.remove(i);
             added.retain(|x| !std::ptr::eq(*x, a));
-            out.push(format!("{path}: {} → {}", show(l), show(a)));
+            out.push(Detail::new(
+                format!("{path}: {} → {}", show(l), show(a)),
+                path,
+                Some(l),
+                Some(a),
+            ));
         }
     }
     for l in removed {
-        out.push(format!("{path}: - {}", show(l)));
+        out.push(Detail::new(
+            format!("{path}: - {}", show(l)),
+            path,
+            Some(l),
+            None,
+        ));
     }
     for a in added {
-        out.push(format!("{path}: + {}", show(a)));
+        out.push(Detail::new(
+            format!("{path}: + {}", show(a)),
+            path,
+            None,
+            Some(a),
+        ));
     }
 }
 

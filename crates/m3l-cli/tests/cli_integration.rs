@@ -858,6 +858,119 @@ fn diff_summary_counts() {
     assert!(stdout.contains("3 modified"), "stdout: {stdout}");
 }
 
+fn diff_json(left: &str, right: &str) -> (Option<i32>, serde_json::Value, String) {
+    let output = m3l_bin()
+        .args(["diff", left, right, "--format", "json"])
+        .output()
+        .expect("failed to run");
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let doc = serde_json::from_str(&stdout).unwrap_or(serde_json::Value::Null);
+    (output.status.code(), doc, stdout)
+}
+
+/// `--format json` is a versioned document of structured changes: an agent reads `op` / `scope` / `name`, not text.
+#[test]
+fn diff_json_lists_each_change_as_a_structured_entry() {
+    let (code, doc, raw) = diff_json("samples/test/diff/v1.m3l.md", "samples/test/diff/v2.m3l.md");
+    assert_eq!(code, Some(1), "differing schemas still exit 1: {raw}");
+    assert_eq!(doc["version"], 1, "{raw}");
+    assert_eq!(doc["differs"], true);
+    assert_eq!(doc["summary"]["added"], 2);
+    assert_eq!(doc["summary"]["removed"], 1);
+    assert_eq!(doc["summary"]["modified"], 3);
+
+    let changes = doc["changes"].as_array().expect("changes is a list");
+    let find = |op: &str, scope: &str, name: &str| {
+        changes
+            .iter()
+            .find(|c| c["op"] == op && c["scope"] == scope && c["name"] == name)
+            .unwrap_or_else(|| panic!("no {op} {scope} {name} in {raw}"))
+    };
+    assert_eq!(find("added", "declaration", "NewModel")["kind"], "model");
+    find("removed", "declaration", "OldModel");
+    assert_eq!(find("added", "field", "age")["declaration"], "Customer");
+
+    let phone = find("modified", "field", "phone");
+    assert_eq!(phone["declaration"], "Customer");
+    let detail = &phone["details"][0];
+    assert_eq!(detail["path"], "type");
+    assert_eq!(detail["change"], "changed");
+    assert_eq!(detail["before"], "phone");
+    assert_eq!(detail["after"], "string");
+}
+
+/// The JSON and the listing are one finding: same entries, same order.
+#[test]
+fn diff_json_and_text_list_the_same_findings() {
+    let (_, doc, raw) = diff_json("samples/test/diff/v1.m3l.md", "samples/test/diff/v2.m3l.md");
+    let text = m3l_bin()
+        .args([
+            "diff",
+            "samples/test/diff/v1.m3l.md",
+            "samples/test/diff/v2.m3l.md",
+        ])
+        .output()
+        .expect("failed to run");
+    let text = String::from_utf8_lossy(&text.stdout).to_string();
+    let listed = text
+        .lines()
+        .filter(|l| l.starts_with('+') || l.starts_with('-') || l.starts_with('~'))
+        .count();
+    assert_eq!(
+        doc["changes"].as_array().unwrap().len(),
+        listed,
+        "{raw}\n{text}"
+    );
+}
+
+#[test]
+fn diff_json_marks_renames_with_from_and_to() {
+    let (code, doc, raw) = diff_json(
+        "samples/test/diff/rename-v1.m3l.md",
+        "samples/test/diff/rename-v2.m3l.md",
+    );
+    assert_eq!(code, Some(1), "{raw}");
+    let changes = doc["changes"].as_array().unwrap();
+    let declaration = changes
+        .iter()
+        .find(|c| c["op"] == "renamed" && c["scope"] == "declaration")
+        .unwrap_or_else(|| panic!("no declaration rename in {raw}"));
+    assert_eq!(declaration["from"], "SalesOrder");
+    assert_eq!(declaration["to"], "CustomerOrder");
+    let field = changes
+        .iter()
+        .find(|c| c["op"] == "renamed" && c["scope"] == "field" && c["to"] == "order_code")
+        .unwrap_or_else(|| panic!("no field rename in {raw}"));
+    assert_eq!(field["from"], "code");
+    assert_eq!(field["declaration"], "CustomerOrder");
+}
+
+#[test]
+fn diff_json_of_identical_schemas_is_an_empty_document_with_exit_zero() {
+    let (code, doc, raw) = diff_json("samples/test/diff/v1.m3l.md", "samples/test/diff/v1.m3l.md");
+    assert_eq!(code, Some(0), "{raw}");
+    assert_eq!(doc["version"], 1);
+    assert_eq!(doc["differs"], false);
+    assert_eq!(doc["changes"].as_array().unwrap().len(), 0);
+    assert_eq!(doc["summary"]["added"], 0);
+}
+
+#[test]
+fn diff_rejects_an_unknown_format_as_a_usage_error() {
+    let output = m3l_bin()
+        .args([
+            "diff",
+            "samples/test/diff/v1.m3l.md",
+            "samples/test/diff/v2.m3l.md",
+            "--format",
+            "yaml",
+        ])
+        .output()
+        .expect("failed to run");
+    assert_eq!(output.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("unknown diff format"));
+}
+
 /// Like diff(1): 0 = the same, 1 = they differ, 2 = the comparison could not be made.
 #[test]
 fn diff_exit_codes_tell_the_same_from_different_from_broken() {

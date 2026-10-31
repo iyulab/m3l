@@ -52,6 +52,10 @@ enum Commands {
 
         /// Second input file/directory
         right: PathBuf,
+
+        /// Output format: human (default) or json — a versioned document of structured changes (see the README)
+        #[arg(long, default_value = "human")]
+        format: String,
     },
 
     /// Format M3L files into standardized output
@@ -115,18 +119,38 @@ fn main() {
             }
         }
         // Like diff(1): 0 = the two sides are the same, 1 = they differ, 2 = the comparison could not be made.
-        Commands::Diff { left, right } => match commands::diff::run_diff(&left, &right) {
-            Ok(report) => {
-                println!("{}", report.text);
-                if report.differs {
-                    process::exit(1);
-                }
-            }
-            Err(e) => {
-                eprintln!("Error: {e}");
+        Commands::Diff {
+            left,
+            right,
+            format,
+        } => {
+            if format != "human" && format != "json" {
+                eprintln!("Error: unknown diff format '{format}' (expected human or json)");
                 process::exit(2);
             }
-        },
+            match commands::diff::run_diff(&left, &right) {
+                Ok(report) => {
+                    if format == "json" {
+                        match serde_json::to_string_pretty(&report.json()) {
+                            Ok(json) => println!("{json}"),
+                            Err(e) => {
+                                eprintln!("Error: JSON serialization error: {e}");
+                                process::exit(2);
+                            }
+                        }
+                    } else {
+                        println!("{}", report.text);
+                    }
+                    if report.differs {
+                        process::exit(1);
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Error: {e}");
+                    process::exit(2);
+                }
+            }
+        }
         Commands::Format { path } => match commands::format::run_format(&path) {
             Ok(output) => {
                 println!("{output}");

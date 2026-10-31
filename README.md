@@ -41,6 +41,7 @@ This repository is the **specification and parser** for M3L. It provides:
 3. **CLI Tool** — `m3l parse`, `m3l validate`, `m3l lint`, `m3l format`, `m3l diff`, `m3l analyze`
 4. **Lint Framework** — configurable style & quality rules (`m3l-lint`)
 5. **Language Bindings** — Node.js (NAPI), C# (P/Invoke), WASM
+6. **Agent Skill** — [`skills/m3l/SKILL.md`](./skills/m3l/SKILL.md) packages the authoring loop (edit → validate → lint → diff), the machine-readable outputs and the pitfalls in the [Agent Skills](https://agentskills.io) format; drop it into your agent's skills directory
 
 **What this repo does NOT do:** code generation, database migration, UI scaffolding, or any other output. Those are the responsibility of consumer applications that depend on the M3L parser to read the AST.
 

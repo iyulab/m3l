@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **An Agent Skill, `skills/m3l/SKILL.md`**: the loop around the CLI (edit, validate, lint, format, diff), the machine-readable
+  outputs of each command, how to read a diff, and the pitfalls — in the [Agent Skills](https://agentskills.io) format.
 - **`m3l diff --format json`** prints what the comparison found as a versioned JSON document instead of text:
   `{"version": 1, "differs", "summary": {"added", "removed", "modified", "renamed"}, "changes": [...]}`. Each change is
   `{"op": "added" | "removed" | "modified" | "renamed", "scope": "declaration" | "field" | "project" | "attributeRegistry", ...}`

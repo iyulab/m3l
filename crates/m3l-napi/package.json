@@ -16,7 +16,8 @@
   },
   "files": [
     "index.js",
-    "index.d.ts"
+    "index.d.ts",
+    "README.md"
   ],
   "optionalDependencies": {
     "@iyulab/m3l-napi-win32-x64-msvc": "0.25.0",

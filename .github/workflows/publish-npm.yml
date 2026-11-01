@@ -143,3 +143,19 @@ jobs:
         run: .github/scripts/npm-publish.sh bindings/typescript
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # What a first-time user does, against what the registry now serves: install the
+      # published wrapper into an empty directory and import it as an ES module and as
+      # CommonJS. The registry can take a moment to serve a new version, so the install retries.
+      - name: Smoke-test the published package
+        run: |
+          version=$(node -p "require('./bindings/typescript/package.json').version")
+          dir=$(mktemp -d)
+          cp bindings/typescript/test/installed.smoke.mjs "$dir/"
+          cd "$dir"
+          npm init -y >/dev/null
+          for attempt in 1 2 3 4 5 6; do
+            npm install "@iyulab/m3l@$version" && break
+            echo "install attempt $attempt failed; waiting for the registry"; sleep 20
+          done
+          node installed.smoke.mjs

@@ -12,7 +12,7 @@ on:
       # introduces it rather than on the next release (crates/** already covers NAPI's).
       - 'VERSION'
       - 'bindings/csharp/M3L.Native.csproj'
-      - 'bindings/typescript/package.json'
+      - 'bindings/typescript/**'
       - 'update-version.ps1'
       - '.github/actions/verify-version-sync/**'
       - '.github/workflows/rust-ci.yml'
@@ -27,7 +27,7 @@ on:
       # introduces it rather than on the next release (crates/** already covers NAPI's).
       - 'VERSION'
       - 'bindings/csharp/M3L.Native.csproj'
-      - 'bindings/typescript/package.json'
+      - 'bindings/typescript/**'
       - 'update-version.ps1'
       - '.github/actions/verify-version-sync/**'
       - '.github/workflows/rust-ci.yml'
@@ -54,6 +54,19 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Run tests
         run: cargo test --workspace --exclude m3l-wasm --exclude m3l-napi
+
+  # The npm wrapper's names are written by hand in three files; this fails when they stop
+  # matching the addon source. Sources only: no native build is needed.
+  npm-exports:
+    name: npm wrapper exports
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Check the wrapper's export names
+        run: node --test "bindings/typescript/test/*.test.mjs"
 
   clippy:
     name: Clippy

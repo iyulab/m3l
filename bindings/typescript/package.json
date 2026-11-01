@@ -4,10 +4,21 @@
   "description": "M3L parser — Markdown-based schema definition language (.m3l.md → JSON AST)",
   "license": "MIT",
   "main": "index.js",
+  "module": "index.mjs",
   "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.mjs",
+      "require": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
     "index.js",
-    "index.d.ts"
+    "index.mjs",
+    "index.d.ts",
+    "README.md"
   ],
   "dependencies": {
     "@iyulab/m3l-napi": "0.25.0"

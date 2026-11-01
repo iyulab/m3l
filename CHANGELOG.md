@@ -49,6 +49,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **`@iyulab/m3l` can be imported by name from an ES module, and it ships a README.** `import { parse } from '@iyulab/m3l'`
+  failed (`Named export 'parse' not found … CommonJS`) while `index.d.ts` declared it: the CommonJS entry re-exports the
+  native addon as a whole, which names nothing Node can see from an ES module, so only a default import and `require`
+  worked. The package now has an ES module entry (`index.mjs`, selected by an `exports` map; `require` is unchanged) that
+  names the five functions, and a test fails when the addon source, that file, `index.d.ts` and the README stop naming
+  the same ones. The npm page was empty — the package had no README; it now documents the string-in, string-out
+  contract, the result shape and the diagnostics. The publish workflow installs the freshly published version into an
+  empty directory and imports it both ways.
 - **A field written with more than one space (or a tab) after the `-` is read as that field.** The list marker was
   matched as `-` and exactly one space, so `-   id: identifier @pk` — valid Markdown — became a field named `  id:
   identifier @pk` with no type, and `-<tab>id: identifier` vanished from the model; `validate` reported neither. The

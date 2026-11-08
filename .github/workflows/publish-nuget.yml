@@ -64,8 +64,8 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  pack-publish:
-    name: Pack & Publish
+  pack:
+    name: Pack
     needs: build-native
     runs-on: ubuntu-latest
     steps:
@@ -104,9 +104,22 @@ jobs:
           cd bindings/csharp
           dotnet pack -c Release -p:Version=${{ steps.version.outputs.version }} -o ./nupkg
 
-      - name: Publish to NuGet
-        run: |
-          dotnet nuget push bindings/csharp/nupkg/*.nupkg \
-            --api-key ${{ secrets.NUGET_API_KEY }} \
-            --source https://api.nuget.org/v3/index.json \
-            --skip-duplicate
+      # The push itself runs in the organization's central publish workflow, which holds the
+      # only NuGet trust policy; this repository holds no NuGet credential. Only the packed
+      # files go up, and they are kept for one day.
+      - name: Upload packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: nuget-packages
+          path: |
+            bindings/csharp/nupkg/*.nupkg
+            bindings/csharp/nupkg/*.snupkg
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    name: Publish
+    needs: pack
+    uses: iyulab/nuget-publish/.github/workflows/request.yml@de1e58c8bcefaf88f497fcb58899a1c6e84f4e29 # main
+    permissions: {}
+    secrets: inherit

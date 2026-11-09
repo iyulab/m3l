@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.26.0] - 2026-11-09
+
 ### Added
 
 - **An Agent Skill, `skills/m3l/SKILL.md`**: the loop around the CLI (edit, validate, lint, format, diff), the machine-readable

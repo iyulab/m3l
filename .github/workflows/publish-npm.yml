@@ -154,8 +154,10 @@ jobs:
           cp bindings/typescript/test/installed.smoke.mjs "$dir/"
           cd "$dir"
           npm init -y >/dev/null
-          for attempt in 1 2 3 4 5 6; do
+          # npm accepts a publish at once but says it "may take a few minutes to become available";
+          # measured: about three minutes. The wait has to outlast that, or a good release fails here.
+          for attempt in $(seq 1 20); do
             npm install "@iyulab/m3l@$version" && break
-            echo "install attempt $attempt failed; waiting for the registry"; sleep 20
+            echo "install attempt $attempt failed; waiting for the registry"; sleep 30
           done
           node installed.smoke.mjs

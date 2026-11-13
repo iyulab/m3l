@@ -1,0 +1,154 @@
+{
+  "parserVersion": "0.26.0",
+  "astVersion": "1.0",
+  "project": {},
+  "sources": [
+    "spec/conformance/inputs/single-quoted-default.m3l.md"
+  ],
+  "models": [
+    {
+      "name": "SingleQuotedDefault",
+      "qualifiedName": "SingleQuotedDefault",
+      "type": "model",
+      "source": "spec/conformance/inputs/single-quoted-default.m3l.md",
+      "line": 1,
+      "inherits": [],
+      "attributes": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "identifier",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "attributes": [
+            {
+              "name": "pk",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/single-quoted-default.m3l.md",
+            "line": 2,
+            "col": 1
+          }
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "params": [
+            20.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "PARSED",
+          "default_value_type": "literal",
+          "defaultValueQuoted": true,
+          "attributes": [
+            {
+              "name": "not_null",
+              "isStandard": true
+            }
+          ],
+          "loc": {
+            "file": "spec/conformance/inputs/single-quoted-default.m3l.md",
+            "line": 3,
+            "col": 1
+          }
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "params": [
+            100.0
+          ],
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "two words",
+          "default_value_type": "literal",
+          "defaultValueQuoted": true,
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/single-quoted-default.m3l.md",
+            "line": 4,
+            "col": 1
+          }
+        },
+        {
+          "name": "empty_note",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "",
+          "default_value_type": "literal",
+          "defaultValueQuoted": true,
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/single-quoted-default.m3l.md",
+            "line": 5,
+            "col": 1
+          }
+        },
+        {
+          "name": "plain",
+          "type": "string",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "double quoted",
+          "default_value_type": "literal",
+          "defaultValueQuoted": true,
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/single-quoted-default.m3l.md",
+            "line": 6,
+            "col": 1
+          }
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "nullable": false,
+          "array": false,
+          "arrayItemNullable": false,
+          "kind": "stored",
+          "default_value": "now()",
+          "default_value_type": "expression",
+          "defaultValueBacktick": true,
+          "attributes": [],
+          "loc": {
+            "file": "spec/conformance/inputs/single-quoted-default.m3l.md",
+            "line": 7,
+            "col": 1
+          }
+        }
+      ],
+      "sections": {
+        "indexes": [],
+        "relations": [],
+        "behaviors": [],
+        "metadata": {}
+      },
+      "loc": {
+        "file": "spec/conformance/inputs/single-quoted-default.m3l.md",
+        "line": 1,
+        "col": 1
+      }
+    }
+  ],
+  "enums": [],
+  "interfaces": [],
+  "views": [],
+  "flows": [],
+  "attributeRegistry": [],
+  "errors": [],
+  "warnings": []
+}

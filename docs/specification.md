@@ -726,7 +726,7 @@ Default values can be more than simple constants. M3L supports various forms of 
 Backtick-wrapped default values explicitly mark the value as an expression rather than a literal:
 
 ```markdown
-- status: string = "active"          # Literal string (default_value_type: literal)
+- status: string = "active"          # Literal string (default_value_type: literal); 'active' reads the same
 - created_at: timestamp = `now()`    # Expression (default_value_type: expression)
 - discount: decimal = `price * 0.9`  # Expression (default_value_type: expression)
 ```
@@ -769,9 +769,17 @@ field-spec   = type , [ ws , "=" , ws , default ] ,
 type         = word , [ "<" , params , ">" ] , [ "(" , params , ")" ] ,
                [ "?" ] , [ "[]" ] , [ "?" ] ;
 default      = quoted | backtick-expression | bare-value ;
+quoted       = '"' , text , '"' | "'" , text , "'" ;
 attribute    = "@" , word , [ "(" , arguments , ")" ] , [ "!" | "!!" | "?" ] ;
 description  = '"' , text , '"' ;
 ```
+
+A `quoted` default is a string written in double or single quotes — `= "active"` and `= 'active'` are the same
+value. The quotes are not part of it, it is a literal (`default_value_type: literal`, `defaultValueQuoted: true`),
+and the text between them may hold spaces. A backslash keeps the quote character that follows it from closing the string;
+doubling a quote (`'it''s'`) does not — that is how the SQL-like expressions of §10.7 escape one, not how a default does.
+Only a description is limited to double quotes (the `description` rule above); a single-quoted string after the type
+is a default only when it follows `=`.
 
 Inline comments (`# ...`) and backtick-wrapped framework attributes (§2.5.6) are removed before
 the line is read. **The default comes right after the type** — `= value` written after an

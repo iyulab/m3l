@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **A default written in single quotes is a string, like one in double quotes.** `- status: string(20) = 'PARSED' @not_null` used to
+  keep the quotes as part of the value (`'PARSED'` came out as a bare value that still held its quotes, so a generator that
+  quotes literals wrote them twice), and a single-quoted default with a space in it (`= 'two words'`) was cut at the space and
+  reported as text a field line does not read (`M3L-W010`). It is now read exactly as `= "PARSED"`: the quotes are not part
+  of the value, it is a literal with `defaultValueQuoted: true`, spaces are kept, and a backslash keeps the quote
+  character that follows it from closing the string. The specification's grammar named `quoted` without defining it; §2.5.7
+  now does. **If you worked around the old reading** by writing the default in double quotes, nothing changes for you;
+  a model that relied on single quotes being kept in the value — a default that is itself a quoted SQL string — writes it in
+  double quotes with the single quotes inside (`= "'x'"`) or as a backtick expression.
+
 ## [0.26.0] - 2026-11-09
 
 ### Added

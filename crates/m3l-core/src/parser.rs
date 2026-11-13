@@ -1944,7 +1944,10 @@ fn process_default_value(
                     None,
                     Some(true),
                 )
-            } else if v.starts_with('"') && v.ends_with('"') && v.len() >= 2 {
+            } else if v.len() >= 2
+                && ((v.starts_with('"') && v.ends_with('"'))
+                    || (v.starts_with('\'') && v.ends_with('\'')))
+            {
                 (
                     Some(v[1..v.len() - 1].to_string()),
                     Some(DefaultValueType::Literal),
@@ -2855,6 +2858,44 @@ mod tests {
         let field = &result.models[0].fields[0];
         assert_eq!(field.default_value.as_deref(), Some("active"));
         assert_eq!(field.default_value_type, Some(DefaultValueType::Literal));
+    }
+
+    #[test]
+    fn single_quoted_default_is_a_string_literal_like_a_double_quoted_one() {
+        let input = "## User\n- status: string(20) = 'PARSED' @not_null\n- title: string = 'two words'\n- note: string = ''\n- label: string = \"active\"";
+        let result = parse_string(input, "test.m3l.md");
+        let fields = &result.models[0].fields;
+        for (field, expected) in fields.iter().zip(["PARSED", "two words", "", "active"]) {
+            assert_eq!(
+                field.default_value.as_deref(),
+                Some(expected),
+                "{}",
+                field.name
+            );
+            assert_eq!(
+                field.default_value_type,
+                Some(DefaultValueType::Literal),
+                "{}",
+                field.name
+            );
+            assert_eq!(field.default_value_quoted, Some(true), "{}", field.name);
+        }
+        // The attribute after the quoted default is still read, and nothing of the quoted text is left over as a description.
+        assert_eq!(fields[0].attributes.len(), 1);
+        assert!(
+            fields[1].description.is_none(),
+            "{:?}",
+            fields[1].description
+        );
+    }
+
+    #[test]
+    fn a_backslash_escapes_the_quote_inside_a_single_quoted_default() {
+        let input = "## User\n- motto: string = 'it\\'s fine' @not_null";
+        let result = parse_string(input, "test.m3l.md");
+        let field = &result.models[0].fields[0];
+        assert_eq!(field.default_value.as_deref(), Some("it\\'s fine"));
+        assert_eq!(field.attributes.len(), 1);
     }
 
     #[test]

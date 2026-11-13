@@ -765,12 +765,12 @@ pub fn parse_type_and_attrs(rest: &str, data: &mut TokenData) {
         skip_ws(&mut pos);
     }
 
-    // Parse default value: = "quoted" or = `backtick` or = unquoted
+    // Parse default value: = "quoted" or = 'quoted' or = `backtick` or = unquoted
     if pos < len && bytes[pos] == b'=' {
         pos += 1;
         skip_ws(&mut pos);
-        if pos < len && bytes[pos] == b'"' {
-            let close_idx = find_closing_quote(rest, pos);
+        if pos < len && (bytes[pos] == b'"' || bytes[pos] == b'\'') {
+            let close_idx = find_closing(rest, pos, bytes[pos]);
             if close_idx >= 0 {
                 data.default_value = Some(rest[pos..=close_idx as usize].to_string());
                 pos = close_idx as usize + 1;
@@ -941,6 +941,11 @@ fn find_balanced_paren(s: &str, open_pos: usize) -> i32 {
 }
 
 fn find_closing_quote(s: &str, open_pos: usize) -> i32 {
+    find_closing(s, open_pos, b'"')
+}
+
+/// The index of the `quote` byte that closes the string opened at `open_pos`; a backslash escapes the byte after it.
+fn find_closing(s: &str, open_pos: usize, quote: u8) -> i32 {
     let bytes = s.as_bytes();
     let mut i = open_pos + 1;
     while i < bytes.len() {
@@ -948,7 +953,7 @@ fn find_closing_quote(s: &str, open_pos: usize) -> i32 {
             i += 2;
             continue;
         }
-        if bytes[i] == b'"' {
+        if bytes[i] == quote {
             return i as i32;
         }
         i += 1;

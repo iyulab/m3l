@@ -63,6 +63,12 @@
       "category": "unit"
     },
     {
+      "name": "single-quoted-default",
+      "input": "inputs/single-quoted-default.m3l.md",
+      "expected": "expected/single-quoted-default.json",
+      "category": "unit"
+    },
+    {
       "name": "framework-attrs",
       "input": "inputs/framework-attrs.m3l.md",
       "expected": "expected/framework-attrs.json",

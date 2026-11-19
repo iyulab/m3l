@@ -21,6 +21,19 @@ once.
   generation, or any other downstream output is out of scope here — that is a consumer's job
   (code generators and similar tools consume `m3l-core`'s AST for exactly this).
 
+## Asking for help or requesting something
+
+Open an [issue](https://github.com/iyulab/m3l/issues) on this repository — questions, bug reports
+and feature requests all go there. Look through the open ones first.
+
+- **A bug or a question:** give the smallest `.m3l.md` input that shows it, the command you ran (or
+  the binding you called), what you expected and what you got, and the version.
+- **A request:** describe the problem you are trying to solve before the change you would like. It
+  is weighed against the design principles above, and a request that conflicts with an anchor is
+  discussed as a change to the anchor.
+
+Do not put credentials or private data in an issue.
+
 ## Development
 
 Requires a stable Rust toolchain (see `Cargo.toml`'s `edition`) and, for the Node/WASM bindings

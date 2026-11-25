@@ -1286,8 +1286,8 @@ Indexes are used to optimize query performance.
 - @unique(order_id, product_id) "Ensures uniqueness of products per order"
 ```
 
-After its columns, `@index` takes the keyword arguments `name:` (the index's name) and `fulltext:` (`true` or
-`false`); `@unique` takes `name:` and `nulls:` (§3.3.4.2). Each is given once. A keyword argument is never a column:
+After its columns, `@index` takes the keyword arguments `name:` (the index's name), `fulltext:` (`true` or
+`false`) and `where:` (§3.3.5); `@unique` takes `name:`, `nulls:` (§3.3.4.3) and `where:`. Each is given once. A keyword argument is never a column:
 an implementation reads the columns and the keywords apart, and a keyword the directive does not take is reported
 (`M3L-W010`).
 
@@ -1373,6 +1373,35 @@ Implementations map the declared intent to whatever the target dialect calls it 
 unfiltered `UNIQUE` constraint or index on SQL Server, `UNIQUE NULLS NOT DISTINCT` on PostgreSQL —
 the same way `@rollup`'s `where:` (§4.6.5) declares an intent that the implementation layer
 expresses in its own expression syntax.
+
+### 3.3.5 Conditional Indexes
+
+An index or a unique constraint can cover only the rows a condition admits — a *filtered* or *partial* index. Give the
+condition as `where:`, a quoted portable expression (§10.7) over the stored fields of the model's own table:
+
+```markdown
+### Indexes
+- ux_report_schedule: @unique(type, period_from, where: "source = 'SCHEDULE'") "One scheduled report per type and period"
+- ix_open_orders: @index(customer_id, where: "status != 'closed'")
+- ix_recent
+  - fields: [created_at]
+  - where: "is_archived = false"
+```
+
+A conditional `@unique` holds only among the admitted rows: above, any number of reports with another `source` may share
+a type and period, and the scheduled ones may not. The condition names fields by name — no relation path, no `$parent`,
+and no derived field (`@computed`, `@lookup`, `@rollup`), which is not a stored column. An expression outside the subset
+is reported (`M3L-W011`).
+
+`where:` is the whole condition the model declares; an implementation that adds a condition of its own — SQL Server
+leaving `NULL` rows out of a nullable multi-column `@unique` (§3.3.4.3) — combines the two with `AND`. A full-text index
+takes no condition, so `fulltext: true` with `where:` is a declaration an implementation refuses rather than emitting a
+different index than the one declared.
+
+A database indexes a narrower condition than the portable subset admits: SQL Server's filtered index takes only the
+conjunction (`AND`) of comparisons between a column and a constant, `IN` lists of constants and `IS [NOT] NULL`, and
+PostgreSQL takes no function that is not immutable (`now()`, `today()`). A model meant for every platform keeps to that
+form; an implementation that cannot put a condition on an index refuses it rather than creating another index.
 
 ### 3.4 Inheritance and Interfaces
 > **Status: Implemented** — Fully supported in `m3l-core` parser and resolver.
@@ -3229,7 +3258,7 @@ Conforming parsers should use these error codes for consistent diagnostics.
 | `M3L-W008` | Attribute `@{attr}` is required but used without an explicit argument on `{subject}` | Custom registry attribute declared `required: true` was used bare (no argument) |
 | `M3L-W009` | Relationship notation `{notation}` in model `{model}` is written among the fields — it is read as a relationship, not a field, but `### Relations` is where it belongs | `>name`/`<name`/`<>name` (or an arrow spelling) written in the field list (§3.2.4) instead of `### Relations` (§3.2.3) — parsed either way, but flagged since the section is the documented home |
 | `M3L-W010` | Field `{field}` in `{model}`: `{text}` is not read — or, on a header, Header of `{element}`: `{text}` is not read | On a header: a second description string or a quote that never closes (§4.2.1), attributes on a header whose kind takes none, or words that are none of a header's parts (§10.3.2). Text left on a field line after the field syntax (§2.5.7) has read everything it reads — most often a default written after an attribute (§2.5.8). Also an attribute argument nothing reads: a rollup argument other than `where:`, `where_raw:` and the `platform:` that follows a `where_raw:` — a misspelt `where:` would otherwise leave the rollup unfiltered — a rollup `platform:` with no `where_raw:` to name, an `@computed_raw` argument beyond its expression and one `platform:` (§10.7.5), and an `@index`/`@unique` keyword argument the directive does not take (§3.3.2), or a `name:` on the directive of an `### Indexes` item, which the item's name already names (§3.3.3) |
-| `M3L-W011` | `{context}` `"{expression}"` is not a portable expression (§10.7): {constructs} | An expression in a portable context — `@computed`, a rollup's `where:`, a view's `where` — uses something outside the subset: a function not in §10.7.4, a bracketed or quoted identifier, `\|\|`, a `::` cast, a JSON operator, or `+` next to text. Each construct is named once. `@computed_raw` and a view whose source is a SQL code block (§4.7.8) are not checked |
+| `M3L-W011` | `{context}` `"{expression}"` is not a portable expression (§10.7): {constructs} | An expression in a portable context — `@computed`, a rollup's `where:`, a view's `where`, an index's `where:` (§3.3.5) — uses something outside the subset: a function not in §10.7.4, a bracketed or quoted identifier, `\|\|`, a `::` cast, a JSON operator, or `+` next to text. Each construct is named once. `@computed_raw` and a view whose source is a SQL code block (§4.7.8) are not checked |
 | `M3L-W012` | `{what}` with no platform — an implementation picks a platform expression by its platform, so this one is never chosen | A platform expression — `@computed_raw`, a rollup's `where_raw:`, a view's `- where_raw:` — written without `platform:` (§10.7.5). In a rollup the `platform:` follows the `where_raw:` it is for; one written before it names nothing |
 
 ### 10.6 Import Resolution

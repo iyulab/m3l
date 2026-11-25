@@ -1,5 +1,5 @@
 //! The keyword arguments of `@index` and `@unique` (specification §3.3) are not columns. The parser takes each out
-//! of `args` — the column list every consumer reads — into a field of its own (`name`, `fulltext`, `nulls`), and
+//! of `args` — the column list every consumer reads — into a field of its own (`name`, `fulltext`, `nulls`, `where`), and
 //! reports one the directive does not read as `M3L-W010` instead of leaving it as a column. Left in `args`, the
 //! specification's own `@index(customer_id, order_date, name: "customer_orders")` reached a generator as a third
 //! column named `name: "customer_orders"`.
@@ -62,7 +62,7 @@ fn a_keyword_the_directive_does_not_read_is_w010_not_a_column() {
         warned[0]
     );
     assert!(
-        warned[0].contains("`@index` reads `name:` and `fulltext:`"),
+        warned[0].contains("`@index` reads `name:`, `fulltext:` and `where:`"),
         "{}",
         warned[0]
     );
@@ -103,4 +103,53 @@ fn columns_alone_carry_no_keyword_fields_and_no_warning() {
         "{found:?}"
     );
     assert!(w010(lines).is_empty());
+}
+
+fn w011(lines: &str) -> Vec<String> {
+    let parsed = parse_string(&format!("{PRODUCT}{lines}"), "index.m3l.md");
+    let ast = m3l_core::resolve(&[parsed], None);
+    validate(&ast, &ValidateOptions::default())
+        .warnings
+        .into_iter()
+        .filter(|w| w.code == "M3L-W011")
+        .map(|w| w.message)
+        .collect()
+}
+
+#[test]
+fn a_where_condition_is_read_in_every_index_form_and_is_not_a_column() {
+    let found = indexes(concat!(
+        "- @unique(sku, where: \"name != 'retired'\")\n",
+        "### Indexes\n",
+        "- ux_live: @unique(sku, name, where: \"name IN ('a', 'b')\", nulls: \"not_distinct\")\n",
+        "- ix_named: @index(name, where: \"sku IS NOT NULL\")\n",
+        "- ix_items\n",
+        "  - fields: [name]\n",
+        "  - where: \"sku != ''\"\n",
+    ));
+
+    assert_eq!(found[0]["args"], json!(["sku"]));
+    assert_eq!(found[0]["where"], json!("name != 'retired'"));
+    assert_eq!(found[1]["args"], json!(["sku", "name"]));
+    assert_eq!(found[1]["where"], json!("name IN ('a', 'b')"));
+    assert_eq!(found[1]["nulls"], json!("not_distinct"));
+    assert_eq!(found[2]["where"], json!("sku IS NOT NULL"));
+    assert_eq!(found[3]["where"], json!("sku != ''"));
+}
+
+#[test]
+fn a_second_where_is_w010_and_the_first_stands() {
+    let lines = "- @index(sku, where: \"sku != ''\", where: \"name != ''\")\n";
+
+    assert_eq!(indexes(lines)[0]["where"], json!("sku != ''"));
+    assert_eq!(w010(lines).len(), 1);
+}
+
+#[test]
+fn an_index_where_outside_the_portable_subset_is_w011() {
+    assert!(w011("- @index(sku, where: \"sku != ''\")\n").is_empty());
+
+    let warned = w011("- @index(sku, where: \"ISNULL(name, '') != ''\")\n");
+    assert_eq!(warned.len(), 1, "{warned:?}");
+    assert!(warned[0].contains("\"Product\" index where"), "{warned:?}");
 }

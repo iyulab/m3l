@@ -29,7 +29,7 @@ static RE_PLATFORM: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r#"platform\s*:\s*["']?([^"'\s]+)["']?"#).unwrap());
 // Same optional-quote shape as `RE_WHERE`, same reason: by the time this sees the
 // arg, the generic tokenizer has already stripped one enclosing quote pair.
-// A keyword argument in an `@index`/`@unique` list — `name: "…"`, `fulltext: true`, `nulls: "…"`. The same
+// A keyword argument in an `@index`/`@unique` list — `name: "…"`, `fulltext: true`, `nulls: "…"`, `where: "…"`. The same
 // optional-quote shape as `RE_WHERE`; a column name never carries a colon.
 static RE_INDEX_KEYWORD: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r#"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*"?(.*?)"?$"#).unwrap());
@@ -830,12 +830,13 @@ struct IndexArgs {
     name: Option<String>,
     fulltext: Option<bool>,
     nulls: Option<String>,
+    where_clause: Option<String>,
     unread: Vec<String>,
 }
 
 /// The hint `M3L-W010` gives for a keyword argument an `@index`/`@unique` does not read (§3.3).
 const INDEX_ARGUMENT_HINT: &str =
-    "After its columns `@index` reads `name:` and `fulltext:`, and `@unique` reads `name:` and `nulls:` — each once.";
+    "After its columns `@index` reads `name:`, `fulltext:` and `where:`, and `@unique` reads `name:`, `nulls:` and `where:` — each once.";
 
 /// The hint for a `name:` on the directive of an `### Indexes` item (§3.3.3). The directive hint would tell the writer
 /// that `name:` is read — true of a bare directive, the opposite of what happened here.
@@ -868,6 +869,7 @@ fn split_index_args(args: &[AttrArgValue], unique: bool) -> IndexArgs {
         name: None,
         fulltext: None,
         nulls: None,
+        where_clause: None,
         unread: Vec::new(),
     };
     for a in args {
@@ -888,6 +890,9 @@ fn split_index_args(args: &[AttrArgValue], unique: bool) -> IndexArgs {
                 split.fulltext = Some(value == "true")
             }
             "nulls" if unique && split.nulls.is_none() => split.nulls = Some(value),
+            "where" if split.where_clause.is_none() && !value.trim().is_empty() => {
+                split.where_clause = Some(value)
+            }
             _ => split.unread.push(s.trim().to_string()),
         }
     }
@@ -921,6 +926,9 @@ fn insert_index_args(
     }
     if let Some(nulls) = split.nulls {
         entry.insert("nulls".into(), serde_json::json!(nulls));
+    }
+    if let Some(where_clause) = split.where_clause {
+        entry.insert("where".into(), serde_json::json!(where_clause));
     }
     unread
 }

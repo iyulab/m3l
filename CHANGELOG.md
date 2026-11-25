@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **Conditional indexes: `where:` on `@index` and `@unique`** (§3.3.5). `@unique(type, period_from, where: "source = 'SCHEDULE'")`
+  declares a filtered (partial) index, in all three index forms — a model-level directive, an `### Indexes` item with a directive,
+  and an item with sub-items (`- where: "…"`). The AST carries it as the entry's `where` string; the condition is a portable
+  expression over the table's own stored fields, and one outside the subset is `M3L-W011`. A sub-item `where:` was carried into the
+  AST before this release too, but the language gave it no meaning.
+
 ## [0.27.0] - 2026-11-22
 
 ### Fixed

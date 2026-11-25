@@ -1266,7 +1266,7 @@ fn is_text_field(field: &FieldNode) -> bool {
     )
 }
 
-/// M3L-W011 — an expression in a portable context (`@computed`, a rollup's `where:`, a view's `where`)
+/// M3L-W011 — an expression in a portable context (`@computed`, a rollup's `where:`, a view's `where`, an index's `where:`)
 /// uses something outside the subset §10.7 defines. A warning: the model still builds, and an expression
 /// meant for one platform says so with `@computed_raw`.
 fn validate_portable_expressions(
@@ -1298,6 +1298,28 @@ fn validate_portable_expressions(
             ),
         });
     };
+
+    // An index's `where:` (§3.3.5) reads the stored fields of its own table, by name.
+    for entry in &model.sections.indexes {
+        let Some(expression) = entry.get("where").and_then(|w| w.as_str()) else {
+            continue;
+        };
+        let line = entry
+            .get("loc")
+            .and_then(|l| l.get("line"))
+            .and_then(|l| l.as_u64())
+            .map_or(model.loc.line, |l| l as usize);
+        let constructs = crate::expressions::non_portable_constructs(expression, &|name| {
+            text_in(Some(model), name)
+        });
+        warn(
+            &model.loc.file,
+            line,
+            &format!("\"{}\" index where", model.name),
+            expression,
+            constructs,
+        );
+    }
 
     // A view whose source is a SQL code block (§4.7.8) is platform SQL as a whole — its fields compute over
     // the block's aliases — so none of its expressions is held to the subset.

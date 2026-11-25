@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.28.0] - 2026-11-26
+
 ### Added
 
 - **Conditional indexes: `where:` on `@index` and `@unique`** (§3.3.5). `@unique(type, period_from, where: "source = 'SCHEDULE'")`

@@ -313,7 +313,7 @@ checksum = "4d9aae57673c1a235149777a74d152f3210ebd3e3b13346d2cdb6809e566bd3c"
 
 [[package]]
 name = "m3l-cabi"
-version = "0.28.0"
+version = "0.29.0"
 dependencies = [
  "m3l-core",
  "m3l-lint",
@@ -322,7 +322,7 @@ dependencies = [
 
 [[package]]
 name = "m3l-cli"
-version = "0.28.0"
+version = "0.29.0"
 dependencies = [
  "clap",
  "glob",
@@ -336,7 +336,7 @@ dependencies = [
 
 [[package]]
 name = "m3l-core"
-version = "0.28.0"
+version = "0.29.0"
 dependencies = [
  "pretty_assertions",
  "regex",
@@ -346,7 +346,7 @@ dependencies = [
 
 [[package]]
 name = "m3l-lint"
-version = "0.28.0"
+version = "0.29.0"
 dependencies = [
  "m3l-core",
  "serde",
@@ -355,7 +355,7 @@ dependencies = [
 
 [[package]]
 name = "m3l-napi"
-version = "0.28.0"
+version = "0.29.0"
 dependencies = [
  "m3l-core",
  "m3l-lint",
@@ -367,7 +367,7 @@ dependencies = [
 
 [[package]]
 name = "m3l-wasm"
-version = "0.28.0"
+version = "0.29.0"
 dependencies = [
  "m3l-core",
  "m3l-lint",

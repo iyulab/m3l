@@ -1854,7 +1854,6 @@ For complex Lookup definitions, use the extended format following the same flat 
 ```markdown
 - customer_name: string
   - lookup: order_id.customer_id.name
-  - fallback: "Unknown Customer"
   - description: "Customer name via order reference"
 ```
 
@@ -1867,7 +1866,6 @@ Simple Format and Extended Format correspondence:
 # Extended — when additional settings are needed
 - product_name: string
   - lookup: product_id.name
-  - fallback: "N/A"
   - persisted: true
   - description: "Product name from reference"
 ```

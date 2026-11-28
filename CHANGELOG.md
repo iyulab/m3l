@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Documentation
+
+- The extended Lookup examples (§4.5.3) no longer show a `fallback:` key. The language never defined one — the parser keeps it as a
+  user attribute like any unknown key, and no generator reads it — so the examples taught a setting that does nothing. A default for a
+  Lookup whose chain finds no row would be a language addition, made through an RFC.
+
 ## [0.28.0] - 2026-11-26
 
 ### Added

@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **A field-level `@unique` takes a `NULL` policy: `@unique(nulls: "not_distinct")`** (§3.3.4.1, §3.3.4.3). A nullable field can now
+  say on its own line that a `NULL` competes for uniqueness like any value (SQL:2023 `NULLS NOT DISTINCT`), as a model-level
+  `@unique(code, nulls: "not_distinct")` already could. The AST carries it as the attribute's `nulls` key — the key a model-level entry
+  carries — and not in `args`. The parser accepted the same text before this release but kept it as an argument string no consumer
+  read, so the constraint a generator emitted had the default policy; any other argument a field-level `@unique` is given is now
+  reported (`M3L-W010`). `format` writes the policy back as written. The C# and TypeScript bindings gain the `nulls` property.
+
 ### Documentation
 
 - The extended Lookup examples (§4.5.3) no longer show a `fallback:` key. The language never defined one — the parser keeps it as a

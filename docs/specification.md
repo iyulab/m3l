@@ -1329,6 +1329,16 @@ Defined at the field level using the `@unique` attribute:
 - email: string(100) @unique @index
 ```
 
+A nullable field's `@unique` takes the same `NULL` policy a model-level one does (§3.3.4.3), and nothing else — a name or a
+condition is declared at the model level:
+
+```markdown
+- badge_code: string(20)? @unique(nulls: "not_distinct")    # at most one row without a badge code
+```
+
+The AST carries it as the attribute's own `nulls` key (the key a model-level entry carries), not as an argument. Any other
+argument is reported (`M3L-W010`).
+
 Or using framework-specific notation:
 
 ```markdown
@@ -1348,7 +1358,10 @@ For example:
 - @unique(tenant_id, username) "Ensures username uniqueness within each tenant"
 ```
 
-#### 3.3.4.3 NULL Handling in Multi-Column Unique Constraints
+#### 3.3.4.3 NULL Handling in Unique Constraints
+
+What follows is written for multi-column constraints, where it matters most; it holds for a single column the same way — a
+model-level `@unique(code, nulls: "not_distinct")` or a field-level `@unique(nulls: "not_distinct")` (§3.3.4.1).
 
 By default, a `NULL` in any column of a multi-column `@unique` constraint excludes that row from
 uniqueness enforcement — two rows that agree on every other column may both carry `NULL` in the

@@ -83,6 +83,7 @@ fn field_attribute_optional_fields() {
         args: None,
         args_quoted: None,
         cascade: None,
+        nulls: None,
         is_standard: None,
         is_registered: None,
     };
@@ -100,6 +101,7 @@ fn field_attribute_with_standard() {
         args: None,
         args_quoted: None,
         cascade: None,
+        nulls: None,
         is_standard: Some(true),
         is_registered: None,
     };

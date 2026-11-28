@@ -745,6 +745,10 @@ fn format_arg(arg: &m3l_core::AttrArgValue, quoted: bool) -> String {
 /// quoting from `args_quoted` (§HD-16 — `AttrArgValue` is untagged so it can't
 /// carry that flag itself). `None` when the attribute has no args at all.
 fn format_attr_args(attr: &m3l_core::FieldAttribute) -> Option<String> {
+    // A field-level `@unique`'s NULL policy is read out of its arguments into its own key (§3.3.4.3).
+    if let Some(ref nulls) = attr.nulls {
+        return Some(format!("(nulls: \"{nulls}\")"));
+    }
     let args = attr.args.as_ref()?;
     let arg_strs: Vec<String> = args
         .iter()
@@ -1248,11 +1252,11 @@ mod lossless {
              - customer_id: identifier? @reference(Customer)?\n\
              - owner_id: identifier @reference(Customer)!!\n\
              - tags: map<string, integer>\n\
-             - secret: string(100) `[JsonIgnore]` `[MaxLength(100)]`\n",
+             - secret: string(100) `[JsonIgnore]` `[MaxLength(100)]`\n\
+             - code: string(10)? @unique(nulls: \"not_distinct\")\n",
         );
         assert!(losses.is_empty(), "{losses:#?}");
     }
-
     #[test]
     fn model_sections_survive_a_round_trip() {
         // Joined rather than written with `\` continuations, which would strip the

@@ -1694,7 +1694,13 @@ fn build_field_node(
     current_kind: &FieldKind,
     unread: &mut Vec<UnreadFieldText>,
 ) -> FieldNode {
-    let attrs = parse_raw_attributes(&data.attributes);
+    let attrs = read_field_unique_args(
+        parse_raw_attributes(&data.attributes),
+        data.name.as_deref().unwrap_or_default(),
+        token.line,
+        file,
+        unread,
+    );
 
     // Process default_value
     let (default_value, default_value_type, default_value_quoted, default_value_backtick) =
@@ -2029,6 +2035,52 @@ fn without_renamed_from(mut attrs: Vec<FieldAttribute>) -> Vec<FieldAttribute> {
     attrs
 }
 
+/// The hint `M3L-W010` gives for an argument a field-level `@unique` does not read (§3.3.4.3).
+const FIELD_UNIQUE_ARGUMENT_HINT: &str =
+    "A field's `@unique` reads one `nulls:` — \"distinct\" or \"not_distinct\". A name or a condition is declared at the model level.";
+
+/// A field-level `@unique` reads one argument, its NULL policy `nulls:` (§3.3.4.3), into the attribute's own `nulls`
+/// key — the key a model-level `@unique` entry carries — and out of `args`. Anything else it was given is reported
+/// (`M3L-W010`) rather than carried as an argument no one reads.
+fn read_field_unique_args(
+    mut attrs: Vec<FieldAttribute>,
+    field: &str,
+    line: usize,
+    file: &str,
+    unread: &mut Vec<UnreadFieldText>,
+) -> Vec<FieldAttribute> {
+    for attr in attrs.iter_mut().filter(|a| a.name == "unique") {
+        let Some(args) = attr.args.take() else {
+            continue;
+        };
+        attr.args_quoted = None;
+        for arg in args {
+            let text = match &arg {
+                AttrArgValue::String(s) => s.trim().to_string(),
+                AttrArgValue::Number(n) => n.to_string(),
+                AttrArgValue::Bool(b) => b.to_string(),
+            };
+            let policy = RE_INDEX_KEYWORD
+                .captures(&text)
+                .filter(|caps| &caps[1] == "nulls")
+                .map(|caps| caps[2].to_string())
+                .filter(|value| value == "distinct" || value == "not_distinct");
+            match policy {
+                Some(value) if attr.nulls.is_none() => attr.nulls = Some(value),
+                _ => unread.push(UnreadFieldText {
+                    element: String::new(),
+                    field: field.to_string(),
+                    text,
+                    hint: Some(FIELD_UNIQUE_ARGUMENT_HINT),
+                    line,
+                    file: file.to_string(),
+                }),
+            }
+        }
+    }
+    attrs
+}
+
 fn parse_raw_attributes(raw_attrs: &[RawAttribute]) -> Vec<FieldAttribute> {
     raw_attrs
         .iter()
@@ -2053,6 +2105,7 @@ fn parse_raw_attributes(raw_attrs: &[RawAttribute]) -> Vec<FieldAttribute> {
                 args,
                 args_quoted,
                 cascade: a.cascade.clone(),
+                nulls: None,
                 is_standard,
                 is_registered: None,
             }
@@ -3030,6 +3083,52 @@ mod tests {
         assert!(entry.get("nulls").is_none());
         let args = entry.get("args").unwrap().as_array().unwrap();
         assert_eq!(args.len(), 2);
+    }
+
+    /// A field-level `@unique` takes the same NULL policy as a model-level one, read into the attribute's own `nulls`
+    /// key — the key a model-level entry carries — and out of `args`. Before, it was carried as an argument string no
+    /// consumer read, and the constraint came out with the opposite policy.
+    #[test]
+    fn field_level_unique_reads_its_null_policy_into_its_own_key() {
+        let input = "## Order\n- id: identifier\n- code: string(10)? @unique(nulls: \"not_distinct\")\n- part: string? @unique";
+        let result = parse_string(input, "test.m3l.md");
+        let code = &result.models[0].fields[1].attributes[0];
+        assert_eq!(code.name, "unique");
+        assert_eq!(code.nulls.as_deref(), Some("not_distinct"));
+        assert!(code.args.is_none());
+        assert!(result.models[0].fields[2].attributes[0].nulls.is_none());
+        assert!(result.unread_field_text.is_empty());
+    }
+
+    /// Anything else a field-level `@unique` is given — a name, a condition, a policy outside the two words, a second
+    /// policy — is reported instead of being carried as an argument no one reads.
+    #[test]
+    fn field_level_unique_reports_what_it_does_not_read() {
+        let input = "## Order\n- id: identifier\n- code: string? @unique(nulls: \"maybe\", name: \"uq\", where: \"a = 1\")\n- tag: string? @unique(nulls: \"distinct\", nulls: \"not_distinct\")";
+        let result = parse_string(input, "test.m3l.md");
+        assert!(result.models[0].fields[1].attributes[0].nulls.is_none());
+        assert_eq!(
+            result.models[0].fields[2].attributes[0].nulls.as_deref(),
+            Some("distinct")
+        );
+        let unread: Vec<&str> = result
+            .unread_field_text
+            .iter()
+            .map(|u| u.text.as_str())
+            .collect();
+        assert_eq!(
+            unread,
+            [
+                "nulls: \"maybe\"",
+                "name: \"uq\"",
+                "where: \"a = 1\"",
+                "nulls: \"not_distinct\""
+            ]
+        );
+        assert!(result
+            .unread_field_text
+            .iter()
+            .all(|u| u.element == "Order"));
     }
 
     /// `@index` (non-unique) has no NULL-policy concept — a `nulls:`-shaped token there

@@ -171,6 +171,10 @@ pub struct FieldAttribute {
     pub args_quoted: Option<Vec<bool>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cascade: Option<String>,
+    /// A field-level `@unique`'s NULL policy, `"distinct"` or `"not_distinct"` (§3.3.4.3) — the same key and
+    /// values a model-level `@unique` entry carries. Read out of `args`, which no longer holds it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub nulls: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "isStandard")]
     pub is_standard: Option<bool>,

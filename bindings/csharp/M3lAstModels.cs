@@ -128,6 +128,10 @@ public class FieldAttribute
     [JsonPropertyName("cascade")]
     public string? Cascade { get; set; }
 
+    /// <summary>A field-level <c>@unique</c>'s NULL policy: <c>"distinct"</c> or <c>"not_distinct"</c>.</summary>
+    [JsonPropertyName("nulls")]
+    public string? Nulls { get; set; }
+
     [JsonPropertyName("isStandard")]
     public bool? IsStandard { get; set; }
 

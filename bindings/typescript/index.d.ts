@@ -47,6 +47,8 @@ export interface FieldAttribute {
   name: string;
   args?: AttrArgValue[];
   cascade?: string;
+  /** A field-level `@unique`'s NULL policy (§3.3.4.3). */
+  nulls?: "distinct" | "not_distinct";
   isStandard?: boolean;
   isRegistered?: boolean;
 }
